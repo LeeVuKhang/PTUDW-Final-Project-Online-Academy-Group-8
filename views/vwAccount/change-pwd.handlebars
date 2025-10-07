@@ -1,0 +1,32 @@
+<div class="card shadow-sm">
+  <div class="card-header bg-primary text-white">
+    <i class="bi bi-person-circle"></i> Change Password
+  </div>
+  <div class="card-body">
+    {{#if error}}
+    <div class="alert alert-primary alert-dismissible fade show" role="alert">
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"> </button>
+        <strong>Holy guacamole!</strong> Wrong current password
+    </div>
+    {{/if}}
+    <form action="/account/change-pwd" method="post">
+      <h4 class="card-title">{{user.name}}</h4>
+      
+      <div class="mb-3">
+        <label for="txtcurrentPassword" class="form-label">Current password</label>
+        <input type="password" class="form-control" id="txtcurrentPassword" name="currentPassword">
+      </div>
+
+      <div class="mb-3">
+        <label for="txtnewPassword" class="form-label">newPassword address</label>
+        <input type="password" class="form-control" id="txtnewPassword" name="newPassword">
+      </div>
+
+      <div class="text-end">
+        <button type="submit" class="btn btn-success">
+          <i class="bi bi-save"></i> Save
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

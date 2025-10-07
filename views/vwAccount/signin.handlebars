@@ -1,0 +1,56 @@
+{{#fill_section 'js'}}
+<script>
+      function handleSubmit(event) {
+      event.preventDefault(); 
+      
+      const username = document.querySelector('#loginUsername').value;
+
+      fetch(`/account/is-available?username=${username}`)
+      .then(function(res){
+        return res.json();
+      })
+      .then(function(data){
+        if (data === true){
+          alert('Username is not existed');
+          return;
+        }
+        event.target.submit(); 
+      })
+      {{!-- .then(function (err){
+        console.log(err);
+        alert('An error occurred. Please try again');
+      }) --}}
+    }
+    document.querySelector('#frmSignin').addEventListener('submit', handleSubmit);
+  </script>
+{{/fill_section}}
+
+
+<div class="container d-flex align-items-center justify-content-center">
+    <div class="card shadow p-4" style="max-width: 400px; width: 100%;">
+      <h3 class="mb-3 text-center">Sign In</h3>
+      <form method = "post" action = "/account/signin" id="frmSignin">
+        <div class="mb-3">
+          <label for="loginUsername" class="form-label">Username</label>
+          <input type="text" class="form-control" id="loginUsername" name = "username" required>
+        </div>
+        <div class="mb-3">
+          <label for="loginPassword" class="form-label">Password</label>
+          <input type="password" class="form-control" id="loginPassword" name = "password" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 mb-2">Login</button>
+      </form>
+      <div class="text-center my-2 text-muted">or</div>
+      <div class="d-grid gap-2 mb-2">
+        <a href="#" class="btn btn-outline-danger w-100">
+          <i class="bi bi-google"></i> Sign in with Google
+        </a>
+        <a href="#" class="btn btn-outline-primary w-100">
+          <i class="bi bi-facebook"></i> Sign in with Facebook
+        </a>
+      </div>
+      <div class="text-center">
+        <small>Don't have an account? <a href="/account/signup">Register</a></small>
+      </div>
+    </div>
+  </div>

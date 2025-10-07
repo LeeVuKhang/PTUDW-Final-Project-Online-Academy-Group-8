@@ -1,0 +1,34 @@
+<div class="card shadow-sm">
+  <div class="card-header bg-primary text-white">
+    <i class="bi bi-person-circle"></i> Personal Profile
+  </div>
+  <div class="card-body">
+    <form action="/account/profile" method="post">
+      <h4 class="card-title">{{user.name}}</h4>
+      
+      <div class="mb-3">
+        <label for="txtUsername" class="form-label">Username</label>
+        <input type="text" class="form-control" id="txtUsername" name="username" 
+               value="{{user.username}}" readonly>
+      </div>
+
+      <div class="mb-3">
+        <label for="txtEmail" class="form-label">Email address</label>
+        <input type="email" class="form-control" id="txtEmail" name="email" 
+               value="{{user.email}}">
+      </div>
+
+      <div class="mb-3">
+        <label for="txtDoB" class="form-label">Date of Birth</label>
+        <input type="date" class="form-control" id="txtDoB" name="dob" 
+               value="{{formatDate user.dob}}">
+      </div>
+
+      <div class="text-end">
+        <button type="submit" class="btn btn-success">
+          <i class="bi bi-save"></i> Save
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

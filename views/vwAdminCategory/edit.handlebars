@@ -1,0 +1,37 @@
+<form action="" method="post">
+    <div class="card">
+        <h5 class="card-headed mt-4 mx-3 ">Edit Category</h5>
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="txtCatID" class="form-label mx">ID</label>
+                <input type="text" class="form-control" id="txtCatID" value = "{{category.catid}}" name="catid" readonly>
+            </div>
+        </div>
+
+         <div class="card-body">
+            <div class="">
+                <label for="CatName" class="form-label mx" >Caterogy</label>
+                <input type="text" class="form-control" id="txtCatName" value = "{{category.catname}}" name="catname" >
+            </div>
+        </div>
+    </div>
+
+    <div class="card-footer text-muted mt-2">
+        <a name="" id="" class="btn btn-outline-success" href="/admin/categories" role="button">
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+
+        <button type="summit" formaction="/admin/categories/delete" class="btn btn-danger">
+            <i class="bi bi-trash3-fill"></i>
+            Delete
+        </button>
+
+        <button type="summit" formaction="/admin/categories/patch" class="btn btn-success">
+            <i class="bi bi-check2"></i>
+            Save
+        </button>
+
+        
+    </div>
+</form>

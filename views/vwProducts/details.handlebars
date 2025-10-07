@@ -1,0 +1,13 @@
+<div class="card">
+  <img src="/static/imgs/sp/{{proid}}/main_thumbs.jpg" class="mx-auto d-block " style="width: 23rem;" alt="...">
+  <div class="card-body">
+    <h4 class="card-title">{{proname}}</h4>
+    <p class="card-text">{{{fulldes}}}</p>
+  </div>
+    <h6 class="card-title row g-3 p-3">Quantity: {{quantity}}</h6>
+    <h5 class="card-title text-danger row g-3 p-3">{{formatNumber price}}</h5>
+  <div class="card-body">
+    <a href="/products/byCat/?id={{catid}}" class="btn btn-outline-success">Back</a>
+    <a href="#" class="btn btn-outline-success btn-sm float-end"> <i class="bi bi-cart-plus"></i> Add to cart</a>
+  </div>
+</div>
