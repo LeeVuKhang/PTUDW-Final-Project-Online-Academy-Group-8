@@ -1,0 +1,58 @@
+.navbar .nav-link {
+  color: #212529; /* đen nhẹ */
+  font-weight: 400;
+}
+
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+  color: #0d6efd; /* xanh khi hover */
+}
+
+.course-card {
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.course-card img {
+  width: 93%;
+  height: 180px;
+  object-fit: cover;
+  border-radius:15px;
+  margin: 10px auto;
+  display: block;
+  box-shadow: 0 0 10px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+  background-color: #fff;
+}
+
+
+.course-card .overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.course-card:hover img {
+  transform: scale(1.05);
+  filter: brightness(0.7);
+}
+
+.course-card:hover .overlay {
+  opacity: 1;
+}
+
+.course-card .overlay .btn {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+}
+
+.course-card:hover .overlay .btn {
+  opacity: 1;
+  transform: translateY(0);
+}

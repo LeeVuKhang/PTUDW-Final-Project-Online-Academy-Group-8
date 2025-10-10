@@ -1,0 +1,31 @@
+/* ==== KHÓA HỌC NỔI BẬT & TẤT CẢ KHÓA HỌC ==== */
+.course-card {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #eee;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: #fff;
+  position: relative;
+}
+
+.course-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Ảnh bo góc bên trong card */
+.course-card .card-img-top {
+  border-radius: 12px;
+  margin: 12px;
+  width: calc(100% - 24px);
+  height: 180px;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+/* Ảnh phóng nhẹ khi hover */
+.course-card:hover .card-img-top {
+  transform: scale(1.05);
+}
+
+
