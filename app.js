@@ -98,6 +98,10 @@ app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
 
 import productRouter from './routes/product.routes.js';
 app.use('/products', productRouter);
+
+import instructorRouter from './routes/instructor.routes.js'
+app.use('/instructor', instructorRouter)
+
 //lenh cuoi cung
 app.listen(3000, () => {
   console.log('Server is running on http://localhost:3000');
