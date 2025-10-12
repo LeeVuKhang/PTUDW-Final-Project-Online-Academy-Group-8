@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khóa học của bạn</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        .course-thumbnail {
+            width: 120px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .course-item:hover {
+            background-color: #f8f9fa;
+        }
+        .filter-btn.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Khóa học của giảng viên</h3>
+                    
+                    <!-- Filter Buttons -->
+                    <div class="btn-group" role="group" aria-label="Category filter">
+                        <button type="button" class="btn btn-outline-primary filter-btn active" data-category="all">
+                            <i class="bi bi-grid-fill"></i> Tất cả
+                        </button>
+                        <button type="button" class="btn btn-outline-primary filter-btn" data-category="programming">
+                            <i class="bi bi-code-slash"></i> Lập trình
+                        </button>
+                        <button type="button" class="btn btn-outline-primary filter-btn" data-category="data-science">
+                            <i class="bi bi-graph-up"></i> Data Science
+                        </button>
+                        <button type="button" class="btn btn-outline-primary filter-btn" data-category="design">
+                            <i class="bi bi-palette"></i> Thiết kế
+                        </button>
+                        <button type="button" class="btn btn-outline-primary filter-btn" data-category="marketing">
+                            <i class="bi bi-megaphone"></i> Marketing
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <!-- List Group -->
+                <div class="list-group list-group-flush" id="courseList">
+                    
+                    <!-- Course 1 - Programming -->
+                    <div class="list-group-item course-item" data-category="programming">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <img src="https://images.unsplash.com/photo-1516397281156-ca07cf9746fc?w=400" 
+                                     class="course-thumbnail" 
+                                     alt="Python Programming">
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-1">Lập trình Python từ cơ bản đến nâng cao</h5>
+                                <p class="mb-1 text-muted">Học Python toàn diện: cú pháp, OOP, xử lý dữ liệu, web scraping và machine learning cơ bản</p>
+                                <small class="text-muted">
+                                    <span class="badge bg-primary me-2">Lập trình</span>
+                                    <i class="bi bi-people-fill"></i> 1,234 học viên | 
+                                    <i class="bi bi-star-fill text-warning"></i> 4.8/5.0
+                                </small>
+                            </div>
+                            <div class="col-auto">
+                                <div class="d-flex gap-2 flex-wrap justify-content-end">
+                                    <a href="#" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Xem
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-play-circle"></i> Học ngay
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Course 2 - Programming -->
+                    <div class="list-group-item course-item" data-category="programming">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <img src="https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=400" 
+                                     class="course-thumbnail" 
+                                     alt="Web Development">
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-1">Phát triển Web Full-Stack với MERN</h5>
+                                <p class="mb-1 text-muted">Xây dựng ứng dụng web hoàn chỉnh với MongoDB, Express.js, React và Node.js</p>
+                                <small class="text-muted">
+                                    <span class="badge bg-primary me-2">Lập trình</span>
+                                    <i class="bi bi-people-fill"></i> 2,456 học viên | 
+                                    <i class="bi bi-star-fill text-warning"></i> 4.9/5.0
+                                </small>
+                            </div>
+                            <div class="col-auto">
+                                <div class="d-flex gap-2 flex-wrap justify-content-end">
+                                    <a href="#" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Xem
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-play-circle"></i> Học ngay
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+
+                <!-- No Results Message -->
+                <div id="noResults" class="text-center py-5" style="display: none;">
+                    <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-3">Không tìm thấy khóa học nào trong danh mục này</p>
+                </div>
+
+                <!-- Pagination -->
+                <div class="p-3">
+                    <nav aria-label="Course pagination">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                            </li>
+                            <li class="page-item active">
+                                <a class="page-link" href="#">1</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">2</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">3</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            <div class="card-footer text-muted">
+                <span id="courseCount">Tổng cộng 6 khóa học</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Filter functionality
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const courseItems = document.querySelectorAll('.course-item');
+        const noResults = document.getElementById('noResults');
+        const courseCount = document.getElementById('courseCount');
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const category = this.getAttribute('data-category');
+                
+                // Update active button
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Filter courses
+                let visibleCount = 0;
+                courseItems.forEach(item => {
+                    if (category === 'all' || item.getAttribute('data-category') === category) {
+                        item.style.display = '';
+                        visibleCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+                
+                // Show/hide no results message
+                if (visibleCount === 0) {
+                    noResults.style.display = 'block';
+                } else {
+                    noResults.style.display = 'none';
+                }
+                
+                // Update course count
+                courseCount.textContent = `Tổng cộng ${visibleCount} khóa học`;
+            });
+        });
+
+        // JavaScript để xử lý sự kiện click cho nút Edit
+        document.querySelectorAll('.btn-outline-secondary').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const courseName = this.closest('.row').querySelector('h5').textContent;
+                alert('Chỉnh sửa khóa học: ' + courseName);
+            });
+        });
+
+        // JavaScript để xử lý Học ngay
+        document.querySelectorAll('.btn-primary').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const courseName = this.closest('.row').querySelector('h5').textContent;
+                alert('Bắt đầu học: ' + courseName);
+            });
+        });
+
+        // JavaScript để xử lý View Details
+        document.querySelectorAll('.btn-outline-primary').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const courseName = this.closest('.row').querySelector('h5').textContent;
+                alert('Xem chi tiết khóa học: ' + courseName);
+            });
+        });
+    </script>
+</body>s
+</html>
