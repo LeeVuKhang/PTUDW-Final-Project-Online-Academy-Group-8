@@ -1,0 +1,162 @@
+{{#fill_section 'js'}}
+<script>
+  // js here
+</script>
+{{/fill_section}}
+
+<div class="bg-gray-900 text-white py-8 shadow-inner">
+  <div class="container mx-auto px-4 lg:px-8 max-w-6xl">
+    <div class="text-sm font-semibold mb-2">
+      <a href="/categories/{{course.catid}}" class="text-blue-400 hover:text-blue-300">{{course.category_name}}</a>
+    </div>
+    <h1 class="text-3xl lg:text-4xl font-bold mb-3">{{course.title}}</h1>
+    <p class="text-lg lg:text-xl text-gray-300 mb-4">{{course.tinydes}}</p>
+    <div class="flex flex-wrap items-center text-sm gap-x-4 gap-y-2 text-gray-200">
+      <div class="flex items-center gap-1">
+        <span class="font-bold text-yellow-400">{{course.rating}}</span>
+        <span class="text-yellow-400">{{{renderStars course.rating}}}</span>
+        <span class="text-gray-400">({{formatNumber course.total_reviews}} đánh giá)</span>
+      </div>
+      <span>{{formatNumber course.student_count}} học viên</span>
+    </div>
+    <div class="flex flex-wrap items-center text-sm gap-x-4 gap-y-2 text-gray-200 mt-2">
+      <span class="px-3 py-1 bg-gray-700 rounded-full text-xs font-semibold">{{course.level}}</span>
+      <span>Tổng cộng {{course.total_hours}} giờ</span>
+      <span>{{course.total_lectures}} bài giảng</span>
+    </div>
+  </div>
+</div>
+
+<div class="container mx-auto px-4 lg:px-8 py-8 max-w-6xl">
+  <div class="flex flex-col lg:flex-row -mx-4">
+
+    <div class="w-full lg:w-2/3 px-4 mb-8">
+      
+      <div class="bg-gray-800 p-6 shadow-md rounded-lg mb-8 aspect-video flex items-center justify-center">
+         <div class="text-center">
+            <i class="fas fa-play-circle text-white text-6xl mb-2 opacity-50"></i>
+            <p class="text-gray-300 font-semibold">Video giới thiệu khóa học</p>
+            <p class="text-gray-400 text-sm">(Placeholder)</p>
+         </div>
+      </div>
+
+      <div class="bg-white p-6 shadow-md rounded-lg mb-8">
+        <h2 class="text-2xl font-bold mb-4">Mô tả khóa học</h2>
+        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{course.fulldes}}</p>
+      </div>
+
+      <div class="bg-white p-6 shadow-md rounded-lg mb-8">
+        <h2 class="text-2xl font-bold mb-4">Nội dung khóa học</h2>
+        <div class="space-y-2"> 
+          <details class="group border rounded-md hover:bg-gray-50 transition duration-150 ease-in-out">
+            <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-lg list-none">
+              Chương 1: Giới thiệu
+              <span class="text-gray-500 group-open:rotate-180 transition-transform duration-200">
+                <i class="fas fa-chevron-down text-sm"></i>
+              </span>
+            </summary>
+            <div class="p-4 pt-0">
+              <ul class="list-disc list-inside text-gray-700 space-y-1 pl-2">
+                <li>Bài 1: Tổng quan về Python</li>
+                <li>Bài 2: Cài đặt môi trường</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="group border rounded-md hover:bg-gray-50 transition duration-150 ease-in-out">
+            <summary class="flex justify-between items-center p-4 cursor-pointer font-semibold text-lg list-none">
+              Chương 2: Cú pháp cơ bản
+              <span class="text-gray-500 group-open:rotate-180 transition-transform duration-200">
+                 <i class="fas fa-chevron-down text-sm"></i>
+              </span>
+            </summary>
+             <div class="p-4 pt-0">
+              <ul class="list-disc list-inside text-gray-700 space-y-1 pl-2">
+                <li>Bài 3: Biến và kiểu dữ liệu</li>
+                <li>Bài 4: Toán tử</li>
+                <li>Bài 5: Cấu trúc điều khiển</li>
+              </ul>
+            </div>
+          </details>
+
+        </div>
+      </div>
+
+      <div class="bg-white p-6 shadow-md rounded-lg">
+        <h2 class="text-2xl font-bold mb-4">Đánh giá của học viên</h2>
+        <div class="space-y-6">
+          <div class="border-b pb-4">
+            <div class="flex items-center mb-2">
+              <div class="w-10 h-10 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center font-bold mr-3">JD</div>
+              <div>
+                <p class="font-semibold">John Doe</p>
+                <div class="text-sm text-gray-500">
+                   <span class="text-yellow-500">
+                     <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                   </span>
+                   <span class="ml-1">a week ago</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-gray-700">"Excellent course! The explanations were clear and concise. Highly recommended for beginners."</p>
+          </div>
+          <div class="border-b pb-4">
+            <div class="flex items-center mb-2">
+              <div class="w-10 h-10 rounded-full bg-pink-200 text-pink-700 flex items-center justify-center font-bold mr-3">AS</div>
+              <div>
+                <p class="font-semibold">Alice Smith</p>
+                 <div class="text-sm text-gray-500">
+                   <span class="text-yellow-500">
+                     <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                   </span>
+                   <span class="ml-1">2 weeks ago</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-gray-700">"This is one of the best Python courses I've taken. The instructor is very knowledgeable and the projects were very helpful. Great content!"</p>
+          </div>
+        </div>
+        <div class="mt-6 text-center">
+            <p class="text-gray-600">Tổng cộng {{formatNumber course.total_reviews}} đánh giá</p>
+            <button class="mt-2 font-semibold text-blue-600 hover:text-blue-700">Xem tất cả đánh giá</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="w-full lg:w-1/3 px-4 mb-8">
+      <div class="lg:sticky top-8">
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden"> {
+          <div class="w-full h-56 bg-gray-200 flex items-center justify-center">
+             <img src="{{course.image_url}}" alt="{{course.title}}" class="w-full h-full object-cover">
+          </div>
+          
+          <div class="p-6">
+            <div class="flex items-baseline gap-2 mb-4">
+              <span class="text-3xl font-bold text-gray-900">{{formatNumber course.discount_price}}</span>
+              {{#if (isGreater course.price course.discount_price)}}
+                <span class="text-xl text-gray-500 line-through">{{formatNumber course.price}}</span>
+                <span class="text-lg font-semibold text-red-600">{{calculateDiscount course.price course.discount_price}}% off</span>
+              {{/if}}
+            </div>
+            <div class="flex flex-col gap-3">
+              <button class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors">Thêm vào giỏ hàng</button>
+              <button class="w-full bg-transparent border-2 border-gray-800 text-gray-900 font-bold py-3 rounded-lg hover:bg-gray-100 transition-colors">Mua ngay</button>
+            </div>
+            <p class="text-center text-xs text-gray-500 mt-3">Đảm bảo hoàn tiền trong 30 ngày</p>
+            <div class="mt-6">
+              <h3 class="font-bold text-lg mb-3">Khóa học này bao gồm:</h3>
+              <ul class="space-y-2 text-gray-700">
+                <li class="flex items-center"><i class="fas fa-video w-5 mr-2 text-gray-500"></i><span>{{course.total_hours}} giờ video theo yêu cầu</span></li>
+                <li class="flex items-center"><i class="fas fa-file-alt w-5 mr-2 text-gray-500"></i><span>{{course.total_lectures}} bài giảng</span></li>
+                <li class="flex items-center"><i class="fas fa-signal w-5 mr-2 text-gray-500"></i><span>Cấp độ {{course.level}}</span></li>
+                <li class="flex items-center"><i class="fas fa-trophy w-5 mr-2 text-gray-500"></i><span>Chứng chỉ hoàn thành</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
