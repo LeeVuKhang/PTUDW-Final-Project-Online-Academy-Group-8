@@ -1,44 +1,180 @@
-<form action="" method="post">
-    <div class="card">
-        <h4 class="card-headed">Đăng ký khóa học mới</h4>
-        <div class="card-body">
+{{#fill_section 'js'}}
+<script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
 
-            <div class="mb-3">
-                <label for="txtTitle" class="form-label">Tên khóa học</label>
-                <input type="text" class="form-control" id="txtTitle" name="title" autofocus>
-            </div>
+<script>
+  const cleaveCurrent = new Cleave('#discount_price', {
+    numeral: true,
+    numeralThousandsGroupStyle: 'thousand'
+  });
 
-            <div class="mb-3">
-                <label for="txtShortDes" class="form-label">Mô tả ngắn gọn nội dung khoá học</label>
-                <input type="text" class="form-control" id="txtShortDetail" name="shortdes" autofocus>
-            </div>
+  const cleaveOriginal = new Cleave('#price', {
+    numeral: true,
+    numeralThousandsGroupStyle: 'thousand'
+  });
 
-            <div class="mb-3">
-                <label for="txtLonogDes" class="form-label">Mô tả chi tiết nội dung khoá học</label>
-                <input type="text" class="form-control" id="txtLongDetail" name="longdes" autofocus>
-            </div>
+  const form = document.getElementById('courseForm');
+  form.addEventListener('submit', function (e) {
+    document.getElementById('discount_price').value = cleaveCurrent.getRawValue();
+    document.getElementById('price').value = cleaveOriginal.getRawValue();
+  });
+</script>
+{{/fill_section}}
 
-            <div class="mb-3">
-                <label for="txtPrice" class="form-label">Học phí & thông tin khuyến mại </label>
-                <input type="text" class="form-control" id="txtPrice" name="price" autofocus>
-            </div>
+<div class="container mx-auto px-4 py-12 max-w-4xl">
+  
+  <form id="courseForm" class="bg-white rounded-xl shadow-lg p-10" method="post">
+    
+    <div class="mb-8 text-center">
+      <h1 class="text-4xl font-extrabold text-gray-800 mb-3 flex items-center justify-center">
+        <i class="fas fa-plus-circle text-blue-500 mr-3"></i>
+        Create New Course
+      </h1>
+      <p class="text-gray-600 text-lg">Fill in the information below to create a new course</p>
+    </div>
 
-            <div class="mb-3">
-                <label for="txtSyllabus" class="form-label">Đề cương khoá học, cho phép xem trước (preview) một số chương </label>
-                <input type="text" class="form-control" id="txtSyllabus" name="syllabus" autofocus>
-            </div>
+    <hr class="my-8 border-gray-200">
+
+    <div class="space-y-6"> 
+      
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">
+          Course Title <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="title" name="title" autofocus
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+          placeholder="e.g. Complete Python Programming Masterclass 2025" required>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">
+         Short Course Description <span class="text-red-500">*</span>
+        </label>
+        <textarea id="tinydes" rows="4"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+          placeholder="Describe what students will learn in this course..." name='tinydes' required></textarea>
+        <p class="text-sm text-gray-500 mt-1">Minimum 50 characters</p>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">
+          Full Course Description <span class="text-red-500">*</span>
+        </label>
+        <textarea id="fulldes" rows="4"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+          placeholder="Describe what students will learn in this course..." name='fulldes' required></textarea>
+        <p class="text-sm text-gray-500 mt-1">Minimum 200 characters</p>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">
+          Course Image URL <span class="text-red-500">*</span>
+        </label>
+        <input type="url" id="imageUrl"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+          placeholder="https://example.com/course-image.jpg" name='image_url' required>
+        <p class="text-sm text-gray-500 mt-1">Enter a valid image URL</p>
+      </div>
+
+
+    </div> 
+    <hr class="my-8 border-gray-200">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6"> 
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">
+          Total Hours <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="total_hours"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+          placeholder="10.5" name='total_hours' required>
+        <p class="text-sm text-gray-500 mt-1">Course duration in hours</p>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">
+          Total Lectures <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="totalLectures"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+          placeholder="45" name='total_lectures' required>
+      </div>
+    </div>
+
+    <div class="mb-6">
+        <label class="block text-gray-700 font-semibold mb-2">
+          Category <span class="text-red-500">*</span>
+        </label>
+        <select id="catid"
+          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          name='catid' required>
+          <option value="">-- Select Instructor --</option>
+          <option value="1">Programming</option>
+          <option value="2">Data Science</option>
+          <option value="3">Marketing</option>
+          <option value="4">Math</option>
+        </select>
+      </div>
+
+    <div class="mb-6">
+      <label class="block text-gray-700 font-semibold mb-2">
+        Course Level <span class="text-red-500">*</span>
+      </label>
+      <select id="level"
+        class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+        name='level' required>
+        <option value="">-- Select Level --</option>
+        <option value="Beginner">Beginner</option>
+        <option value="Intermediate">Intermediate</option>
+        <option value"Advanced">Advanced</option>
+        <option value="All Levels">All Levels</option>
+      </select>
+    </div>
+    <hr class="my-8 border-gray-200">
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6"> 
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">
+          Current Price (VND) <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₫</span>
+          <input type="text" id="discount_price"
+            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+            placeholder="279000" name='discount_price' required>
         </div>
-    </div>
+      </div>
 
-    <div class="card-footer text-muted">
-        <a name="" id="" class="btn btn-outline-success" href="/admin/categories" role="button">
-            <i class="bi bi-arrow-left"></i>
-            Back
-        </a>
-
-        <button type="summit" class="btn btn-success">
-            <i class="bi bi-check2"></i>
-            Save
-        </button>
+      <div>
+        <label class="block text-gray-700 font-semibold mb-2">
+          Original Price (VND) <span class="text-red-500">*</span>
+        </label>
+        <div class="relative">
+          <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₫</span>
+          <input type="text" id="price"
+            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+            placeholder="399000" name='price' required>
+        </div>
+      </div>
     </div>
-</form>
+    
+    <hr class="my-8 border-gray-200">
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-end">
+      <a href="/courses"
+        class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors duration-200 ease-in-out flex items-center justify-center">
+        <i class="fas fa-arrow-left mr-2"></i>
+        Back
+      </a>
+      <button type="reset" 
+        class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors duration-200 ease-in-out">
+        <i class="fas fa-redo mr-2"></i>
+        Reset Form
+      </button>
+      <button type="submit"
+        class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 ease-in-out shadow-md">
+        <i class="fas fa-save mr-2"></i>
+        Create Course
+      </button>
+    </div>
+  </form>
+</div>
