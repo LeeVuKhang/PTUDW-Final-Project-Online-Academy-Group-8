@@ -24,12 +24,31 @@ app.engine('handlebars', engine({
         formatNumber(num) {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
         },
-        eq(a, b) {return a === b;},
+        eq(a, b) {
+            return a === b;
+        },
         formatDate(date) {
             if (!date) return '';
             const d = new Date(date);
             d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); 
             return d.toISOString().split('T')[0];
+        },
+        isGreater (a, b) {
+            return a > b;
+          },
+        calculateDiscount (original, current) {
+            if (original <= current) return 0;
+            const discount = ((original - current) / original) * 100;
+            return Math.round(discount);
+        },
+        truncate (str, len) {
+            if (str.length > len && str.length > 0) {
+                let new_str = str.substr(0, len);
+                new_str = str.substr(0, new_str.lastIndexOf(" "));
+                new_str = (new_str.length > 0) ? new_str : str.substr(0, len);
+                return new_str + '...';
+            }
+            return str;
         }
     }
 

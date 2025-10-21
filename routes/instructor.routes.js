@@ -1,4 +1,5 @@
 import express from 'express';
+import courseModels from '../models/product.model.js'
 
 const router = express.Router();
 
@@ -11,19 +12,32 @@ router.get('/courses', (req, res) => {
 });
 
 router.get('/create-course', (req, res) => {
+    console.log("go")
     res.render('vwInstructor/create-course')
 })
 
-router.post('/create-course', (req, res) => {
+router.post('/create-course', async (req, res) => {
     const course = {
         title: req.body.title,
-        short_description: req.body.shortdes,
-        long_description: req.body.longdes,
+        tinydes: req.body.tinydes,
+        fulldes: req.body.fulldes,
+        total_hours: req.body.total_hours,
         price: req.body.price,
-        syllabus: req.body.syllabus
+        discount_price: req.body.discount_price,
+        catid: req.body.catid,
+        level: req.body.level,
     };
-    res.send(course)
+    // if(course) {
+    //     await courseModels.add(course);
+    //     console.log("added")
+    //     res.redirect('/instructor/courses')
+    // }
+    // else {
+    //     res.send("Error")
+    // }
+    res.json(course)
 })
+
 
 // router.post('/add', async function(req, res) {
 //     const category = {
