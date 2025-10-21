@@ -15,5 +15,8 @@ export default {
         .where('catid',catID)
         .count('catid as amount')
         .first();
+    },
+    add(course) {
+        return db('courses').insert(course);
     }
 }   
