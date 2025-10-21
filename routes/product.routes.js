@@ -60,7 +60,6 @@ router.get('/details', async (req, res) => {
         });
     }
     else res.render('vwProducts/byCat/?id="1"');
-    
 });
 
 export default router; 

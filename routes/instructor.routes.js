@@ -7,8 +7,11 @@ router.get('/', (req, res) => {
     res.send('Instructor home page - to be implemented');
 });
 
-router.get('/courses', (req, res) => {
-    res.render('vwInstructor/list-course')
+router.get('/courses', async (req, res) => {
+    const list = await courseModels.findAll()
+    res.render('vwInstructor/list-course', {
+        courses: list
+    })
 });
 
 router.get('/create-course', (req, res) => {
@@ -24,18 +27,18 @@ router.post('/create-course', async (req, res) => {
         total_hours: req.body.total_hours,
         price: req.body.price,
         discount_price: req.body.discount_price,
-        catid: req.body.catid,
+        // catid: req.body.catid,
         level: req.body.level,
+        image_url: req.body.image_url
     };
-    // if(course) {
-    //     await courseModels.add(course);
-    //     console.log("added")
-    //     res.redirect('/instructor/courses')
-    // }
-    // else {
-    //     res.send("Error")
-    // }
-    res.json(course)
+    if(course) {
+        await courseModels.add(course);
+        console.log("added")
+        res.redirect('/instructor/courses')
+    }
+    else {
+        res.send("Error")
+    }
 })
 
 
@@ -46,5 +49,17 @@ router.post('/create-course', async (req, res) => {
 //     await categoryModels.add(category);
 //     res.redirect('/admin/categories')
 // })
+
+router.get('/courses/:course_id', async function (req, res) {
+    const course_id = req.params.course_id
+    const course = await courseModels.findByID(course_id)
+    if (!course) {
+        return res.status(404).send('Không tìm thấy khóa học');
+    }
+    res.render('vwProducts/course_detail', {
+        course: course,
+        title: course.title
+    })
+})
 
 export default router;

@@ -51,7 +51,6 @@ app.engine('handlebars', engine({
             return str;
         }
     }
-
 }));
 
 //lấy danh mục bỏ vào chỗ dùng chung để mọi file đều dùng được
