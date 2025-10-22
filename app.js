@@ -102,9 +102,10 @@ app.get('/', async (req, res) => {
         console.log(req.session.authUser)
     }
     const newestCourses = await courseModel.findNewestCourses();
-
+    const mostViewsCourses = await courseModel.findMostViewsCourses();
     res.render('home', {
-        newestCourses
+        newestCourses,
+        mostViewsCourses
     });
 });
 
