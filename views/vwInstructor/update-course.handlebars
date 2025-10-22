@@ -1,437 +1,282 @@
 {{#fill_section 'js'}}
 <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
-
 <script>
-    // Khởi tạo Cleave.js cho các ô giá
-    const cleaveCurrent = new Cleave('#discount_price', {
-        numeral: true,
-        numeralThousandsGroupStyle: 'thousand'
-    });
+    document.addEventListener('DOMContentLoaded', function() { // Bọc toàn bộ JS
 
-    const cleaveOriginal = new Cleave('#price', {
-        numeral: true,
-        numeralThousandsGroupStyle: 'thousand'
-    });
+        // --- Khởi tạo Cleave.js cho giá ---
+        const discountPriceInput = document.getElementById('discount_price');
+        const priceInput = document.getElementById('price');
+        let cleaveCurrent = null;
+        let cleaveOriginal = null;
 
-    // Xử lý submit để gửi giá trị số thô
-    const form = document.getElementById('courseForm');
-    form.addEventListener('submit', function (e) {
-        document.getElementById('discount_price').value = cleaveCurrent.getRawValue();
-        document.getElementById('price').value = cleaveOriginal.getRawValue();
-    });
-
-    { { #fill_section 'js' } }
-
-    <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
-
-
-
-<script>
-
-  // Khởi tạo Cleave.js
-
-        const cleaveCurrent = new Cleave('#discount_price', { /* ... */});
-
-        const cleaveOriginal = new Cleave('#price', { /* ... */});
-
-
-
-        // Xử lý submit
-
-        const form = document.getElementById('courseForm');
-
-        form.addEventListener('submit', function (e) { /* ... */});
-
-
-
-        // --- JS CẬP NHẬT ẢNH PREVIEW VÀ XỬ LÝ LỖI ---
-
-        const imageUrlInput = document.getElementById('imageUrlInput');
-
-        const imagePreview = document.getElementById('imagePreview');
-
-        const imageError = document.getElementById('imageError'); // Lấy thẻ p báo lỗi
-
-
-
-        // Hàm xử lý khi ảnh không tải được
-
-        function handleImageError(imgElement) {
-
-            imgElement.style.display = 'none'; // Ẩn ảnh bị lỗi
-
-        if (imageError) {
-
-            imageError.style.display = 'block'; // Hiển thị thông báo lỗi
-
-    }
-
-  }
-
-
-
-        if (imageUrlInput && imagePreview && imageError) {
-
-            // Sự kiện khi người dùng nhập URL
-
-            imageUrlInput.addEventListener('input', function () {
-
-                const url = this.value;
-
-                imageError.style.display = 'none'; // Luôn ẩn lỗi khi bắt đầu nhập URL mới
-
-
-
-                if (url) {
-
-                    imagePreview.src = url; // Thử tải ảnh mới
-
-                    // Không set display='block' ngay lập tức, đợi sự kiện load hoặc error
-
-                } else {
-
-                    imagePreview.src = ''; // Xóa src nếu URL rỗng
-
-                    imagePreview.style.display = 'none'; // Ẩn ảnh
-
-                    imageError.style.display = 'none'; // Ẩn lỗi
-
-                }
-
+        if (discountPriceInput) {
+            cleaveCurrent = new Cleave(discountPriceInput, {
+                numeral: true,
+                numeralThousandsGroupStyle: 'thousand'
             });
 
-
-
-        // Sự kiện khi ảnh tải THÀNH CÔNG
-
-        imagePreview.addEventListener('load', function() {
-
-            imagePreview.style.display = 'block'; // Hiển thị ảnh đã tải xong
-
-        imageError.style.display = 'none'; // Đảm bảo ẩn thông báo lỗi
-
-    });
-
-
-
-        // Sự kiện khi ảnh tải THẤT BẠI (đã có onerror trong HTML gọi handleImageError)
-
-
-
-        // Kiểm tra và ẩn ảnh/lỗi ban đầu nếu URL rỗng khi tải trang
-
-        if (!imageUrlInput.value) {
-
-            imagePreview.style.display = 'none';
-
-        imageError.style.display = 'none';
-
-    } else {
-
-            // Nếu có URL ban đầu, cũng cần kiểm tra xem nó có lỗi không
-
-            // Trình duyệt sẽ tự động kích hoạt 'onerror' nếu URL ban đầu bị lỗi
-
-            // Nhưng nếu URL ban đầu hợp lệ, cần ẩn lỗi (đề phòng trường hợp lỗi trước đó)
-
-            imageError.style.display = 'none';
-
-    }
-
-  }
-
-
-
-</script>
-
-<script>
-    // ... (Existing Cleave.js and Image Preview JS) ...
-
-    // --- JS FOR DYNAMIC LECTURER INPUTS ---
-    const totalLecturesInput = document.getElementById('totalLectures');
-    const lecturerInputsContainer = document.getElementById('lecturerInputsContainer');
-
-    if (totalLecturesInput && lecturerInputsContainer) {
-        totalLecturesInput.addEventListener('input', generateLecturerInputs);
-        
-        // Optional: Generate initial fields if editing and course.total_lectures has a value
-        // generateLecturerInputs(); 
-    }
-
-    function generateLecturerInputs() {
-        // Clear previous inputs
-        lecturerInputsContainer.innerHTML = '';
-
-        const count = parseInt(totalLecturesInput.value, 10);
-
-        if (isNaN(count) || count <= 0) {
-            return; // Do nothing if input is not a positive number
-        }
-
-        // Add a label for the section
-        const sectionLabel = document.createElement('label');
-        sectionLabel.className = 'block text-gray-700 font-semibold mb-2';
-        sectionLabel.textContent = 'Enter Lecturer IDs';
-        lecturerInputsContainer.appendChild(sectionLabel);
-
-        for (let i = 1; i <= count; i++) {
-            // Create elements for each row
-            const inputGroup = document.createElement('div');
-            inputGroup.className = 'flex items-center gap-1';
-
-            const label = document.createElement('label');
-            label.className = 'w-1/2 text-sm font-medium text-gray-600'; // Adjusted width
-            label.textContent = `Lecture ${i} - ID:`;
-            label.setAttribute('for', `lecturer_id_${i}`); // Link label to input
-
-            const input = document.createElement('input');
-            input.type = 'text'; // Use text initially, or number if IDs are numeric only
-            input.id = `lecturer_id_${i}`;
-            input.name = `lecturer_ids[${i-1}]`; // Send as an array element
-            input.className = 'w-1/3 px-3.5 py-2 border border-gray-500 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out'; // Adjusted width
-            input.placeholder = `Enter ID`;
-            
-            const nameDisplay = document.createElement('span');
-            nameDisplay.id = `lecturer_name_${i}`;
-            nameDisplay.className = 'w-1/3 text-sm text-gray-700 italic'; // Adjusted width
-            nameDisplay.textContent = '(Name will appear here)';
-
-            // Add event listener to fetch name when input loses focus (blur)
-            input.addEventListener('blur', fetchLecturerName);
-
-            // Append elements
-            inputGroup.appendChild(label);
-            inputGroup.appendChild(input);
-            inputGroup.appendChild(nameDisplay);
-            lecturerInputsContainer.appendChild(inputGroup);
-        }
-    }
-
-    async function fetchLecturerName(event) {
-        const inputElement = event.target;
-        const lecturerId = inputElement.value.trim();
-        const index = inputElement.id.split('_')[2]; // Get the index (1, 2, ...)
-        const nameDisplayElement = document.getElementById(`lecturer_name_${index}`);
-
-        if (!lecturerId) {
-            nameDisplayElement.textContent = '(Name will appear here)';
-            nameDisplayElement.className = 'w-1/2 text-sm text-gray-700 italic'; // Reset style
-            return;
-        }
-
-        nameDisplayElement.textContent = 'Searching...';
-        nameDisplayElement.className = 'w-1/2 text-sm text-gray-500 italic'; // Indicate searching
-
-        try {
-            // !!! IMPORTANT: Replace '/api/lecturers/' with your actual API endpoint !!!
-            const response = await fetch(`/api/lecturers/${lecturerId}`);
-
-            if (!response.ok) {
-                if(response.status === 404) {
-                   nameDisplayElement.textContent = 'ID Not Found';
-                   nameDisplayElement.className = 'w-1/2 text-sm text-red-600 font-medium'; // Error style
-                } else {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-            } else {
-                const lecturerData = await response.json();
-                if (lecturerData && lecturerData.name) {
-                    nameDisplayElement.textContent = lecturerData.name;
-                    nameDisplayElement.className = 'w-1/2 text-sm text-green-700 font-semibold'; // Success style
-                } else {
-                     nameDisplayElement.textContent = 'Name not available';
-                     nameDisplayElement.className = 'w-1/2 text-sm text-orange-600 italic'; // Warning style
-                }
+            const initialDiscountValue = discountPriceInput.getAttribute('data-initial-value');
+            if (initialDiscountValue && cleaveCurrent) {
+                cleaveCurrent.setRawValue(initialDiscountValue);
             }
-        } catch (error) {
-            console.error('Error fetching lecturer name:', error);
-            nameDisplayElement.textContent = 'Error fetching name';
-            nameDisplayElement.className = 'w-1/2 text-sm text-red-600 font-medium'; // Error style
         }
-    }
-    // --- END JS FOR DYNAMIC LECTURER INPUTS ---
+
+        if (priceInput) {
+            cleaveOriginal = new Cleave(priceInput, {
+                numeral: true,
+                numeralThousandsGroupStyle: 'thousand'
+            });
+
+            const initialPriceValue = priceInput.getAttribute('data-initial-value');
+            if (initialPriceValue && cleaveOriginal) {
+                cleaveOriginal.setRawValue(initialPriceValue);
+            }
+        }
+
+        // --- Xử lý submit ---
+        const form = document.getElementById('courseForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                if (cleaveCurrent && discountPriceInput) {
+                    discountPriceInput.value = cleaveCurrent.getRawValue();
+                }
+                if (cleaveOriginal && priceInput) {
+                    priceInput.value = cleaveOriginal.getRawValue();
+                }
+            });
+        }
+
+        const imageUrlInput = document.getElementById('imageUrlInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const imageError = document.getElementById('imageError');
+
+        window.handleImageError = function(imgElement) { 
+            imgElement.style.display = 'none';
+            if (imageError) imageError.style.display = 'block';
+        }
+
+        if (imageUrlInput && imagePreview && imageError) {
+            imageUrlInput.addEventListener('input', function () {
+                const url = this.value;
+                imageError.style.display = 'none'; // 
+                if (url) {
+                    imagePreview.src = url; // 
+                } else {
+                    imagePreview.src = ''; // 
+                    imagePreview.style.display = 'none'; 
+                }
+            });
+
+            imagePreview.addEventListener('load', function() {
+                imagePreview.style.display = 'block';  
+                imageError.style.display = 'none'; 
+            });
+
+            if (!imageUrlInput.value) {
+                imagePreview.style.display = 'none';
+                imageError.style.display = 'none';
+            } else {
+                 if (imagePreview.complete && imagePreview.naturalHeight !== 0) {
+                    imageError.style.display = 'none';
+                 } else if (!imagePreview.complete) {
+                     imageError.style.display = 'none';
+                 }
+            }
+        }
+
+
+        const totalLecturesInput = document.getElementById('totalLectures');
+        const lecturerInputsContainer = document.getElementById('lecturerInputsContainer');
+
+        function generateLecturerInputs() {
+            lecturerInputsContainer.innerHTML = ''; 
+            const count = parseInt(totalLecturesInput.value, 10);
+            if (isNaN(count) || count <= 0) return;
+
+            const sectionLabel = document.createElement('label');
+            sectionLabel.className = 'block text-gray-700 font-semibold mb-2';
+            sectionLabel.textContent = 'Enter Lecturer IDs';
+            lecturerInputsContainer.appendChild(sectionLabel);
+
+            for (let i = 1; i <= count; i++) {
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'flex items-center gap-4';
+                const label = document.createElement('label');
+                label.className = 'w-1/4 text-sm font-medium text-gray-600 shrink-0';
+                label.textContent = `Lecture ${i} - ID:`;
+                label.setAttribute('for', `lecturer_id_${i}`);
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = `lecturer_id_${i}`;
+                input.name = `lecturer_ids[${i-1}]`; 
+                input.className = 'w-1/4 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out';
+                input.placeholder = `Enter ID`;
+                input.addEventListener('blur', fetchLecturerName);
+                const nameDisplay = document.createElement('span');
+                nameDisplay.id = `lecturer_name_${i}`;
+                nameDisplay.className = 'w-1/2 text-sm text-gray-500 italic';
+                nameDisplay.textContent = '(Name will appear here)';
+                inputGroup.appendChild(label);
+                inputGroup.appendChild(input);
+                inputGroup.appendChild(nameDisplay);
+                lecturerInputsContainer.appendChild(inputGroup);
+            }
+        }
+
+        async function fetchLecturerName(event) {
+            const inputElement = event.target;
+            const lecturerId = inputElement.value.trim();
+            const index = inputElement.id.split('_')[2];
+            const nameDisplayElement = document.getElementById(`lecturer_name_${index}`);
+            if (!lecturerId) {
+                nameDisplayElement.textContent = '(Name will appear here)';
+                nameDisplayElement.className = 'w-1/2 text-sm text-gray-500 italic';
+                return;
+            }
+            nameDisplayElement.textContent = 'Searching...';
+            nameDisplayElement.className = 'w-1/2 text-sm text-gray-400 italic';
+            try {
+                const response = await fetch(`/api/lecturers/${lecturerId}`);
+                if (!response.ok) {
+                    if(response.status === 404) {
+                       nameDisplayElement.textContent = 'ID Not Found';
+                       nameDisplayElement.className = 'w-1/2 text-sm text-red-600 font-medium';
+                    } else { throw new Error(`HTTP ${response.status}`); }
+                } else {
+                    const lecturerData = await response.json();
+                    if (lecturerData && lecturerData.name) {
+                        nameDisplayElement.textContent = lecturerData.name;
+                        nameDisplayElement.className = 'w-1/2 text-sm text-green-700 font-semibold';
+                    } else {
+                         nameDisplayElement.textContent = 'Name N/A';
+                         nameDisplayElement.className = 'w-1/2 text-sm text-orange-600 italic';
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching lecturer name:', error);
+                nameDisplayElement.textContent = 'Fetch Error';
+                nameDisplayElement.className = 'w-1/2 text-sm text-red-600 font-medium';
+            }
+        }
+
+        if (totalLecturesInput && lecturerInputsContainer) {
+            totalLecturesInput.addEventListener('input', generateLecturerInputs);
+             generateLecturerInputs();
+        }
+    });
 </script>
 {{/fill_section}}
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-12 max-w-4xl">
+        <form id="courseForm" class="bg-white rounded-xl shadow-lg p-10" method="post" action="/instructor/update/{{course.course_id}}"> {{!-- Giả sử ID là course_id --}}
 
-<div class="container mx-auto px-4 py-12 max-w-4xl">
-
-    <form id="courseForm" class="bg-white rounded-xl shadow-lg p-10" method="post">
-
-        <div class="mb-8 text-center">
-            <h1 class="text-4xl font-extrabold text-gray-800 mb-3 flex items-center justify-center">
-                <i class="fas fa-edit text-blue-500 mr-3"></i>
-                Update Course
-            </h1>
-            <p class="text-gray-600 text-lg">Update the information below for the course</p>
-        </div>
-
-        <hr class="my-8 border-gray-200">
-
-        <div class="space-y-6">
-
-            {{!-- Course Title --}}
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                    Course Title <span class="text-red-500">*</span>
-                </label>
-                <input type="text" id="title" name="title" value="{{course.title}}" autofocus
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                    placeholder="e.g. Complete Python Programming Masterclass 2025" required>
+            {{!-- Header --}}
+            <div class="mb-8 text-center">
+                 <h1 class="text-4xl font-extrabold text-gray-800 mb-3 flex items-center justify-center">
+                     <i class="fas fa-edit text-blue-500 mr-3"></i> Update Course
+                 </h1>
+                 <p class="text-gray-600 text-lg">Update the information below for the course</p>
             </div>
+            <hr class="my-8 border-gray-200">
 
-            {{!-- Short Description --}}
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                    Short Course Description <span class="text-red-500">*</span>
-                </label>
-                <textarea id="tinydes" name="tinydes" rows="4"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                    placeholder="Short summary for course listings..." required>{{course.tinydes}}</textarea>
-                <p class="text-sm text-gray-500 mt-1">Minimum 50 characters</p>
-            </div>
 
-            {{!-- Full Description --}}
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                    Full Course Description <span class="text-red-500">*</span>
-                </label>
-                <textarea id="fulldes" name="fulldes" rows="8"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                    placeholder="Detailed description for the course page..." required>{{course.fulldes}}</textarea>
-                <p class="text-sm text-gray-500 mt-1">Minimum 200 characters</p>
-            </div>
-
-            {{!-- Course Image URL --}}
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                    Course Image URL <span class="text-red-500">*</span>
-                </label>
-                {{!-- THAY ĐỔI: Thêm ID mới cho input --}}
-                <input type="url" id="imageUrlInput" name="image_url" value="{{course.image_url}}"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                    placeholder="https://example.com/course-image.jpg" required>
-                <p class="text-sm text-gray-500 mt-1">Enter a valid image URL. The preview will update below.</p>
-
-                <div class="mt-4">
-                    <img id="imagePreview" src="{{course.image_url}}" alt="Course Image Preview"
-                        class="rounded-lg shadow-md border w-full h-auto object-cover max-h-80"
-                        onerror="handleImageError(this)"> {{!-- Gọi hàm JS khi lỗi --}}
-
-                    <p id="imageError" class="mt-2 text-sm text-red-600 font-medium" style="display: none;">
-                        <i class="fas fa-exclamation-triangle mr-1"></i> Cannot load image preview. Please check the
-                        URL.
-                    </p>
+            <div class="space-y-6">
+                {{!-- Course Title --}}
+                <div>
+                     <label class="block text-gray-700 font-semibold mb-2"> Course Title <span class="text-red-500">*</span> </label>
+                     <input type="text" id="title" name="title" value="{{course.title}}" autofocus class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="e.g. Complete Python Programming Masterclass 2025" required>
                 </div>
+                {{!-- Short Description --}}
+                <div>
+                     <label class="block text-gray-700 font-semibold mb-2"> Short Course Description <span class="text-red-500">*</span> </label>
+                     <textarea id="tinydes" name="tinydes" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="Short summary for course listings..." required>{{course.tinydes}}</textarea>
+                     <p class="text-sm text-gray-500 mt-1">Minimum 50 characters</p>
+                </div>
+                {{!-- Full Description --}}
+                <div>
+                     <label class="block text-gray-700 font-semibold mb-2"> Full Course Description <span class="text-red-500">*</span> </label>
+                     <textarea id="fulldes" name="fulldes" rows="8" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="Detailed description for the course page..." required>{{course.fulldes}}</textarea>
+                     <p class="text-sm text-gray-500 mt-1">Minimum 200 characters</p>
+                </div>
+                {{!-- Course Image URL + Preview --}}
+                <div>
+                     <label class="block text-gray-700 font-semibold mb-2"> Course Image URL <span class="text-red-500">*</span> </label>
+                     <input type="url" id="imageUrlInput" name="image_url" value="{{course.image_url}}" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="https://example.com/course-image.jpg" required>
+                     <p class="text-sm text-gray-500 mt-1">Enter a valid image URL. The preview will update below.</p>
+                     <div class="mt-4">
+                         <img id="imagePreview" src="{{course.image_url}}" alt="Course Image Preview" class="rounded-lg shadow-md border w-full h-auto object-cover max-h-80" onerror="handleImageError(this)">
+                         <p id="imageError" class="mt-2 text-sm text-red-600 font-medium" style="display: none;"> <i class="fas fa-exclamation-triangle mr-1"></i> Cannot load image preview. Please check the URL. </p>
+                     </div>
+                </div>
+            </div>
+            <hr class="my-8 border-gray-200">
 
+            {{!-- Nhóm Total Hours và Total Lectures --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                 {{!-- Total Hours --}}
+                 <div>
+                     <label class="block text-gray-700 font-semibold mb-2"> Total Hours <span class="text-red-500">*</span> </label>
+                     <input type="text" id="total_hours" name="total_hours" value="{{course.total_hours}}" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="10.5" required>
+                     <p class="text-sm text-gray-500 mt-1">Course duration in hours</p>
+                 </div>
+                 {{!-- Total Lectures --}}
+                 <div>
+                     <label class="block text-gray-700 font-semibold mb-2"> Total Lectures <span class="text-red-500">*</span> </label>
+                     <input type="number" id="totalLectures" name="total_lectures" value="{{course.total_lectures}}" min="0" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="Enter number of lectures" required>
+                 </div>
+            </div> 
 
+            {{!-- Container cho Lecturer Inputs --}}
+            <div id="lecturerInputsContainer" class="space-y-4 mb-6">
             </div>
 
-        </div>
-        <hr class="my-8 border-gray-200">
-
-        {{!-- Phần còn lại của form (Total Hours, Lectures, Category, Level, Price...) giữ nguyên --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-            {{!-- Total Hours --}}
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                    Total Hours <span class="text-red-500">*</span>
-                </label>
-                <input type="text" id="total_hours" name="total_hours" value="{{course.total_hours}}"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                    placeholder="10.5" required>
-                <p class="text-sm text-gray-500 mt-1">Course duration in hours</p>
+            <div class="mb-6">
+                 <label class="block text-gray-700 font-semibold mb-2"> Category <span class="text-red-500">*</span> </label>
+                 <select id="catid" name="catid" required class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                     <option value="">-- Select Category --</option>
+                     {{#each categories}}
+                       <option value="{{this.cat_id}}" {{selectOption ../course.catid this.cat_id}}>{{this.cat_name}}</option>
+                     {{/each}}
+                 </select>
             </div>
-
-            {{!-- Total Lectures --}}
-            <div>
-                <label class="block text-gray-700 font-semibold mb-2">
-                    Total Lectures <span class="text-red-500">*</span>
-                </label>
-                {{!-- Input type should ideally be number, min="0" --}}
-                <input type="number" id="totalLectures" name="total_lectures" value="{{course.total_lectures}}" min="0"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                    placeholder="Enter number of lectures" required> {{!-- Changed placeholder --}}
+            <div class="mb-6">
+                 <label class="block text-gray-700 font-semibold mb-2"> Course Level <span class="text-red-500">*</span> </label>
+                 <select id="level" name="level" required class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                     <option value="">-- Select Level --</option>
+                     <option value="Beginner" {{selectOption course.level "Beginner" }}>Beginner</option>
+                     <option value="Intermediate" {{selectOption course.level "Intermediate" }}>Intermediate</option>
+                     <option value="Advanced" {{selectOption course.level "Advanced" }}>Advanced</option>
+                     <option value="All Levels" {{selectOption course.level "All Levels" }}>All Levels</option>
+                 </select>
             </div>
+            <hr class="my-8 border-gray-200">
 
-            {{!-- THÊM CONTAINER CHO LECTURER INPUTS --}}
-            <div id="lecturerInputsContainer" class="space-y-4 mt-4 border-t pt-4">
-                {{!-- Dynamic inputs will be added here by JavaScript --}}
+            {{!-- Nhóm Price Inputs --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                 {{!-- Current Price --}}
+                 <div>
+                     <label class="block text-gray-700 font-semibold mb-2"> Current Price (VND) <span class="text-red-500">*</span> </label>
+                     <div class="relative">
+                         <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₫</span>
+                         <input type="text" id="discount_price" name="discount_price" data-initial-value="{{course.discount_price}}" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="279000" required>
+                     </div>
+                 </div>
+                 {{!-- Original Price --}}
+                 <div>
+                     <label class="block text-gray-700 font-semibold mb-2"> Original Price (VND) <span class="text-red-500">*</span> </label>
+                     <div class="relative">
+                         <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₫</span>
+                         <input type="text" id="price" name="price" data-initial-value="{{course.price}}" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="399000" required>
+                     </div>
+                 </div>
             </div>
-        </div>
+            <hr class="my-8 border-gray-200">
 
-{{!-- Category Select --}}
-<div class="mb-6">
-    <label class="block text-gray-700 font-semibold mb-2">
-        Category <span class="text-red-500">*</span>
-    </label>
-    <select id="catid" name="catid" required
-        class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-        <option value="">-- Select Category --</option>
-        {{#each categories}}
-        <option value="{{this.id}}" {{selectOption ../course.catid this.id}}>{{this.name}}</option>
-        {{/each}}
-    </select>
-</div>
-
-{{!-- Level Select --}}
-<div class="mb-6">
-    <label class="block text-gray-700 font-semibold mb-2">
-        Course Level <span class="text-red-500">*</span>
-    </label>
-    <select id="level" name="level" required
-        class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-        <option value="">-- Select Level --</option>
-        <option value="Beginner" {{selectOption course.level "Beginner" }}>Beginner</option>
-        <option value="Intermediate" {{selectOption course.level "Intermediate" }}>Intermediate</option>
-        <option value="Advanced" {{selectOption course.level "Advanced" }}>Advanced</option>
-        <option value="All Levels" {{selectOption course.level "All Levels" }}>All Levels</option>
-    </select>
-</div>
-<hr class="my-8 border-gray-200">
-
-{{!-- Price inputs --}}
-<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-    {{!-- Current Price (Discount Price) --}}
-    <div>
-        <label class="block text-gray-700 font-semibold mb-2">
-            Current Price (VND) <span class="text-red-500">*</span>
-        </label>
-        <div class="relative">
-            <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₫</span>
-            <input type="text" id="discount_price" name="discount_price" value="{{course.discount_price}}"
-                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                placeholder="279000" required>
-        </div>
+            {{!-- Action Buttons --}}
+            <div class="flex flex-col sm:flex-row gap-4 justify-end">
+                 <a href="/instructor/courses" class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors duration-200 ease-in-out flex items-center justify-center"> <i class="fas fa-arrow-left mr-2"></i> Cancel </a>
+                 <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 ease-in-out shadow-md"> <i class="fas fa-save mr-2"></i> Save Changes </button>
+            </div>
+        </form>
     </div>
-
-    {{!-- Original Price --}}
-    <div>
-        <label class="block text-gray-700 font-semibold mb-2">
-            Original Price (VND) <span class="text-red-500">*</span>
-        </label>
-        <div class="relative">
-            <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₫</span>
-            <input type="text" id="price" name="price" value="{{course.price}}"
-                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
-                placeholder="399000" required>
-        </div>
-    </div>
-</div>
-
-<hr class="my-8 border-gray-200">
-
-{{!-- Action Buttons --}}
-<div class="flex flex-col sm:flex-row gap-4 justify-end">
-    <a href="/instructor/courses"
-        class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors duration-200 ease-in-out flex items-center justify-center">
-        <i class="fas fa-arrow-left mr-2"></i>
-        Cancel
-    </a>
-    <button type="submit"
-        class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 ease-in-out shadow-md">
-        <i class="fas fa-save mr-2"></i>
-        Save Changes
-    </button>
-</div>
-</form>
-</div>
+</body>

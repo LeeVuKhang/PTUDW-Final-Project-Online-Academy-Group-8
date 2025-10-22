@@ -22,12 +22,11 @@
             });
         }
 
-        // --- JS CẬP NHẬT ẢNH PREVIEW VÀ XỬ LÝ LỖI ---
         const imageUrlInput = document.getElementById('imageUrlInput'); // ID cho input URL
         const imagePreview = document.getElementById('imagePreview');   // ID cho img preview
         const imageError = document.getElementById('imageError');       // ID cho p báo lỗi
 
-        window.handleImageError = function(imgElement) { // Gán vào window
+        window.handleImageError = function(imgElement) {
             imgElement.style.display = 'none';
             if (imageError) imageError.style.display = 'block';
         }
@@ -47,12 +46,10 @@
                 imagePreview.style.display = 'block';
                 imageError.style.display = 'none';
             });
-            // Ban đầu ẩn
             imagePreview.style.display = 'none';
             imageError.style.display = 'none';
         }
 
-        // --- JS FOR DYNAMIC LECTURER INPUTS ---
         const totalLecturesInput = document.getElementById('totalLectures');
         const lecturerInputsContainer = document.getElementById('lecturerInputsContainer');
 
@@ -108,7 +105,6 @@
             nameDisplayElement.textContent = 'Searching...';
             nameDisplayElement.className = 'w-1/2 text-sm text-gray-400 italic';
             try {
-                // !!! THAY THẾ BẰNG ENDPOINT API CỦA BẠN !!!
                 const response = await fetch(`/api/lecturers/${lecturerId}`);
                 if (!response.ok) {
                     if(response.status === 404) {
@@ -131,19 +127,9 @@
                 nameDisplayElement.className = 'w-1/2 text-sm text-red-600 font-medium';
             }
         }
-        // --- KẾT THÚC JS LECTURER ---
-    }); // Kết thúc DOMContentLoaded
+    }); 
 </script>
 {{/fill_section}}
-
-{{!-- HEAD và BODY --}}
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create New Course</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-</head>
 
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-12 max-w-4xl">
@@ -203,11 +189,9 @@
                      <label class="block text-gray-700 font-semibold mb-2"> Total Lectures <span class="text-red-500">*</span> </label>
                      <input type="number" id="totalLectures" name="total_lectures" min="0" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="Enter number of lectures" required>
                  </div>
-            </div> {{!-- KẾT THÚC GRID --}}
+            </div> 
 
-            {{!-- SỬA LỖI: Container cho Lecturer Inputs đặt SAU grid --}}
             <div id="lecturerInputsContainer" class="space-y-4 mb-6">
-                {{!-- Nội dung động từ JS --}}
             </div>
 
             {{!-- Nhóm Category và Level --}}

@@ -46,6 +46,7 @@ router.post('/create-course', async (req, res) => {
 })
 
 router.get('/update/:course_id', async function(req, res) {
+    const categories = await categoryModel.findAll();
     const course_id = req.params.course_id
     const course = await courseModels.findByID(course_id)
     if (!course) {
@@ -53,6 +54,7 @@ router.get('/update/:course_id', async function(req, res) {
     }
     res.render('vwInstructor/update-course', {
         course: course,
+        categories: categories
     })
 })
 
