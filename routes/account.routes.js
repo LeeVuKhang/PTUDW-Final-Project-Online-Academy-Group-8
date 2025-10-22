@@ -1,5 +1,6 @@
 import express from 'express';
 import userModel from '../models/user.model.js';
+import watchlistModel from '../models/watchlist.model.js';
 import { checkAuthenticated  } from '../models/auth.model.js';
 const router = express.Router();
 
@@ -21,7 +22,7 @@ router.post('/signup', async (req, res) => {
         name: req.body.name,
         email: req.body.email,
         dob: req.body.dob,
-        permission: 0
+        role: 1
     }
 
     await userModel.add(user);
@@ -104,4 +105,36 @@ router.post('/change-pwd', checkAuthenticated, async (req, res) => {
     await userModel.patch(id, user);
     res.render('vwAccount/signup');
 })
+
+router.get('/watchlist', checkAuthenticated, async (req, res) => {
+  try {
+    const student_id = req.session.authUser.user_id;
+    const items = await watchlistModel.findCoursesByStudentID(student_id);
+    
+    res.render('vwAccount/watchlist', { 
+      watchlistItems: items,
+    });
+  } catch (error) {
+    console.error('Error fetching watchlist:', error);
+    res.status(500).send('Error loading your watchlist.');
+  }
+});
+
+router.post('/watchlist/remove', checkAuthenticated, async (req, res) => {
+  try {
+    const student_id = req.session.authUser.user_id;
+    const { course_id } = req.body; 
+
+    if (!course_id) {
+      return res.status(400).send('Course ID is missing.');
+    }
+
+    await watchlistModel.remove(student_id, course_id);
+    
+    res.redirect('/account/watchlist'); 
+  } catch (error) {
+    console.error('Error removing from watchlist:', error);
+    res.status(500).send('Error updating your watchlist.');
+  }
+});
 export default router;
