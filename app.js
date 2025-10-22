@@ -22,7 +22,7 @@ app.engine('handlebars', engine({
     helpers: {
         fill_section: hbs_sections(),
         formatNumber(num) {
-            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
         },
         eq(a, b) {
             return a === b;
