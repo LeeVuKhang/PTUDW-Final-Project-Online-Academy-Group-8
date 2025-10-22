@@ -19,6 +19,9 @@ export default {
     add(course) {
         return db('courses').insert(course);
     },
+    update(course_id, course) {
+        return db('courses').where('course_id', course_id).update(course);
+    },
     findAll(){
         return db('courses');
     }

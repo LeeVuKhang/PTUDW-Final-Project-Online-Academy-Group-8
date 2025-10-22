@@ -58,6 +58,28 @@ router.get('/update/:course_id', async function(req, res) {
     })
 })
 
+router.post('/update/:course_id', async (req, res) => {
+    const course_id = req.params.course_id
+    const course = {
+        title: req.body.title,
+        tinydes: req.body.tinydes,
+        fulldes: req.body.fulldes,
+        total_hours: req.body.total_hours,
+        price: req.body.price,
+        discount_price: req.body.discount_price,
+        catid: req.body.catid,
+        level: req.body.level,
+        image_url: req.body.image_url
+    };
+    if(course) {
+        await courseModels.update(course_id, course);
+        console.log(`updated id=${course_id}`)
+        res.redirect(`/instructor/update/${course_id}`)
+    }
+    else {
+        res.send("Error")
+    }
+})
 
 // router.post('/add', async function(req, res) {
 //     const category = {
@@ -78,5 +100,6 @@ router.get('/courses/:course_id', async function (req, res) {
         title: course.title
     })
 })
+
 
 export default router;
