@@ -331,54 +331,28 @@
         <a href="/courses" class="btn btn-outline-success px-4 rounded-pill">Khám phá</a>
     </div>
 
-    <div class="row g-4">
-        <!-- Card 1 -->
+    <div class="row g-3">
+        {{#each newestCourses}}
         <div class="col-md-3 col-sm-6">
             <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                <img src="https://picsum.photos/400/250?random=31" class="card-img-top" alt="course1">
+                <img src="{{#if image_url}}{{image_url}}{{else}}https://picsum.photos/400/250?random={{course_id}}{{/if}}"
+                    class="card-img-top" alt="{{title}}">
                 <div class="card-body">
-                    <h6 class="fw-semibold">Nhập môn Trí tuệ nhân tạo (AI)</h6>
-                    <p class="text-muted small mb-1">Giảng viên: Phạm Văn Dũng</p>
-                    <p class="fw-bold text-success">799.000đ</p>
+                    <h6 class="fw-semibold">{{title}}</h6>
+                    <p class="text-muted small mb-1">
+                        Lĩnh vực: {{#if category_name}}{{category_name}}{{else}}Chưa phân loại{{/if}} <br>
+                        Giảng viên: {{#if instructor_name}}{{instructor_name}}{{else}}Đang cập nhật{{/if}}
+                    </p>
+                    <p class="fw-bold text-success mb-0">
+                        {{formatNumber discount_price}}
+                        {{#if discount_price}}
+                        <span class="text-decoration-line-through text-muted small">{{formatNumber price}}</span>
+                        {{/if}}
+                    </p>
                 </div>
             </div>
         </div>
-
-        <!-- Card 2 -->
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                <img src="https://picsum.photos/400/250?random=32" class="card-img-top" alt="course2">
-                <div class="card-body">
-                    <h6 class="fw-semibold">Thiết kế đồ họa với Canva Pro</h6>
-                    <p class="text-muted small mb-1">Giảng viên: Nguyễn Hồng Ánh</p>
-                    <p class="fw-bold text-success">349.000đ</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                <img src="https://picsum.photos/400/250?random=33" class="card-img-top" alt="course3">
-                <div class="card-body">
-                    <h6 class="fw-semibold">Phát triển game với Unity</h6>
-                    <p class="text-muted small mb-1">Giảng viên: Đặng Khánh Lâm</p>
-                    <p class="fw-bold text-success">999.000đ</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                <img src="https://picsum.photos/400/250?random=34" class="card-img-top" alt="course4">
-                <div class="card-body">
-                    <h6 class="fw-semibold">Excel nâng cao cho dân văn phòng</h6>
-                    <p class="text-muted small mb-1">Giảng viên: Lê Hữu Thắng</p>
-                    <p class="fw-bold text-success">299.000đ</p>
-                </div>
-            </div>
-        </div>
+        {{/each}}
     </div>
 </section>
 

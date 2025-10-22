@@ -5,6 +5,7 @@ import hbs_sections from 'express-handlebars-sections';
 import categoryModel from './models/category.model.js';
 import session from 'express-session';
 import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
+import * as courseModel from './models/course.model.js';
 
 const __dirname = import.meta.dirname;
 const app = express();
@@ -89,43 +90,24 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'handlebars');
 app.set('views', './views');
 
-app.get('/home', (req, res) => {
-    res.render('home');
-});
+// app.get('/home', (req, res) => {
+//     res.render('home');
+// });
 
 app.use("/static", express.static('static'));
-//note / tunng tab
-app.get('/', (req, res) => {
+
+app.get('/', async (req, res) => {
     if (req.session.isAuthenticated){
         console.log('User is authenticated');
         console.log(req.session.authUser)
     }
-    res.render('home');
+    const newestCourses = await courseModel.findNewestCourses();
+
+    res.render('home', {
+        newestCourses
+    });
 });
 
-app.get('/about-my-team', (req, res) => {
-    //2 ways to send file
-    res.sendFile(__dirname + '/about-my-team.html');
-    //res.sendFile('about.html', { root: '.' });
-});
-app.get('/about-lvk', (req, res) => {
-    res.sendFile(__dirname + '/about-lvk.html');
-});
-app.get('/about-vhn', (req, res) => {
-    res.sendFile(__dirname + '/about-vhn.html');
-});
-app.get('/about-tpd', (req, res) => {
-    res.sendFile(__dirname + '/about-tpd.html');
-});
-app.get('/about-nngn', (req, res) => {
-    res.sendFile(__dirname + '/about-nngn.html');
-});
-app.get('/about-ntc', (req, res) => {
-    res.sendFile(__dirname + '/about-ntc.html');
-});
-app.get('/about-nhhl', (req, res) => {
-    res.sendFile(__dirname + '/about-nhhl.html');
-});
 
 //signup
 
