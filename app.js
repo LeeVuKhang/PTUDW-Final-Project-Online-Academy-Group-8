@@ -96,13 +96,21 @@ app.set('views', './views');
 
 app.use("/static", express.static('static'));
 
+function chunkArray(array, size) {
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
+}
+
 app.get('/', async (req, res) => {
     if (req.session.isAuthenticated){
         console.log('User is authenticated');
         console.log(req.session.authUser)
     }
-    const newestCourses = await courseModel.findNewestCourses();
-    const mostViewsCourses = await courseModel.findMostViewsCourses();
+    const newestCourses = chunkArray(await courseModel.findNewestCourses(),4)
+    const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(),4)
     res.render('home', {
         newestCourses,
         mostViewsCourses
@@ -111,6 +119,7 @@ app.get('/', async (req, res) => {
 
 
 //signup
+
 
 import accountRouter from './routes/account.routes.js';
 app.use('/account', accountRouter);
