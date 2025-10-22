@@ -68,6 +68,9 @@ app.engine('handlebars', engine({
                 stars += '<i class="far fa-star"></i>'; // Font Awesome empty star (regular style)
             }
             return stars;
+        },
+        selectOption (selectedValue, optionValue) {
+            return String(selectedValue) === String(optionValue) ? 'selected' : '';
         }
     }
 }));
