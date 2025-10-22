@@ -21,6 +21,23 @@ export default {
       );
   },
 
+  async add(student_id, course_id) {
+    // 1. Kiểm tra xem item đã tồn tại chưa
+    const item = await db('watchlists').where({
+        student_id: student_id,
+        course_id: course_id
+    }).first();
+
+    // 2. Nếu chưa tồn tại, thêm mới
+    if (!item) {
+        return db('watchlists').insert({
+            student_id: student_id,
+            course_id: course_id
+        });
+    }
+    // 3. Nếu đã tồn tại, không làm gì cả
+    return null;
+  },
   /**
    * Xóa một khóa học khỏi wishlist của sinh viên
    */

@@ -119,8 +119,25 @@ router.get('/watchlist', checkAuthenticated, async (req, res) => {
     res.status(500).send('Error loading your watchlist.');
   }
 });
+router.post('/watchlist/add', checkAuthenticated, async (req, res) => {
+  try {
+    const student_id = req.session.authUser.user_id;
+    const { course_id } = req.body;
 
-router.post('/watchlist/remove', checkAuthenticated, async (req, res) => {
+    if (!course_id) {
+      return res.status(400).send('Course ID is missing.');
+    }
+
+    await watchlistModel.add(student_id, course_id);
+
+    res.redirect(req.headers.referer || '/');
+  } catch (error) {
+    console.error('Error adding to watchlist:', error);
+    res.status(500).send('Error updating your watchlist.');
+  }
+});
+
+router.post('remove', checkAuthenticated, async (req, res) => {
   try {
     const student_id = req.session.authUser.user_id;
     const { course_id } = req.body; 
