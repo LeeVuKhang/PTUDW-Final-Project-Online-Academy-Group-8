@@ -33,9 +33,12 @@ app.engine('handlebars', engine({
             d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); 
             return d.toISOString().split('T')[0];
         },
-        isGreater (a, b) {
-            return a > b;
-          },
+        isGreater (a, b, options) { 
+            if (a > b) {
+                return options.fn(this); 
+            }
+            return options.inverse(this); 
+        },
         calculateDiscount (original, current) {
             if (original <= current) return 0;
             const discount = ((original - current) / original) * 100;
