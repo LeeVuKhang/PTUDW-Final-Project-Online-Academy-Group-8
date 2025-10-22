@@ -49,6 +49,25 @@ app.engine('handlebars', engine({
                 return new_str + '...';
             }
             return str;
+        },
+        renderStars: function(rating) {
+            rating = parseFloat(rating);
+            if (isNaN(rating) || rating < 0) return '';
+            let stars = '';
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 >= 0.5;
+            const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+    
+            for (let i = 0; i < fullStars; i++) {
+                stars += '<i class="fas fa-star"></i>'; // Font Awesome full star
+            }
+            if (halfStar) {
+                stars += '<i class="fas fa-star-half-alt"></i>'; // Font Awesome half star
+            }
+            for (let i = 0; i < emptyStars; i++) {
+                stars += '<i class="far fa-star"></i>'; // Font Awesome empty star (regular style)
+            }
+            return stars;
         }
     }
 }));

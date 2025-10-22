@@ -2,7 +2,7 @@ import db from '../utils/db.js';
 
 export default {
     findByID(id){
-        return db('products').where('proid', id).first();
+        return db('courses').where('course_id', id).first();
     },
     findByCat(id){
         return db('products').where('catid', id);
@@ -18,5 +18,8 @@ export default {
     },
     add(course) {
         return db('courses').insert(course);
+    },
+    findAll(){
+        return db('courses');
     }
 }   
