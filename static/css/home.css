@@ -28,4 +28,21 @@
   transform: scale(1.05);
 }
 
+/* Giảm kích thước nút prev/next cho carousel*/
+#mostViewsCoursesCarousel .custom-control,
+#newestCoursesCarousel .custom-control {
+    margin: auto;       /* căn giữa */
+    width: 30px;    /* giảm chiều rộng nút */
+    height: 30px;   /* giảm chiều cao nút */
+}
+
+#mostViewsCoursesCarousel .custom-icon,
+#newestCoursesCarousel .custom-icon {
+    background-size: 100%, 100%;  /* giữ icon đúng tỉ lệ */
+    width: 30px;
+    height: 30px;
+    margin: auto;       /* căn giữa */
+}
+
+
 
