@@ -1,187 +1,214 @@
+{{#fill_section 'stylesheet'}}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+{{/fill_section}}
+
 {{#fill_section 'js'}}
 <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function ()
+    document.addEventListener('DOMContentLoaded', function () { 
+        const quill = new Quill('#editor', {
+            theme: 'snow',
+            placeholder: 'Detailed description for the course page...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline'],
+                    [{'list': 'ordered'}, {'list': 'bullet'}],
+                    ['link', 'image']
+                ]
+            }
+        });
+        const fulldesInput = document.getElementById('fulldes');
+
         const discountPriceInput = document.getElementById('discount_price');
-    const priceInput = document.getElementById('price');
-    let cleaveCurrent = null;
-    let cleaveOriginal = null;
+        const priceInput = document.getElementById('price');
+        let cleaveCurrent = null;
+        let cleaveOriginal = null;
 
-    if (discountPriceInput) {
-        cleaveCurrent = new Cleave(discountPriceInput, {
-            numeral: true,
-            numeralThousandsGroupStyle: 'thousand'
-        });
-        const initialDiscountValue = discountPriceInput.getAttribute('data-initial-value');
-        if (initialDiscountValue && cleaveCurrent) {
-            cleaveCurrent.setRawValue(initialDiscountValue);
+        if (discountPriceInput) {
+            cleaveCurrent = new Cleave(discountPriceInput, {
+                numeral: true,
+                numeralThousandsGroupStyle: 'thousand'
+            });
+            const initialDiscountValue = discountPriceInput.getAttribute('data-initial-value');
+            if (initialDiscountValue && cleaveCurrent) {
+                cleaveCurrent.setRawValue(initialDiscountValue);
+            }
         }
-    }
 
-    if (priceInput) {
-        cleaveOriginal = new Cleave(priceInput, {
-            numeral: true,
-            numeralThousandsGroupStyle: 'thousand'
-        });
-        const initialPriceValue = priceInput.getAttribute('data-initial-value');
-        if (initialPriceValue && cleaveOriginal) {
-            cleaveOriginal.setRawValue(initialPriceValue);
+        if (priceInput) {
+            cleaveOriginal = new Cleave(priceInput, {
+                numeral: true,
+                numeralThousandsGroupStyle: 'thousand'
+            });
+            const initialPriceValue = priceInput.getAttribute('data-initial-value');
+            if (initialPriceValue && cleaveOriginal) {
+                cleaveOriginal.setRawValue(initialPriceValue);
+            }
         }
-    }
 
-    const form = document.getElementById('courseForm');
-    if (form) {
-        form.addEventListener('submit', function (e) {
-            if (cleaveCurrent && discountPriceInput) {
-                discountPriceInput.value = cleaveCurrent.getRawValue();
-            }
-            if (cleaveOriginal && priceInput) {
-                priceInput.value = cleaveOriginal.getRawValue();
-            }
-        });
-    }
+        const form = document.getElementById('courseForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                if (quill && fulldesInput) {
+                    fulldesInput.value = quill.root.innerHTML;
+                    if (quill.getText().trim().length === 0) {
+                        fulldesInput.value = ""; 
+                    }
+                }
 
+                if (cleaveCurrent && discountPriceInput) {
+                    discountPriceInput.value = cleaveCurrent.getRawValue();
+                }
+                if (cleaveOriginal && priceInput) {
+                    priceInput.value = cleaveOriginal.getRawValue();
+                }
+            });
+        }
 
-    const imageUrlInput = document.getElementById('imageUrlInput');
-    const imagePreview = document.getElementById('imagePreview');
-    const imageError = document.getElementById('imageError');
+        const imageUrlInput = document.getElementById('imageUrlInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const imageError = document.getElementById('imageError');
 
-    window.handleImageError = function (imgElement) {
-        imgElement.style.display = 'none';
-        if (imageError) imageError.style.display = 'block';
-    }
+        window.handleImageError = function (imgElement) {
+            imgElement.style.display = 'none';
+            if (imageError) imageError.style.display = 'block';
+        }
 
-    if (imageUrlInput && imagePreview && imageError) {
-        imageUrlInput.addEventListener('input', function () {
-            const url = this.value;
-            imageError.style.display = 'none';
-            if (url) {
-                imagePreview.src = url;
-            } else {
-                imagePreview.src = '';
-                imagePreview.style.display = 'none';
-            }
-        });
+        if (imageUrlInput && imagePreview && imageError) {
+            imageUrlInput.addEventListener('input', function () {
+                const url = this.value;
+                imageError.style.display = 'none';
+                if (url) {
+                    imagePreview.src = url;
+                } else {
+                    imagePreview.src = '';
+                    imagePreview.style.display = 'none';
+                }
+            });
 
-        imagePreview.addEventListener('load', function () {
-            imagePreview.style.display = 'block';
-            imageError.style.display = 'none';
-        });
-
-
-        if (imageUrlInput.value) {
-            if (imagePreview.complete && imagePreview.naturalHeight > 0) {
+            imagePreview.addEventListener('load', function () {
                 imagePreview.style.display = 'block';
                 imageError.style.display = 'none';
-            } else if (imagePreview.complete && imagePreview.naturalHeight === 0) {
-                handleImageError(imagePreview); // Ảnh bị lỗi khi tải
-            }
-        } else {
-            imagePreview.style.display = 'none';
-            imageError.style.display = 'none';
-        }
-    }
+            });
 
-    const totalLecturesInput = document.getElementById('totalLectures');
-    const lecturerInputsContainer = document.getElementById('lecturerInputsContainer');
-
-    function generateLecturerInputs() {
-        lecturerInputsContainer.innerHTML = '';
-        const count = parseInt(totalLecturesInput.value, 10);
-        if (isNaN(count) || count <= 0) return;
-
-        const sectionLabel = document.createElement('label');
-        sectionLabel.className = 'h5 fw-semibold mb-3';
-        sectionLabel.textContent = 'Lecturer Assignments';
-        lecturerInputsContainer.appendChild(sectionLabel);
-
-        for (let i = 1; i <= count; i++) {
-            const inputGroup = document.createElement('div');
-            inputGroup.className = 'row g-3 align-items-center mb-3';
-            const labelDiv = document.createElement('div');
-            labelDiv.className = 'col-md-3';
-            const label = document.createElement('label');
-            label.className = 'form-label col-form-label text-md-end mb-0';
-            label.textContent = `Lecture ${i} - ID:`;
-            label.setAttribute('for', `lecturer_id_${i}`);
-            labelDiv.appendChild(label);
-
-
-            const inputDiv = document.createElement('div');
-            inputDiv.className = 'col-md-3';
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = `lecturer_id_${i}`;
-            input.name = `lecturer_ids[${i - 1}]`;
-            input.className = 'form-control'; // Class input của Bootstrap
-            input.placeholder = `Enter ID`;
-            input.addEventListener('blur', fetchLecturerName);
-            inputDiv.appendChild(input);
-
-            const nameDisplayDiv = document.createElement('div');
-            nameDisplayDiv.className = 'col-md-6';
-            const nameDisplay = document.createElement('span');
-            nameDisplay.id = `lecturer_name_${i}`;
-            nameDisplay.className = 'form-text text-muted italic'; // Class text của Bootstrap
-            nameDisplay.textContent = '(Name will appear here)';
-            nameDisplayDiv.appendChild(nameDisplay);
-
-            inputGroup.appendChild(labelDiv);
-            inputGroup.appendChild(inputDiv);
-            inputGroup.appendChild(nameDisplayDiv);
-            lecturerInputsContainer.appendChild(inputGroup);
-        }
-    }
-
-
-    async function fetchLecturerName(event) {
-        const inputElement = event.target;
-        const lecturerId = inputElement.value.trim();
-        const index = inputElement.id.split('_')[2];
-        const nameDisplayElement = document.getElementById(`lecturer_name_${index}`);
-
-        if (!lecturerId) {
-            nameDisplayElement.textContent = '(Name will appear here)';
-            nameDisplayElement.className = 'form-text text-muted italic';
-            return;
-        }
-        nameDisplayElement.textContent = 'Searching...';
-        nameDisplayElement.className = 'form-text text-muted italic'; // Class Bootstrap
-
-        try {
-            const response = await fetch(`/api/lecturers/${lecturerId}`);
-            if (!response.ok) {
-                if (response.status === 404) {
-                    nameDisplayElement.textContent = 'ID Not Found';
-                    nameDisplayElement.className = 'form-text text-danger fw-medium';
-                } else { throw new Error(`HTTP ${response.status}`); }
-            } else {
-                const lecturerData = await response.json();
-                if (lecturerData && lecturerData.name) {
-                    nameDisplayElement.textContent = lecturerData.name;
-                    nameDisplayElement.className = 'form-text text-success fw-semibold';
-                } else {
-                    nameDisplayElement.textContent = 'Name N/A';
-                    nameDisplayElement.className = 'form-text text-warning italic';
+            if (imageUrlInput.value) {
+                if (imagePreview.complete && imagePreview.naturalHeight > 0) {
+                    imagePreview.style.display = 'block';
+                    imageError.style.display = 'none';
+                } else if (imagePreview.complete && imagePreview.naturalHeight === 0) {
+                    handleImageError(imagePreview); 
                 }
+            } else {
+                imagePreview.style.display = 'none';
+                imageError.style.display = 'none';
             }
-        } catch (error) {
-            console.error('Error fetching lecturer name:', error);
-            nameDisplayElement.textContent = 'Fetch Error';
-            nameDisplayElement.className = 'form-text text-danger fw-medium';
         }
-    }
 
-    if (totalLecturesInput && lecturerInputsContainer) {
-        totalLecturesInput.addEventListener('input', generateLecturerInputs);
-        generateLecturerInputs();
-    }
-    });
+        const totalLecturesInput = document.getElementById('totalLectures');
+        const lecturerInputsContainer = document.getElementById('lecturerInputsContainer');
+
+        function generateLecturerInputs() {
+            lecturerInputsContainer.innerHTML = '';
+            const count = parseInt(totalLecturesInput.value, 10);
+            if (isNaN(count) || count <= 0) return;
+
+            const sectionLabel = document.createElement('label');
+            sectionLabel.className = 'h5 fw-semibold mb-3';
+            sectionLabel.textContent = 'Lecturer Assignments';
+            lecturerInputsContainer.appendChild(sectionLabel);
+
+            for (let i = 1; i <= count; i++) {
+                const inputGroup = document.createElement('div');
+                inputGroup.className = 'row g-3 align-items-center mb-3';
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'col-md-3';
+                const label = document.createElement('label');
+                label.className = 'form-label col-form-label text-md-end mb-0';
+                label.textContent = `Lecture ${i} - ID:`;
+                label.setAttribute('for', `lecturer_id_${i}`);
+                labelDiv.appendChild(label);
+                const inputDiv = document.createElement('div');
+                inputDiv.className = 'col-md-3';
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = `lecturer_id_${i}`;
+                input.name = `lecturer_ids[${i - 1}]`;
+                input.className = 'form-control'; 
+                input.placeholder = `Enter ID`;
+                input.addEventListener('blur', fetchLecturerName);
+                inputDiv.appendChild(input);
+                const nameDisplayDiv = document.createElement('div');
+                nameDisplayDiv.className = 'col-md-6';
+                const nameDisplay = document.createElement('span');
+                nameDisplay.id = `lecturer_name_${i}`;
+                nameDisplay.className = 'form-text text-muted italic'; 
+                nameDisplay.textContent = '(Name will appear here)';
+                nameDisplayDiv.appendChild(nameDisplay);
+                inputGroup.appendChild(labelDiv);
+                inputGroup.appendChild(inputDiv);
+                inputGroup.appendChild(nameDisplayDiv);
+                lecturerInputsContainer.appendChild(inputGroup);
+            }
+        }
+
+        async function fetchLecturerName(event) {
+            const inputElement = event.target;
+            const lecturerId = inputElement.value.trim();
+            const index = inputElement.id.split('_')[2];
+            const nameDisplayElement = document.getElementById(`lecturer_name_${index}`);
+            if (!lecturerId) {
+                nameDisplayElement.textContent = '(Name will appear here)';
+                nameDisplayElement.className = 'form-text text-muted italic';
+                return;
+            }
+            nameDisplayElement.textContent = 'Searching...';
+            nameDisplayElement.className = 'form-text text-muted italic'; 
+            try {
+                const response = await fetch(`/api/lecturers/${lecturerId}`);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        nameDisplayElement.textContent = 'ID Not Found';
+                        nameDisplayElement.className = 'form-text text-danger fw-medium';
+                    } else { throw new Error(`HTTP ${response.status}`); }
+                } else {
+                    const lecturerData = await response.json();
+                    if (lecturerData && lecturerData.name) {
+                        nameDisplayElement.textContent = lecturerData.name;
+                        nameDisplayElement.className = 'form-text text-success fw-semibold';
+                    } else {
+                        nameDisplayElement.textContent = 'Name N/A';
+                        nameDisplayElement.className = 'form-text text-warning italic';
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching lecturer name:', error);
+                nameDisplayElement.textContent = 'Fetch Error';
+                nameDisplayElement.className = 'form-text text-danger fw-medium';
+            }
+        }
+
+        if (totalLecturesInput && lecturerInputsContainer) {
+            totalLecturesInput.addEventListener('input', generateLecturerInputs);
+            generateLecturerInputs();
+        }
+    }); 
 </script>
 {{/fill_section}}
 
 {{#fill_section 'css'}}
-background-color: #f8f9fa
+body {
+    background-color: #f8f9fa;
+}
+
+.ql-editor {
+    font-size: 1.2rem;
+}
+
+.ql-editor.ql-blank::before {
+    font-size: 1.2rem; 
+}
 {{/fill_section}}
 
 <div class="container-lg py-5">
@@ -215,12 +242,16 @@ background-color: #f8f9fa
             <div class="form-text">Minimum 50 characters</div>
         </div>
 
-        {{!-- Full Description --}}
+        {{!-- Full Description (SỬA LỖI CẤU TRÚC QUILL) --}}
         <div class="mb-4">
-            <label for="fulldes" class="form-label fs-6 fw-semibold"> Full Course Description <span
-                    class="text-danger">*</span> </label>
-            <textarea id="fulldes" name="fulldes" rows="8" class="form-control form-control-lg"
-                placeholder="Detailed description for the course page..." required>{{course.fulldes}}</textarea>
+            <label class="form-label fs-6 fw-semibold"> Full Course Description <span class="text-danger">*</span>
+            </label>
+            {{!-- Đặt nội dung CÓ SẴN vào đây để Quill đọc (dùng 3 ngoặc nhọn) --}}
+            <div id="editor" style="height: 250px;">
+                {{{course.fulldes}}}
+            </div>
+            {{!-- Input ẩn để Quill đồng bộ --}}
+            <input type="hidden" id="fulldes" name="fulldes">
             <div class="form-text">Minimum 200 characters</div>
         </div>
 
@@ -274,7 +305,6 @@ background-color: #f8f9fa
             <select id="catid" name="catid" required class="form-select form-select-lg">
                 <option value="">-- Select Category --</option>
                 {{#each categories}}
-                {{!-- Sử dụng helper 'selectOption' của bạn --}}
                 <option value="{{this.cat_id}}" {{selectOption ../course.catid this.cat_id}}>{{this.cat_name}}
                 </option>
                 {{/each}}

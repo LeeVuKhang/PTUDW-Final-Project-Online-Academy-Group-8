@@ -1,7 +1,22 @@
 {{#fill_section 'js'}}
 <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const quill = new Quill('#editor', {
+            theme: 'snow',
+            placeholder: 'Detailed description for the course page...',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{'list': 'ordered'}, {'list': 'bullet'}],
+                    ['link', 'image'] 
+                ]
+            }
+        });
+        
+        const fulldesInput = document.getElementById('fulldes');
+
         const cleaveCurrent = new Cleave('#discount_price', {
             numeral: true,
             numeralThousandsGroupStyle: 'thousand'
@@ -16,9 +31,14 @@
             form.addEventListener('submit', function (e) {
                 if (cleaveCurrent) document.getElementById('discount_price').value = cleaveCurrent.getRawValue();
                 if (cleaveOriginal) document.getElementById('price').value = cleaveOriginal.getRawValue();
+                if (quill && fulldesInput) {
+                    fulldesInput.value = quill.root.innerHTML;
+                    if (quill.getText().trim().length === 0) {
+                        fulldesInput.value = ""; 
+                    }
+                }
             });
         }
-
         const imageUrlInput = document.getElementById('imageUrlInput'); // ID cho input URL
         const imagePreview = document.getElementById('imagePreview');  // ID cho img preview
         const imageError = document.getElementById('imageError');      // ID cho p báo lỗi
@@ -43,7 +63,19 @@
                 imagePreview.style.display = 'block';
                 imageError.style.display = 'none';
             });
-            imagePreview.style.display = 'none';
+            
+            if (imageUrlInput.value) {
+                if (imagePreview.complete && imagePreview.naturalHeight > 0) {
+                    imagePreview.style.display = 'block';
+                } else if (!imagePreview.complete) {
+                    // Chờ sự kiện load hoặc error
+                } else {
+                    imagePreview.style.display = 'none';
+                }
+            } else {
+                imagePreview.style.display = 'none';
+            }
+            
             imageError.style.display = 'none';
         }
 
@@ -113,7 +145,7 @@
                 return;
             }
             nameDisplayElement.textContent = 'Searching...';
-            nameDisplayElement.className = 'form-text text-muted italic'; // Class Bootstrap
+            nameDisplayElement.className = 'form-text text-muted italic';
 
             try {
                 const response = await fetch(`/api/lecturers/${lecturerId}`);
@@ -138,13 +170,28 @@
                 nameDisplayElement.className = 'form-text text-danger fw-medium';
             }
         }
-    }); 
+    });
 </script>
 {{/fill_section}}
 
-{{#fill_section 'css'}}
-background-color: #f8f9fa
+{{#fill_section 'stylesheet'}}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
 {{/fill_section}}
+
+{{#fill_section 'css'}}
+body {
+    background-color: #f8f9fa;
+}
+
+.ql-editor {
+    font-size: 1.2rem;
+}
+
+.ql-editor.ql-blank::before {
+    font-size: 1.2rem; 
+}
+{{/fill_section}}
+
 <div class="container-lg py-5">
     <form id="courseForm" class="card shadow-lg p-4 p-md-5 rounded-4" method="post" action="/instructor/create-course">
 
@@ -174,12 +221,12 @@ background-color: #f8f9fa
             <div class="form-text">Minimum 50 characters</div>
         </div>
 
-        {{!-- Full Description --}}
         <div class="mb-4">
-            <label for="fulldes" class="form-label fs-6 fw-semibold"> Full Course Description <span
-                    class="text-danger">*</span> </label>
-            <textarea id="fulldes" name="fulldes" rows="8" class="form-control form-control-lg"
-                placeholder="Detailed description for the course page..." required></textarea>
+            <label class="form-label fs-6 fw-semibold"> Full Course Description <span class="text-danger">*</span>
+            </label>
+            <div id="editor" style="height: 250px;">
+            </div>
+            <input type="hidden" id="fulldes" name="fulldes" required>
             <div class="form-text">Minimum 200 characters</div>
         </div>
 
