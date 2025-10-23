@@ -87,6 +87,7 @@ app.use(function(req, res, next) {
 });
 
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.set('view engine', 'handlebars');
 app.set('views', './views');
 
