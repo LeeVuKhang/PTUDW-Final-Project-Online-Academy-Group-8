@@ -1,0 +1,45 @@
+{{!< main}}
+
+{{#fill_section 'css'}}
+.card-img-top-custom {
+  height: 180px;
+  object-fit: cover;
+  background-color: #f8f9fa;
+}
+{{/fill_section}}
+
+<div class="container mt-5">
+  <h1 class="mb-4">🎓 Khóa học của tôi</h1>
+
+  {{#if courses.length}}
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {{#each courses}}
+    <div class="col">
+      <div class="card shadow-sm h-100">
+        <img src="{{this.image_url}}" class="card-img-top card-img-top-custom" alt="{{this.title}}">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">{{this.title}}</h5>
+          <p class="text-primary fw-bold">{{formatNumber this.discount_price}}₫</p>
+
+          <div class="mt-auto d-flex flex-column gap-2">
+            <a href="/courses/learn/{{this.course_id}}" class="btn btn-primary w-100">🎥 Học ngay</a>
+            
+            <form action="/courses/my-courses/remove/{{this.course_id}}" method="post">
+              <button type="submit" class="btn btn-danger w-100">❌ Xóa khóa học</button>
+            </form>
+
+            <div class="progress mt-2" style="height:6px;">
+              <div class="progress-bar" role="progressbar" style="width: {{this.progress}}%;" aria-valuenow="{{this.progress}}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+  {{else}}
+  <p class="text-muted fst-italic">Bạn chưa mua khóa học nào.</p>
+  <a href="/courses" class="btn btn-primary">Xem khóa học</a>
+  {{/if}}
+</div>

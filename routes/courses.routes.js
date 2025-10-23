@@ -4,7 +4,7 @@ import { checkAuthenticated } from "../models/auth.model.js";
 
 const router = express.Router();
 
-/** 🏠 0️⃣ Trang danh sách tất cả khóa học */
+/*Trang danh sách tất cả khóa học*/
 router.get("/", async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = 8;
@@ -16,10 +16,7 @@ router.get("/", async (req, res) => {
 
   const page_numbers = [];
   for (let i = 1; i <= nPages; i++) {
-    page_numbers.push({
-      value: i,
-      isCurrent: i === page,
-    });
+    page_numbers.push({ value: i, isCurrent: i === page });
   }
 
   res.render("vwCourses/byCat", {
@@ -30,10 +27,9 @@ router.get("/", async (req, res) => {
   });
 });
 
-/** 🏫 1️⃣ Danh sách khóa học theo danh mục */
+/*Danh sách khóa học theo danh mục*/
 router.get("/byCat", async (req, res) => {
   const catid = req.query.id || 0;
-
   const category = await db("categories").where("cat_id", catid).first();
   const catname = category ? category.cat_name : "Danh mục không tồn tại";
 
@@ -42,49 +38,37 @@ router.get("/byCat", async (req, res) => {
   const offset = (page - 1) * limit;
 
   const courses = await db("courses").where("catid", catid).limit(limit).offset(offset);
-
   const total = await db("courses").where("catid", catid).count("* as amount").first();
   const nPages = Math.ceil(total.amount / limit);
+
   const page_numbers = [];
   for (let i = 1; i <= nPages; i++) {
-    page_numbers.push({
-      value: i,
-      catid,
-      isCurrent: i === page,
-    });
+    page_numbers.push({ value: i, catid, isCurrent: i === page });
   }
 
-  res.render("vwCourses/byCat", {
-    layout: "main",
-    courses,
-    catname,
-    page_numbers,
-  });
+  res.render("vwCourses/byCat", { layout: "main", courses, catname, page_numbers });
 });
 
-/** 📘 2️⃣ Chi tiết khóa học */
+/*Chi tiết khóa học*/
 router.get("/details/:id", async (req, res) => {
   const course_id = req.params.id;
   const course = await db("courses").where("course_id", course_id).first();
-
   if (!course) return res.render("vwCourses/not-found", { layout: "main" });
 
   const lessons = await db("lessons")
-    .where("course_id", course_id)
-    .orderBy("order_index");
+    .join("chapters", "lessons.chapter_id", "chapters.chapter_id")
+    .where("chapters.course_id", course_id)
+    .select("lessons.*")
+    .orderBy("lessons.order_index");
 
   let isEnrolled = false;
   if (req.session.isAuthenticated) {
     const enrollment = await db("enrollments")
-      .where({
-        student_id: req.session.authUser.user_id,
-        course_id,
-      })
+      .where({ student_id: req.session.authUser.user_id, course_id })
       .first();
     isEnrolled = !!enrollment;
   }
 
-  // Lấy đánh giá
   const ratings = await db("ratings")
     .join("users", "ratings.student_id", "users.user_id")
     .where("course_id", course_id)
@@ -99,116 +83,176 @@ router.get("/details/:id", async (req, res) => {
   });
 });
 
-/** 🧾 3️⃣ Ghi danh khóa học */
+/*Ghi danh khóa học*/
 router.get("/enroll/:id", checkAuthenticated, async (req, res) => {
   const course_id = req.params.id;
   const student_id = req.session.authUser.user_id;
 
-  // Check if already enrolled
-  const exists = await db("enrollments")
-    .where({ course_id, student_id })
-    .first();
-
+  const exists = await db("enrollments").where({ course_id, student_id }).first();
   if (!exists) {
     await db("enrollments").insert({
       student_id,
       course_id,
       erm_date: new Date(),
       progress: 0,
-      status: "enrolled"
+      status: "enrolled",
     });
   }
 
   res.redirect(`/courses/learn/${course_id}`);
 });
 
-
-/** 🎥 4️⃣ Học bài (video) */
+/*Trang học khóa học*/
 router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
   const course_id = req.params.course_id;
   const student_id = req.session.authUser.user_id;
 
-  // Check enrollment
   const enrolled = await db("enrollments")
-    .where({ 
-      student_id,
-      course_id,
-      status: 'enrolled'
-    })
+    .where({ student_id, course_id, status: "enrolled" })
     .first();
-
   if (!enrolled) return res.redirect(`/courses/details/${course_id}`);
 
-  // Get course info
-  const course = await db("courses")
-    .where({ course_id })
-    .first();
-
-  // Get all lessons
+  const course = await db("courses").where({ course_id }).first();
   const lessons = await db("lessons")
-    .where({ course_id })
-    .orderBy("order_index");
+    .join("chapters", "lessons.chapter_id", "chapters.chapter_id")
+    .where("chapters.course_id", course_id)
+    .select("lessons.*")
+    .orderBy("lessons.order_index");
 
-  // Get current lesson (last watched or first)
-  const currentLesson = enrolled.last_watched_lesson 
-    ? await db("lessons")
-        .where({ lesson_id: enrolled.last_watched_lesson })
-        .first()
+  const currentLesson = enrolled.last_watched_lesson
+    ? await db("lessons").where({ lesson_id: enrolled.last_watched_lesson }).first()
     : lessons[0];
 
-  res.render("vwCourses/learn", {
-    layout: "main",
-    course,
-    currentLesson,
-    lessons,
-    course_id
-  });
+  res.render("vwCourses/learn", { layout: "main", course, currentLesson, lessons, course_id });
 });
 
-/** 📊 Track lesson progress */
-router.post("/progress", checkAuthenticated, async (req, res) => {
-  const { course_id, lesson_id, progress } = req.body;
-  const student_id = req.session.authUser.user_id;
-
-  // Update enrollment progress and last watched lesson
-  await db("enrollments")
-    .where({ 
-      student_id,
-      course_id 
-    })
-    .update({
-      progress: progress,
-      last_watched_lesson: lesson_id
-    });
-
-  res.json({ success: true });
-});
-
-/** ⭐ 5️⃣ Đánh giá khóa học */
+/*Đánh giá khóa học*/
 router.post("/rate/:id", checkAuthenticated, async (req, res) => {
   const course_id = req.params.id;
   const student_id = req.session.authUser.user_id;
   const { value, comment } = req.body;
 
-  const enrolled = await db("enrollments")
-    .where({ course_id, student_id })
-    .first();
+  const enrolled = await db("enrollments").where({ course_id, student_id }).first();
+  if (!enrolled) return res.redirect(`/courses/details/${course_id}`);
 
-  if (!enrolled) {
-    return res.redirect(`/courses/details/${course_id}`);
-  }
-
-  // Thêm đánh giá mới, không update đánh giá cũ
-  await db("ratings").insert({ 
-    course_id, 
-    student_id, 
-    value, 
-    comment,
-    create_time: new Date() 
-  });
-
+  await db("ratings").insert({ course_id, student_id, value, comment, create_time: new Date() });
   res.redirect(`/courses/details/${course_id}`);
 });
 
+/*Mua ngay → chuyển đến checkout*/
+router.get("/buy-now/:id", checkAuthenticated, (req, res) => {
+  const course_id = req.params.id;
+  res.redirect(`/courses/checkout/${course_id}`);
+});
+
+/*Trang thanh toán*/
+router.get("/checkout/:id", checkAuthenticated, async (req, res) => {
+  const course_id = req.params.id;
+  const course = await db("courses").where("course_id", course_id).first();
+  if (!course) return res.render("vwCourses/not-found", { layout: "main" });
+  res.render("vwCourses/checkout", { layout: "main", course });
+});
+
+/*Xử lý thanh toán*/
+router.post("/checkout/:id", checkAuthenticated, async (req, res) => {
+  const course_id = req.params.id;
+  const student_id = req.session.authUser.user_id;
+
+  const exists = await db("enrollments").where({ course_id, student_id }).first();
+  if (!exists) {
+    await db("enrollments").insert({
+      student_id,
+      course_id,
+      erm_date: new Date(),
+      progress: 0,
+      status: "enrolled",
+    });
+  }
+
+  res.redirect(`/courses/learn/${course_id}`);
+});
+
+/*Thêm vào giỏ hàng*/
+router.get("/add-to-cart/:id", checkAuthenticated, async (req, res) => {
+  const course_id = req.params.id;
+  const student_id = req.session.authUser.user_id;
+
+  try {
+    const exists = await db("cart_items").where({ student_id, course_id }).first();
+    if (!exists) {
+      await db("cart_items").insert({
+        student_id,
+        course_id,
+        quantity: 1,
+        added_at: new Date(),
+      });
+    }
+
+    return res.redirect("/courses/cart");
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("Lỗi thêm vào giỏ hàng!");
+  }
+});
+
+
+/*Xem giỏ hàng*/
+router.get("/cart", checkAuthenticated, async (req, res) => {
+  const student_id = req.session.authUser.user_id;
+
+  const items = await db("cart_items")
+    .join("courses", "cart_items.course_id", "courses.course_id")
+    .where("cart_items.student_id", student_id)
+    .select("cart_items.*", "courses.title", "courses.discount_price", "courses.image_url");
+
+  res.render("vwCourses/cart", { layout: "main", items });
+});
+
+/*Xóa khóa học khỏi giỏ hàng*/
+router.post("/cart/remove/:id", checkAuthenticated, async (req, res) => {
+  const cart_item_id = req.params.id;
+  const student_id = req.session.authUser.user_id;
+  await db("cart_items").where({ cart_item_id, student_id }).delete();
+  res.redirect("/courses/cart");
+});
+
+/*Thanh toán tất cả khóa học trong giỏ*/
+router.post("/cart/checkout", checkAuthenticated, async (req, res) => {
+  const student_id = req.session.authUser.user_id;
+  const items = await db("cart_items").where({ student_id });
+
+  for (const item of items) {
+    const exists = await db("enrollments").where({ student_id, course_id: item.course_id }).first();
+    if (!exists) {
+      await db("enrollments").insert({ student_id, course_id: item.course_id, erm_date: new Date(), progress: 0, status: "enrolled" });
+    }
+    await db("cart_items").where({ cart_item_id: item.cart_item_id }).delete();
+  }
+
+  res.redirect("/courses/my-courses");
+});
+
+/*Trang liệt kê tất cả khóa học đã mua*/
+router.get("/my-courses", checkAuthenticated, async (req, res) => {
+  const student_id = req.session.authUser.user_id;
+
+  const courses = await db("enrollments")
+    .join("courses", "enrollments.course_id", "courses.course_id")
+    .where("enrollments.student_id", student_id)
+    .select("courses.course_id", "courses.title", "courses.discount_price", "courses.image_url", "enrollments.progress");
+
+  res.render("vwCourses/myCourses", { layout: "main", courses });
+});
+/*Xóa khóa học đã ghi danh*/
+router.post("/my-courses/remove/:id", checkAuthenticated, async (req, res) => {
+  const course_id = req.params.id;
+  const student_id = req.session.authUser.user_id;
+
+  await db("enrollments")
+    .where({ course_id, student_id })
+    .delete();
+
+  res.redirect("/courses/my-courses");
+});
 
 export default router;
