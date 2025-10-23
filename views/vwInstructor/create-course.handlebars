@@ -1,9 +1,22 @@
 {{#fill_section 'js'}}
 <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() { // Bọc toàn bộ JS
+    document.addEventListener('DOMContentLoaded', function () {
+        const quill = new Quill('#editor', {
+            theme: 'snow',
+            placeholder: 'Detailed description for the course page...',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{'list': 'ordered'}, {'list': 'bullet'}],
+                    ['link', 'image'] 
+                ]
+            }
+        });
+        
+        const fulldesInput = document.getElementById('fulldes');
 
-        // --- Khởi tạo Cleave.js cho giá ---
         const cleaveCurrent = new Cleave('#discount_price', {
             numeral: true,
             numeralThousandsGroupStyle: 'thousand'
@@ -13,20 +26,24 @@
             numeralThousandsGroupStyle: 'thousand'
         });
 
-        // --- Xử lý submit ---
         const form = document.getElementById('courseForm');
         if (form) {
             form.addEventListener('submit', function (e) {
                 if (cleaveCurrent) document.getElementById('discount_price').value = cleaveCurrent.getRawValue();
                 if (cleaveOriginal) document.getElementById('price').value = cleaveOriginal.getRawValue();
+                if (quill && fulldesInput) {
+                    fulldesInput.value = quill.root.innerHTML;
+                    if (quill.getText().trim().length === 0) {
+                        fulldesInput.value = ""; 
+                    }
+                }
             });
         }
-
         const imageUrlInput = document.getElementById('imageUrlInput'); // ID cho input URL
-        const imagePreview = document.getElementById('imagePreview');   // ID cho img preview
-        const imageError = document.getElementById('imageError');       // ID cho p báo lỗi
+        const imagePreview = document.getElementById('imagePreview');  // ID cho img preview
+        const imageError = document.getElementById('imageError');      // ID cho p báo lỗi
 
-        window.handleImageError = function(imgElement) {
+        window.handleImageError = function (imgElement) {
             imgElement.style.display = 'none';
             if (imageError) imageError.style.display = 'block';
         }
@@ -36,17 +53,29 @@
                 const url = this.value;
                 imageError.style.display = 'none';
                 if (url) {
-                    imagePreview.src = url; // Thử tải
+                    imagePreview.src = url;
                 } else {
                     imagePreview.src = '';
                     imagePreview.style.display = 'none';
                 }
             });
-            imagePreview.addEventListener('load', function() {
+            imagePreview.addEventListener('load', function () {
                 imagePreview.style.display = 'block';
                 imageError.style.display = 'none';
             });
-            imagePreview.style.display = 'none';
+            
+            if (imageUrlInput.value) {
+                if (imagePreview.complete && imagePreview.naturalHeight > 0) {
+                    imagePreview.style.display = 'block';
+                } else if (!imagePreview.complete) {
+                    // Chờ sự kiện load hoặc error
+                } else {
+                    imagePreview.style.display = 'none';
+                }
+            } else {
+                imagePreview.style.display = 'none';
+            }
+            
             imageError.style.display = 'none';
         }
 
@@ -58,36 +87,48 @@
         }
 
         function generateLecturerInputs() {
-            lecturerInputsContainer.innerHTML = ''; // Xóa input cũ
+            lecturerInputsContainer.innerHTML = '';
             const count = parseInt(totalLecturesInput.value, 10);
             if (isNaN(count) || count <= 0) return;
 
             const sectionLabel = document.createElement('label');
-            sectionLabel.className = 'block text-gray-700 font-semibold mb-2';
-            sectionLabel.textContent = 'Enter Lecturer IDs';
+            sectionLabel.className = 'h5 fw-semibold mb-3';
+            sectionLabel.textContent = 'Lecturer Assignments';
             lecturerInputsContainer.appendChild(sectionLabel);
 
             for (let i = 1; i <= count; i++) {
                 const inputGroup = document.createElement('div');
-                inputGroup.className = 'flex items-center gap-4';
+                inputGroup.className = 'row g-3 align-items-center mb-3';
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'col-md-3';
                 const label = document.createElement('label');
-                label.className = 'w-1/4 text-sm font-medium text-gray-600 shrink-0';
+                label.className = 'form-label col-form-label text-md-end mb-0';
                 label.textContent = `Lecture ${i} - ID:`;
                 label.setAttribute('for', `lecturer_id_${i}`);
+                labelDiv.appendChild(label);
+
+                const inputDiv = document.createElement('div');
+                inputDiv.className = 'col-md-3';
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.id = `lecturer_id_${i}`;
-                input.name = `lecturer_ids[${i-1}]`;
-                input.className = 'w-1/4 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out';
+                input.name = `lecturer_ids[${i - 1}]`;
+                input.className = 'form-control';
                 input.placeholder = `Enter ID`;
                 input.addEventListener('blur', fetchLecturerName);
+                inputDiv.appendChild(input);
+
+                const nameDisplayDiv = document.createElement('div');
+                nameDisplayDiv.className = 'col-md-6';
                 const nameDisplay = document.createElement('span');
                 nameDisplay.id = `lecturer_name_${i}`;
-                nameDisplay.className = 'w-1/2 text-sm text-gray-500 italic';
+                nameDisplay.className = 'form-text text-muted italic';
                 nameDisplay.textContent = '(Name will appear here)';
-                inputGroup.appendChild(label);
-                inputGroup.appendChild(input);
-                inputGroup.appendChild(nameDisplay);
+                nameDisplayDiv.appendChild(nameDisplay);
+
+                inputGroup.appendChild(labelDiv);
+                inputGroup.appendChild(inputDiv);
+                inputGroup.appendChild(nameDisplayDiv);
                 lecturerInputsContainer.appendChild(inputGroup);
             }
         }
@@ -97,150 +138,194 @@
             const lecturerId = inputElement.value.trim();
             const index = inputElement.id.split('_')[2];
             const nameDisplayElement = document.getElementById(`lecturer_name_${index}`);
+
             if (!lecturerId) {
                 nameDisplayElement.textContent = '(Name will appear here)';
-                nameDisplayElement.className = 'w-1/2 text-sm text-gray-500 italic';
+                nameDisplayElement.className = 'form-text text-muted italic';
                 return;
             }
             nameDisplayElement.textContent = 'Searching...';
-            nameDisplayElement.className = 'w-1/2 text-sm text-gray-400 italic';
+            nameDisplayElement.className = 'form-text text-muted italic';
+
             try {
                 const response = await fetch(`/api/lecturers/${lecturerId}`);
                 if (!response.ok) {
-                    if(response.status === 404) {
-                       nameDisplayElement.textContent = 'ID Not Found';
-                       nameDisplayElement.className = 'w-1/2 text-sm text-red-600 font-medium';
+                    if (response.status === 404) {
+                        nameDisplayElement.textContent = 'ID Not Found';
+                        nameDisplayElement.className = 'form-text text-danger fw-medium';
                     } else { throw new Error(`HTTP ${response.status}`); }
                 } else {
                     const lecturerData = await response.json();
                     if (lecturerData && lecturerData.name) {
                         nameDisplayElement.textContent = lecturerData.name;
-                        nameDisplayElement.className = 'w-1/2 text-sm text-green-700 font-semibold';
+                        nameDisplayElement.className = 'form-text text-success fw-semibold';
                     } else {
-                         nameDisplayElement.textContent = 'Name N/A';
-                         nameDisplayElement.className = 'w-1/2 text-sm text-orange-600 italic';
+                        nameDisplayElement.textContent = 'Name N/A';
+                        nameDisplayElement.className = 'form-text text-warning italic';
                     }
                 }
             } catch (error) {
                 console.error('Error fetching lecturer name:', error);
                 nameDisplayElement.textContent = 'Fetch Error';
-                nameDisplayElement.className = 'w-1/2 text-sm text-red-600 font-medium';
+                nameDisplayElement.className = 'form-text text-danger fw-medium';
             }
         }
-    }); 
+    });
 </script>
 {{/fill_section}}
 
-<body class="bg-gray-100">
-    <div class="container mx-auto px-4 py-12 max-w-4xl">
-        <form id="courseForm" class="bg-white rounded-xl shadow-lg p-10" method="post" action="/instructor/create-course"> 
+{{#fill_section 'stylesheet'}}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+{{/fill_section}}
 
-            {{!-- Header --}}
-            <div class="mb-8 text-center">
-                 <h1 class="text-4xl font-extrabold text-gray-800 mb-3 flex items-center justify-center">
-                     <i class="fas fa-plus-circle text-blue-500 mr-3"></i> Create New Course
-                 </h1>
-                 <p class="text-gray-600 text-lg">Fill in the information below to create a new course</p>
+{{#fill_section 'css'}}
+body {
+    background-color: #f8f9fa;
+}
+
+.ql-editor {
+    font-size: 1.2rem;
+}
+
+.ql-editor.ql-blank::before {
+    font-size: 1.2rem; 
+}
+{{/fill_section}}
+
+<div class="container-lg py-5">
+    <form id="courseForm" class="card shadow-lg p-4 p-md-5 rounded-4" method="post" action="/instructor/create-course">
+
+        {{!-- Header --}}
+        <div class="mb-4 text-center">
+            <h1 class="display-5 fw-bold text-dark mb-3">
+                <i class="fas fa-plus-circle text-primary me-3"></i> Create New Course
+            </h1>
+            <p class="text-muted fs-5">Fill in the information below to create a new course</p>
+        </div>
+        <hr class="my-5">
+
+        {{!-- Course Title --}}
+        <div class="mb-4">
+            <label for="title" class="form-label fs-6 fw-semibold"> Course Title <span class="text-danger">*</span>
+            </label>
+            <input type="text" id="title" name="title" autofocus class="form-control form-control-lg"
+                placeholder="e.g. Complete Python Programming Masterclass 2025" required>
+        </div>
+
+        {{!-- Short Description --}}
+        <div class="mb-4">
+            <label for="tinydes" class="form-label fs-6 fw-semibold"> Short Course Description <span
+                    class="text-danger">*</span> </label>
+            <textarea id="tinydes" name="tinydes" rows="4" class="form-control form-control-lg"
+                placeholder="Describe what students will learn in this course..." required></textarea>
+            <div class="form-text">Minimum 50 characters</div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fs-6 fw-semibold"> Full Course Description <span class="text-danger">*</span>
+            </label>
+            <div id="editor" style="height: 250px;">
             </div>
-            <hr class="my-8 border-gray-200">
+            <input type="hidden" id="fulldes" name="fulldes" required>
+            <div class="form-text">Minimum 200 characters</div>
+        </div>
 
-            {{!-- Nhóm thông tin cơ bản --}}
-            <div class="space-y-6">
-                {{!-- Course Title --}}
-                <div>
-                     <label class="block text-gray-700 font-semibold mb-2"> Course Title <span class="text-red-500">*</span> </label>
-                     <input type="text" id="title" name="title" autofocus class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="e.g. Complete Python Programming Masterclass 2025" required>
+        {{!-- Course Image URL + Preview --}}
+        <div class="mb-4">
+            <label for="imageUrlInput" class="form-label fs-6 fw-semibold"> Course Image URL <span
+                    class="text-danger">*</span> </label>
+            <input type="url" id="imageUrlInput" name="image_url" class="form-control form-control-lg"
+                placeholder="https://example.com/course-image.jpg" required>
+            <div class="form-text">Enter a valid image URL. The preview will update below.</div>
+            <div class="mt-4">
+                <img id="imagePreview" src="{{course.image_url}}" alt="Course Image Preview"
+                    class="rounded-3 shadow-sm border d-block mx-auto w-100"
+                    style="max-width: 600px; height: 337px; object-fit: contain; background-color: #f8f9fa;"
+                    onerror="handleImageError(this)">
+                <p id="imageError" class="mt-2 small text-danger fw-medium" style="display: none;"> <i
+                        class="fas fa-exclamation-triangle me-1"></i> Cannot load image preview. Please check the URL.
+                </p>
+            </div>
+        </div>
+
+        <hr class="my-5">
+
+        <div class="row g-4 mb-4">
+            {{!-- Total Hours --}}
+            <div class="col-md-6">
+                <label for="total_hours" class="form-label fs-6 fw-semibold"> Total Hours <span
+                        class="text-danger">*</span> </label>
+                <input type="text" id="total_hours" name="total_hours" class="form-control form-control-lg"
+                    placeholder="10.5" required>
+                <div class="form-text">Course duration in hours</div>
+            </div>
+            {{!-- Total Lectures --}}
+            <div class="col-md-6">
+                <label for="totalLectures" class="form-label fs-6 fw-semibold"> Total Lectures <span
+                        class="text-danger">*</span> </label>
+                <input type="number" id="totalLectures" name="total_lectures" min="0"
+                    class="form-control form-control-lg" placeholder="Enter number of lectures" required>
+            </div>
+        </div>
+
+        <div id="lecturerInputsContainer" class="mb-4">
+        </div>
+
+        {{!-- Nhóm Category và Level --}}
+        <div class="mb-4">
+            <label for="catid" class="form-label fs-6 fw-semibold"> Category <span class="text-danger">*</span> </label>
+            <select id="catid" name="catid" required class="form-select form-select-lg">
+                <option value="">-- Select Category --</option>
+                {{#each categories}} <option value="{{this.cat_id}}">{{this.cat_name}}</option> {{/each}}
+            </select>
+        </div>
+        <div class="mb-4">
+            <label for="level" class="form-label fs-6 fw-semibold"> Course Level <span class="text-danger">*</span>
+            </label>
+            <select id="level" name="level" required class="form-select form-select-lg">
+                <option value="">-- Select Level --</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+                <option value="All Levels">All Levels</option>
+            </select>
+        </div>
+
+        <hr class="my-5">
+
+        {{!-- Nhóm Price Inputs --}}
+        <div class="row g-4 mb-4">
+            {{!-- Current Price --}}
+            <div class="col-md-6">
+                <label for="discount_price" class="form-label fs-6 fw-semibold"> Current Price (VND) <span
+                        class="text-danger">*</span> </label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text">₫</span>
+                    <input type="text" id="discount_price" name="discount_price" class="form-control"
+                        placeholder="279000" required>
                 </div>
-                {{!-- Short Description --}}
-                <div>
-                     <label class="block text-gray-700 font-semibold mb-2"> Short Course Description <span class="text-red-500">*</span> </label>
-                     <textarea id="tinydes" name="tinydes" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="Describe what students will learn in this course..." required></textarea>
-                     <p class="text-sm text-gray-500 mt-1">Minimum 50 characters</p>
-                </div>
-                {{!-- Full Description --}}
-                <div>
-                     <label class="block text-gray-700 font-semibold mb-2"> Full Course Description <span class="text-red-500">*</span> </label>
-                     <textarea id="fulldes" name="fulldes" rows="8" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="Detailed description for the course page..." required></textarea>
-                     <p class="text-sm text-gray-500 mt-1">Minimum 200 characters</p>
-                </div>
-                {{!-- Course Image URL + Preview --}}
-                <div>
-                     <label class="block text-gray-700 font-semibold mb-2"> Course Image URL <span class="text-red-500">*</span> </label>
-                     <input type="url" id="imageUrlInput" name="image_url" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="https://example.com/course-image.jpg" required>
-                     <p class="text-sm text-gray-500 mt-1">Enter a valid image URL. The preview will update below.</p>
-                     <div class="mt-4">
-                         <img id="imagePreview" src="" alt="Course Image Preview" class="rounded-lg shadow-md border w-full h-auto object-cover max-h-80" onerror="handleImageError(this)" style="display: none;">
-                         <p id="imageError" class="mt-2 text-sm text-red-600 font-medium" style="display: none;"> <i class="fas fa-exclamation-triangle mr-1"></i> Cannot load image preview. Please check the URL. </p>
-                     </div>
+            </div>
+            {{!-- Original Price --}}
+            <div class="col-md-6">
+                <label for="price" class="form-label fs-6 fw-semibold"> Original Price (VND) <span
+                        class="text-danger">*</span> </label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text">₫</span>
+                    <input type="text" id="price" name="price" class="form-control" placeholder="399000" required>
                 </div>
             </div>
-            <hr class="my-8 border-gray-200">
+        </div>
 
-            {{!-- Nhóm Total Hours và Total Lectures --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-                 {{!-- Total Hours --}}
-                 <div>
-                     <label class="block text-gray-700 font-semibold mb-2"> Total Hours <span class="text-red-500">*</span> </label>
-                     <input type="text" id="total_hours" name="total_hours" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="10.5" required>
-                     <p class="text-sm text-gray-500 mt-1">Course duration in hours</p>
-                 </div>
-                 {{!-- Total Lectures --}}
-                 <div>
-                     <label class="block text-gray-700 font-semibold mb-2"> Total Lectures <span class="text-red-500">*</span> </label>
-                     <input type="number" id="totalLectures" name="total_lectures" min="0" class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="Enter number of lectures" required>
-                 </div>
-            </div> 
+        <hr class="my-5">
 
-            <div id="lecturerInputsContainer" class="space-y-4 mb-6">
-            </div>
-
-            {{!-- Nhóm Category và Level --}}
-            <div class="mb-6">
-                 <label class="block text-gray-700 font-semibold mb-2"> Category <span class="text-red-500">*</span> </label>
-                 <select id="catid" name="catid" required class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                     <option value="">-- Select Category --</option>
-                     {{#each categories}} <option value="{{this.cat_id}}">{{this.cat_name}}</option> {{/each}}
-                 </select>
-            </div>
-            <div class="mb-6">
-                 <label class="block text-gray-700 font-semibold mb-2"> Course Level <span class="text-red-500">*</span> </label>
-                 <select id="level" name="level" required class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                     <option value="">-- Select Level --</option>
-                     <option value="Beginner">Beginner</option>
-                     <option value="Intermediate">Intermediate</option>
-                     <option value="Advanced">Advanced</option>
-                     <option value="All Levels">All Levels</option>
-                 </select>
-            </div>
-            <hr class="my-8 border-gray-200">
-
-            {{!-- Nhóm Price Inputs --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-                 {{!-- Current Price --}}
-                 <div>
-                     <label class="block text-gray-700 font-semibold mb-2"> Current Price (VND) <span class="text-red-500">*</span> </label>
-                     <div class="relative">
-                         <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₫</span>
-                         <input type="text" id="discount_price" name="discount_price" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="279000" required>
-                     </div>
-                 </div>
-                 {{!-- Original Price --}}
-                 <div>
-                     <label class="block text-gray-700 font-semibold mb-2"> Original Price (VND) <span class="text-red-500">*</span> </label>
-                     <div class="relative">
-                         <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">₫</span>
-                         <input type="text" id="price" name="price" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out" placeholder="399000" required>
-                     </div>
-                 </div>
-            </div>
-            <hr class="my-8 border-gray-200">
-
-            {{!-- Action Buttons --}}
-            <div class="flex flex-col sm:flex-row gap-4 justify-end">
-                 <a href="/instructor/courses" class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors duration-200 ease-in-out flex items-center justify-center"> <i class="fas fa-arrow-left mr-2"></i> Back </a>
-                 <button type="reset" class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-100 transition-colors duration-200 ease-in-out"> <i class="fas fa-redo mr-2"></i> Reset Form </button>
-                 <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 ease-in-out shadow-md"> <i class="fas fa-save mr-2"></i> Create Course </button>
-            </div>
-        </form>
-    </div>
-</body>
+        {{!-- Action Buttons --}}
+        <div class="d-flex flex-column flex-sm-row justify-content-end gap-3">
+            <a href="/instructor/courses" class="btn btn-outline-secondary btn-lg"> <i
+                    class="fas fa-arrow-left me-2"></i> Back </a>
+            <button type="reset" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-redo me-2"></i> Reset Form
+            </button>
+            <button type="submit" class="btn btn-primary btn-lg shadow-sm"> <i class="fas fa-save me-2"></i> Create
+                Course </button>
+        </div>
+    </form>
+</div>
