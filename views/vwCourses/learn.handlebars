@@ -1,0 +1,76 @@
+<div class="container-fluid mt-4">
+  <div class="row">
+    <!-- Video Player -->
+    <div class="col-md-9">
+      <div class="card">
+        <div class="card-body">
+          <h4>{{course.title}}</h4>
+          <h5 class="text-muted">{{currentLesson.title}}</h5>
+          
+          <div class="video-container mt-3">
+            <video id="player" playsinline controls class="w-100">
+              <source src="{{currentLesson.video_url}}" type="video/mp4">
+            </video>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lesson List -->
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Danh sách bài học</h5>
+        </div>
+        <div class="list-group list-group-flush">
+          {{#each lessons}}
+          <a href="/courses/learn/{{../course_id}}/{{lesson_id}}" 
+             class="list-group-item list-group-item-action 
+                    {{#if (eq lesson_id ../currentLesson.lesson_id)}}active{{/if}}">
+            <div class="d-flex w-100 justify-content-between">
+              <h6 class="mb-1">{{title}}</h6>
+              <small>{{duration}} phút</small>
+            </div>
+          </a>
+          {{/each}}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'js'}}
+<script src="https://cdn.plyr.io/3.7.2/plyr.js"></script>
+<link rel="stylesheet" href="https://cdn.plyr.io/3.7.2/plyr.css" />
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const player = new Plyr('#player', {
+      controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen']
+    });
+
+    // Track progress every 5 seconds
+    let lastUpdate = 0;
+    player.on('timeupdate', () => {
+      const now = Date.now();
+      if (now - lastUpdate >= 5000) { // Update every 5 seconds
+        const progress = (player.currentTime / player.duration) * 100;
+        
+        fetch('/courses/progress', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            course_id: {{course_id}},
+            lesson_id: {{currentLesson.lesson_id}},
+            progress: progress
+          })
+        });
+
+        lastUpdate = now;
+      }
+    });
+  });
+</script>
+{{/section}}

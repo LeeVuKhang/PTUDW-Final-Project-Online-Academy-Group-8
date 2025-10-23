@@ -5,7 +5,7 @@ import hbs_sections from 'express-handlebars-sections';
 import categoryModel from './models/category.model.js';
 import session from 'express-session';
 import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
-
+import courseRouter from './routes/courses.routes.js';
 const __dirname = import.meta.dirname;
 const app = express();
 
@@ -20,6 +20,7 @@ app.use(session({
 
 app.engine('handlebars', engine({
     helpers: {
+        section: hbs_sections(),
         fill_section: hbs_sections(),
         formatNumber(num) {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
@@ -33,15 +34,15 @@ app.engine('handlebars', engine({
             d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); 
             return d.toISOString().split('T')[0];
         },
-        isGreater (a, b) {
+        isGreater(a, b) {
             return a > b;
-          },
-        calculateDiscount (original, current) {
+        },
+        calculateDiscount(original, current) {
             if (original <= current) return 0;
             const discount = ((original - current) / original) * 100;
             return Math.round(discount);
         },
-        truncate (str, len) {
+        truncate(str, len) {
             if (str.length > len && str.length > 0) {
                 let new_str = str.substr(0, len);
                 new_str = str.substr(0, new_str.lastIndexOf(" "));
@@ -50,27 +51,39 @@ app.engine('handlebars', engine({
             }
             return str;
         },
-        renderStars: function(rating) {
+        renderStars(rating) {
             rating = parseFloat(rating);
             if (isNaN(rating) || rating < 0) return '';
             let stars = '';
             const fullStars = Math.floor(rating);
             const halfStar = rating % 1 >= 0.5;
             const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-    
+
             for (let i = 0; i < fullStars; i++) {
-                stars += '<i class="fas fa-star"></i>'; // Font Awesome full star
+                stars += '<i class="fas fa-star"></i>';
             }
             if (halfStar) {
-                stars += '<i class="fas fa-star-half-alt"></i>'; // Font Awesome half star
+                stars += '<i class="fas fa-star-half-alt"></i>';
             }
             for (let i = 0; i < emptyStars; i++) {
-                stars += '<i class="far fa-star"></i>'; // Font Awesome empty star (regular style)
+                stars += '<i class="far fa-star"></i>';
             }
             return stars;
+        },
+        substr(str, start, len) {
+            if (!str) return '';
+            return str.substring(start, start + len);
+        },
+         moment: function(date, format) {
+            if (!date) return '';
+            if (format === 'fromNow') {
+                return moment(date).fromNow();
+            }
+            return moment(date).format(format);
         }
     }
 }));
+
 
 //lấy danh mục bỏ vào chỗ dùng chung để mọi file đều dùng được
 
@@ -138,6 +151,8 @@ app.use('/products', productRouter);
 
 import instructorRouter from './routes/instructor.routes.js'
 app.use('/instructor', instructorRouter)
+
+app.use('/courses', courseRouter);
 
 //lenh cuoi cung
 app.listen(3000, () => {
