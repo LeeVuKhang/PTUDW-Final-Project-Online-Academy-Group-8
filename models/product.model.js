@@ -24,5 +24,13 @@ export default {
     },
     findAll(){
         return db('courses');
-    }
+    },
+    
+     findParents() {
+        return db('categories').whereNull('parent_id');
+    },
+    findChildren(parentId) {
+        return db('categories').where('parent_id', parentId);
+    },
+    
 }   

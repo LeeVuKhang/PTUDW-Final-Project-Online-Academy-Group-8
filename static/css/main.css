@@ -86,3 +86,33 @@
   visibility: visible;
   transform: translateX(0);
 }
+
+/* Khi rê chuột vào mục cha, hiện submenu */
+.dropdown-submenu:hover > .dropdown-menu {
+  display: block;
+  top: 0;
+  left: 100%;
+  margin-top: -1px;
+}
+
+/* Giữ submenu nổi đúng vị trí */
+.dropdown-submenu {
+  position: relative;
+}
+
+.dropdown-submenu > .dropdown-menu {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  display: none;
+  margin-top: 0;
+}
+
+.dropdown-menu {
+  transition: all 0.2s ease-in-out;
+}
+.dropdown-submenu:hover > .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
