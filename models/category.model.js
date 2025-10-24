@@ -15,6 +15,12 @@ export default {
     },
     patch(id, category) {
         return db('categories').where('catid', id).update(category);
+    },
+     findParents() {
+        return db('categories').whereNull('parent_id');
+    },
+    findChildren(parentId) {
+        return db('categories').where('parent_id', parentId);
     }
 };
 
