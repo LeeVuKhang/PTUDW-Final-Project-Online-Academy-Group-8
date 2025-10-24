@@ -4,13 +4,6 @@
     <div class="col-md-9">
       <div class="card">
         <div class="card-body">
-          <div class="mb-3 d-flex gap-2">
-            <a href="/courses/details/{{#if course}}{{course.course_id}}{{else}}{{course_id}}{{/if}}"
-               class="btn btn-outline-secondary btn-sm">
-              ← Quay lại chi tiết khóa học
-            </a>
-          </div>
-
           <h4>{{course.title}}</h4>
           <h5 class="text-muted">{{currentLesson.title}}</h5>
           
@@ -79,4 +72,11 @@
     });
   });
 </script>
+
+<div class="mb-3 d-flex gap-2">
+  <a href="/courses/details/{{#if course}}{{course.course_id}}{{else}}{{course_id}}{{/if}}"
+    class="btn btn-outline-secondary btn-sm">
+      ← Quay lại chi tiết khóa học
+  </a>
+</div>
 {{/section}}
