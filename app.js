@@ -81,16 +81,13 @@ app.engine('handlebars', engine({
     }
 }));
 
-<<<<<<< HEAD
+
 //lấy danh mục bỏ vào chỗ dùng chung để mọi file đều dùng được
 
-app.use(function (req, res, next) {
-    if (req.session.isAuthenticated) {
-=======
 app.use(function(req, res, next) {
     if (req.session.isAuthenticated){
->>>>>>> 42e85a6724419a8f0f0788083b07403d925e582c
-        res.locals.isAuthenticated = true;
+
+        re.locals.isAuthenticated = true;
         res.locals.authUser = req.session.authUser;
     }
     next();
