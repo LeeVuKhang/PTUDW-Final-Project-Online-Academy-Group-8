@@ -33,11 +33,8 @@ app.engine('handlebars', engine({
             d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); 
             return d.toISOString().split('T')[0];
         },
-        isGreater (a, b, options) { 
-            if (a > b) {
-                return options.fn(this); 
-            }
-            return options.inverse(this); 
+        isGreater(a, b) {
+        return a > b;
         },
         calculateDiscount (original, current) {
             if (original <= current) return 0;

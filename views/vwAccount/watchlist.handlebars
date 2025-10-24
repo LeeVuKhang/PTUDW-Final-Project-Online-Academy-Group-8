@@ -40,9 +40,9 @@
 
                   <div class="col-md-2 text-end">
                     <h5 class="text-dark fw-bold mb-0">{{formatNumber this.discount_price}}</h5>
-                    {{#isGreater this.price this.discount_price}}
+                    {{#if (isGreater this.price this.discount_price)}}
                       <s class="text-muted">{{formatNumber this.price}}</s>
-                    {{/isGreater}}
+                    {{/if}}
                   </div>
 
                   <div class="col-auto">
