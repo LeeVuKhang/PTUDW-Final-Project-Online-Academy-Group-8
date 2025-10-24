@@ -81,9 +81,6 @@ app.engine('handlebars', engine({
     }
 }));
 
-
-//lấy danh mục bỏ vào chỗ dùng chung để mọi file đều dùng được
-
 app.use(function(req, res, next) {
     if (req.session.isAuthenticated){
 
@@ -94,6 +91,7 @@ app.use(function(req, res, next) {
 });
 
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.set('view engine', 'handlebars');
 app.set('views', './views');
 

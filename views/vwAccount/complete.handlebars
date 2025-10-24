@@ -1,0 +1,20 @@
+<h4>Complete your profile</h4>
+<form method="post" action="/account/complete">
+  <div class="mb-3">
+    <label>Email</label>
+    <input class="form-control" value="{{email}}" disabled />
+  </div>
+  <div class="mb-3">
+    <label>Name</label>
+    <input class="form-control" name="name" value="{{name}}" required />
+  </div>
+  <div class="mb-3">
+    <label>Username (must be unique)</label>
+    <input class="form-control" name="username" placeholder="yourname" required />
+  </div>
+  <div class="mb-3">
+                <label for="txtdob" class="form-label">Day of Birth</label>
+                <input type="date" class="form-control" id="txtdob"  name = "dob" required>
+            </div>
+  <button class="btn btn-primary">Save & Continue</button>
+</form>

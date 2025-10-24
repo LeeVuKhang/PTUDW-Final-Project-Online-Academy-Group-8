@@ -1,199 +1,148 @@
-{{!-- 
-  File: views/vwInstructor/list-course.hbs
-  Mô tả: Trang danh sách khóa học dành riêng cho giảng viên.
---}}
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Khóa học của bạn</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-  <style>
-    .course-thumbnail {
-      width: 120px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 4px;
-    }
-    .list-group-item:hover {
-      background-color: #f8f9fa;
-    }
-    .filter-btn.active {
-      background-color: #0d6efd;
-      color: white;
-    }
-  </style>
-</head>
-<body class="bg-light">
-  <div class="container my-5">
+{{#fill_section 'css'}}
+.course-thumbnail {
+width: 120px;
+height: 80px;
+object-fit: cover;
+border-radius: 4px;
+}
+.list-group-item:hover {
+background-color: #f8f9fa;
+}
+{{/fill_section}}
+
+<div class="container my-5">
     <div class="card shadow-sm">
-      
-      <div class="card-header bg-white py-3">
-        <div class="d-flex justify-content-between align-items-center">
-          <h3 class="mb-0">Khóa học của tôi</h3>
-          
-          <a href="/instructor/create-course" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i> Thêm khóa học mới
-          </a>
+
+        <div class="card-header bg-white py-3">
         </div>
-      </div>
+            <form action="/instructor/courses" method="GET" id="filterForm">
+                <div class="card-body p-3 border-bottom">
+                    <div class="row g-2 align-items-center">
 
-      <div class="card-body p-3 border-bottom">
-        <div class="row g-2 align-items-center">
-          <div class="col-lg-4">
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-search"></i></span>
-              <input type="text" id="searchInput" class="form-control" placeholder="Tìm theo tên hoặc mô tả...">
-            </div>
-          </div>
-          
-          <div class="col-lg-8">
-            <div class="btn-group w-100" role="group" aria-label="Category filter">
-              <button type="button" class="btn btn-outline-secondary filter-btn active" data-category="all">
-                <i class="bi bi-grid-fill"></i> Tất cả
-              </button>
-              <button type="button" class="btn btn-outline-secondary filter-btn" data-category="programming">
-                <i class="bi bi-code-slash"></i> Lập trình
-              </button>
-              <button type="button" class="btn btn-outline-secondary filter-btn" data-category="data-science">
-                <i class="bi bi-graph-up"></i> Data Science
-              </button>
-              <button type="button" class="btn btn-outline-secondary filter-btn" data-category="design">
-                <i class="bi bi-palette"></i> Thiết kế
-              </button>
-              <button type="button" class="btn btn-outline-secondary filter-btn" data-category="marketing">
-                <i class="bi bi-megaphone"></i> Marketing
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card-body p-0">
-        <div class="list-group list-group-flush" id="courseList">
-          
-          {{#each courses}}
-          <div class="list-group-item course-item" data-category="{{this.category_slug}}">
-            <div class="row align-items-center">
-              <div class="col-auto">
-                <img src="{{this.image_url}}" 
-                     class="course-thumbnail" 
-                     alt="{{this.title}}">
-              </div>
-              <div class="col">
-                <h5 class="mb-1 course-title">{{this.title}}</h5>
-                <p class="mb-1 text-muted course-description">{{this.short_description}}</p>
-                <small class="text-muted">
-                  <span class="badge bg-primary me-2">{{this.category_name}}</span>
-                  <i>{{this.tinydes}}| </i>
-                  <i class="bi bi-people-fill"></i> {{this.student_count}} 1000 học viên | 
-                  <i class="bi bi-star-fill text-warning"></i> {{this.rating}}4.5/5.0
-                </small>
-              </div>
-              <div class="col-auto">
-                <div class="d-flex gap-2 flex-wrap justify-content-end">
-                  <a href="/instructor/reviews/{{this.id}}" class="btn btn-sm btn-outline-warning">
-                    <i class="bi bi-star"></i> Reviews
-                  </a>
-
-                  <a href="/instructor/update/{{this.course_id}}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-pencil"></i> Chỉnh sửa
-                  </a>
-                  
-                  <a href="/instructor/courses/{{this.course_id}}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-eye"></i> Chi tiết
-                  </a>
+                        <div class="col-lg-8">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="searchInput" class="form-control"
+                                    placeholder="Tìm theo tên hoặc mô tả..." name="search" 
+                                    value="{{currentSearchTerm}}"> 
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                                <select class="form-select" name="category" id="categorySelect"
+                                    aria-label="Lọc theo danh mục">
+                                    <option value="all" {{selectOption currentCategoryId 'all' }}>Tất cả danh mục
+                                    </option>
+                                    {{#each categories}}
+                                    <option value="{{this.cat_id}}" {{selectOption ../currentCategoryId this.cat_id}}>
+                                        {{this.cat_name}}
+                                    </option>
+                                    {{/each}}
+                                </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mt-2">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-funnel-fill"></i> Lọc / Tìm kiếm
+                            </button>
+                        </div>
+                    </div>
                 </div>
-              </div>
+            </form> 
+
+            {{#fill_section 'js'}}
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const categorySelect = document.getElementById('categorySelect');
+                    if (categorySelect) {
+                        categorySelect.addEventListener('change', function () {
+                            document.getElementById('filterForm').submit();
+                        });
+                    }
+                });
+            </script>
+            {{/fill_section}}
+
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush" id="courseList">
+                    {{#each courses}}
+                    <div class="list-group-item course-item" data-category="{{this.category_name}}">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <img src="{{this.image_url}}" class="course-thumbnail" alt="{{this.title}}">
+                            </div>
+                            <div class="col">
+                                <h5 class="mb-1 course-title">{{this.title}}</h5>
+                                <p class="mb-1 text-muted course-description">{{this.short_description}}</p>
+
+                                <small class="text-muted">
+                                    <span class="badge bg-primary me-2">{{this.category_name}}</span>
+                                    <i>{{this.tinydes}}| </i>
+                                    <i class="bi bi-people-fill"></i> {{this.student_count}} 1000 học viên |
+                                    <i class="bi bi-star-fill text-warning"></i> {{this.rating}}4.5/5.0
+                                </small>
+                            </div>
+                            <div class="col-auto">
+                                <div class="d-flex gap-2 flex-wrap justify-content-end">
+                                    <a href="/instructor/reviews/{{this.id}}" class="btn btn-sm btn-outline-warning">
+                                        <i class="bi bi-star"></i> Reviews
+                                    </a>
+
+                                    <a href="/instructor/update/{{this.course_id}}"
+                                        class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i> Chỉnh sửa
+                                    </a>
+
+                                    <a href="/instructor/courses/{{this.course_id}}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Chi tiết
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/each}}
+
+                    {{#unless courses.length}}
+                    <div id="noResults" class="text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-3">Không tìm thấy khóa học nào phù hợp</p>
+                    </div>
+                    {{/unless}}
+
+                </div>
             </div>
-          </div>
-          {{/each}}
-          
-        </div>
 
-        <div id="noResults" class="text-center py-5" style="display: none;">
-          <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
-          <p class="text-muted mt-3">Không tìm thấy khóa học nào phù hợp</p>
-        </div>
-      </div>
+            <div class="card-footer bg-white p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span id="courseCount" class="text-muted">
+                        Hiển thị {{courses.length}} trên tổng số {{totalCourses}} khóa học
+                    </span>
 
-      <div class="card-footer bg-white p-3">
-        <div class="d-flex justify-content-between align-items-center">
-          <span id="courseCount" class="text-muted">Tổng cộng 6 khóa học</span>
-          
-          <nav aria-label="Course pagination">
-            <ul class="pagination justify-content-end mb-0">
-              <li class="page-item disabled">
-                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
-              </li>
-              <li class="page-item active"><a class="page-link" href="#">1</a></li>
-              <li class="page-item"><a class="page-link" href="#">2</a></li>
-              <li class="page-item"><a class="page-link" href="#">3</a></li>
-              <li class="page-item"><a class="page-link" href="#">Next</a></li>
-            </ul>
-          </nav>
-        </div>
-      </div>
+                    {{#if (isGreater pagination.totalPages 1)}}
+                    <nav aria-label="Course pagination">
+                        <ul class="pagination justify-content-end mb-0">
 
+                            <li class="page-item {{#unless pagination.hasPrevPage}}disabled{{/unless}}">
+                                <a class="page-link" href="{{createPaginationLink pagination.prevPage ../queryParams}}"
+                                    tabindex="-1" aria-disabled="true">Previous</a>
+                            </li>
+                            {{#each pagination.pageNumbers}}
+                            <li class="page-item {{#if this.isCurrent}}active{{/if}}">
+                                <a class="page-link"
+                                    href="{{createPaginationLink this.value ../../queryParams}}">{{this.value}}</a>
+                            </li>
+                            {{/each}}
+
+                            <li class="page-item {{#unless pagination.hasNextPage}}disabled{{/unless}}">
+                                <a class="page-link"
+                                    href="{{createPaginationLink pagination.nextPage ../queryParams}}">Next</a>
+                            </li>
+
+                        </ul>
+                    </nav>
+                    {{/if}}
+                </div>
+            </div>
     </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const filterButtons = document.querySelectorAll('.filter-btn');
-      const searchInput = document.getElementById('searchInput');
-      const courseItems = document.querySelectorAll('.course-item');
-      const noResults = document.getElementById('noResults');
-      const courseCount = document.getElementById('courseCount');
-      let currentCategory = 'all';
-
-      // Hàm cập nhật danh sách (lọc và tìm kiếm)
-      function updateCourseList() {
-        const searchTerm = searchInput.value.toLowerCase();
-        
-        let visibleCount = 0;
-        
-        courseItems.forEach(item => {
-          const category = item.getAttribute('data-category');
-          const title = item.querySelector('.course-title').textContent.toLowerCase();
-          const description = item.querySelector('.course-description').textContent.toLowerCase();
-
-          const categoryMatch = (currentCategory === 'all' || category === currentCategory);
-          const searchMatch = (title.includes(searchTerm) || description.includes(searchTerm));
-
-          if (categoryMatch && searchMatch) {
-            item.style.display = '';
-            visibleCount++;
-          } else {
-            item.style.display = 'none';
-          }
-        });
-
-        // Cập nhật thông báo
-        noResults.style.display = (visibleCount === 0) ? 'block' : 'none';
-        courseCount.textContent = `Hiển thị ${visibleCount} khóa học`;
-      }
-
-      // Gán sự kiện cho các nút lọc
-      filterButtons.forEach(button => {
-        button.addEventListener('click', function() {
-          currentCategory = this.getAttribute('data-category');
-          
-          // Cập nhật nút active
-          filterButtons.forEach(btn => btn.classList.remove('active'));
-          this.classList.add('active');
-          
-          updateCourseList();
-        });
-      });
-
-      // Gán sự kiện cho ô tìm kiếm
-      searchInput.addEventListener('keyup', updateCourseList);
-
-      // Cập nhật số lượng ban đầu
-      updateCourseList();
-    });
-  </script>
-</body>
+</div>
