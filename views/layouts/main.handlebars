@@ -6,17 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CourseCademy</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+
     integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
 {{!--   
   <script src="https://cdn.tailwindcss.com"></script> --}}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="/static/css/main.css">
   <link rel="stylesheet" href="/static/css/home.css">
   {{{_sections.stylesheet}}}
   <style>
       {{{_sections.css}}}
   </style>
+  <script>
+  window.SUPABASE_URL = 'https://ezfycqjmcogueofgdxyc.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6ZnljcWptY29ndWVvZmdkeHljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDkzNzAsImV4cCI6MjA3NTgyNTM3MH0.XyO5GRMb8Z3W1w-WzBoJd2A4mALc2CkLIARjxS9cyso';
+  window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
 </head>
 
 <body>
@@ -56,12 +63,19 @@
 
         <form id="frmSignout" action="/account/signout" method="post"></form>
         <li class="nav-item d-flex align-items-center">
+          {{#if authUser}}
+          <span class="me-3">Hello, {{authUser.name}}</span>
+          <button class="btn btn-outline-danger me-2 px-3 py-1" form="frmSignout">
+            Sign Out
+          </button>
+          {{else}}
           <a class="btn btn-outline-primary me-2 px-3 py-1" href="/account/signin">
             Sign In
           </a>
           <a class="btn btn-primary px-3 py-1" href="/account/signup">
             Sign Up
           </a>
+          {{/if}}
         </li>
       </div>
   </nav>
