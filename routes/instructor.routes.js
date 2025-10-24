@@ -9,10 +9,49 @@ router.get('/', (req, res) => {
 });
 
 router.get('/courses', async (req, res) => {
-    const list = await courseModels.findAll()
+    const LIMIT = 5;
+    let page = +req.query.page || 1;
+    if (page < 1) page = 1;
+
+    const categoryId = req.query.category || 'all';
+    const searchTerm = req.query.search || '';
+
+    const offset = (page - 1) * LIMIT;
+    const totalResult = await courseModels.countAll(categoryId, searchTerm);
+    const totalCourses = totalResult.total;
+    const totalPages = Math.ceil(totalCourses / LIMIT);
+
+    const pageNumbers = [];
+    for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push({
+            value: i,
+            isCurrent: i === page
+        });
+    }
+
+    const list = await courseModels.findAll(LIMIT, offset, categoryId, searchTerm);
+    const categories = await categoryModel.findAll();
+
     res.render('vwInstructor/list-course', {
-        courses: list
-    })
+        courses: list,
+        categories: categories,
+        
+        pagination: {
+            page: page,
+            totalPages: totalPages,
+            pageNumbers: pageNumbers,
+            hasPrevPage: page > 1,
+            hasNextPage: page < totalPages,
+            prevPage: page - 1,
+            nextPage: page + 1
+        },
+        totalCourses: totalCourses,
+        
+        currentCategoryId: categoryId,
+        currentSearchTerm: searchTerm,
+        
+        queryParams: req.query 
+    });
 });
 
 router.get('/create-course', async (req, res) => {
