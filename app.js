@@ -1,12 +1,13 @@
-// console.log("Hello, World! This is my first Node.js app.");
+// app.js (đã hợp nhất)
 import express from 'express';
 import { engine } from 'express-handlebars';
 import hbs_sections from 'express-handlebars-sections';
 import session from 'express-session';
 import moment from 'moment';
-import Handlebars from 'handlebars'; // ✅ THÊM DÒNG NÀY
+import Handlebars from 'handlebars';
 
 import categoryModel from './models/category.model.js';
+import * as courseModel from './models/course.model.js';
 import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
 
 import courseRouter from './routes/courses.routes.js';
@@ -18,6 +19,7 @@ import instructorRouter from './routes/instructor.routes.js';
 const __dirname = import.meta.dirname;
 const app = express();
 
+// Cấu hình session
 app.set('trust proxy', 1);
 app.use(session({
   secret: 'skibidiahjdwadlwadluiasigma',
@@ -26,32 +28,40 @@ app.use(session({
   cookie: { secure: false }
 }));
 
+// Thiết lập handlebars
 app.engine('handlebars', engine({
   helpers: {
     section: hbs_sections(),
     fill_section: hbs_sections(),
+
+    // Định dạng tiền tệ VND
     formatNumber(num) {
       if (typeof num !== 'number') num = parseFloat(num);
-      if (isNaN(num)) return '$0.00';
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+      if (isNaN(num)) return '₫0';
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
     },
+
     eq(a, b) {
       return a === b;
     },
+
     formatDate(date) {
       if (!date) return '';
       const d = new Date(date);
       d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
       return d.toISOString().split('T')[0];
     },
+
     isGreater(a, b) {
       return a > b;
     },
+
     calculateDiscount(original, current) {
       if (original <= current) return 0;
       const discount = ((original - current) / original) * 100;
       return Math.round(discount);
     },
+
     truncate(str, len) {
       if (!str) return '';
       if (str.length > len && str.length > 0) {
@@ -62,6 +72,8 @@ app.engine('handlebars', engine({
       }
       return str;
     },
+
+    // Hiển thị sao (rating)
     renderStars(rating) {
       rating = parseFloat(rating);
       if (isNaN(rating) || rating < 0) return '';
@@ -74,26 +86,39 @@ app.engine('handlebars', engine({
       if (halfStar) stars += '<i class="fas fa-star-half-alt text-warning"></i>';
       for (let i = 0; i < emptyStars; i++) stars += '<i class="far fa-star text-warning"></i>';
 
-      // ✅ SỬA Ở ĐÂY: Handlebars.SafeString để render HTML an toàn
       return new Handlebars.SafeString(stars);
     },
+
+    // Hàm bổ sung từ bản GitHub
     substr(str, start, len) {
       if (!str) return '';
       return str.substring(start, start + len).toUpperCase();
     },
+
     moment(date, format) {
       if (!date) return '';
-      if (format === 'fromNow') {
-        return moment(date).fromNow();
-      }
+      if (format === 'fromNow') return moment(date).fromNow();
       return moment(date).format(format);
+    },
+
+    // Giúp chọn option trong select
+    selectOption(selectedValue, optionValue) {
+      return String(selectedValue) === String(optionValue) ? 'selected' : '';
+    },
+
+    // Tạo link phân trang
+    createPaginationLink(page, queryParams) {
+      const params = new URLSearchParams(queryParams);
+      params.set('page', page);
+      return '?' + params.toString();
     }
   },
   allowProtoPropertiesByDefault: true,
   allowProtoMethodsByDefault: true
 }));
 
-app.use(function (req, res, next) {
+// Middleware gán session vào res.locals
+app.use((req, res, next) => {
   if (req.session.isAuthenticated) {
     res.locals.isAuthenticated = true;
     res.locals.authUser = req.session.authUser;
@@ -101,21 +126,36 @@ app.use(function (req, res, next) {
   next();
 });
 
+// Cấu hình Express
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.set('view engine', 'handlebars');
 app.set('views', './views');
-app.use("/static", express.static('static'));
+app.use('/static', express.static('static'));
 
-app.get('/', (req, res) => {
+// Chia mảng thành nhóm (cho giao diện home)
+function chunkArray(array, size) {
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
+}
+
+// Trang chủ – hiển thị dữ liệu thật từ courseModel
+app.get('/', async (req, res) => {
   if (req.session.isAuthenticated) {
     console.log('User is authenticated');
     console.log(req.session.authUser);
   }
-  res.render('home');
+  const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4);
+  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4);
+  res.render('home', { newestCourses, mostViewsCourses });
 });
 
-app.get('/home', (req, res) => res.render('home'));
+app.get('/home', (req, res) => res.redirect('/'));
 
+// Các route “About”
 app.get('/about-my-team', (req, res) => res.sendFile(__dirname + '/about-my-team.html'));
 app.get('/about-lvk', (req, res) => res.sendFile(__dirname + '/about-lvk.html'));
 app.get('/about-vhn', (req, res) => res.sendFile(__dirname + '/about-vhn.html'));
@@ -124,12 +164,14 @@ app.get('/about-nngn', (req, res) => res.sendFile(__dirname + '/about-nngn.html'
 app.get('/about-ntc', (req, res) => res.sendFile(__dirname + '/about-ntc.html'));
 app.get('/about-nhhl', (req, res) => res.sendFile(__dirname + '/about-nhhl.html'));
 
+// Gắn các router
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
 app.use('/products', productRouter);
 app.use('/instructor', instructorRouter);
 app.use('/courses', courseRouter);
 
+// Khởi động server
 app.listen(3000, () => {
   console.log('✅ Server is running on http://localhost:3000');
 });

@@ -74,7 +74,7 @@ router.get("/details/:id", async (req, res) => {
     .where("course_id", course_id)
     .select("users.name", "ratings.value", "ratings.comment");
 
-  res.render("vwCourses/details", {
+  res.render("vwCourses/course_detail", {
     layout: "main",
     course,
     lessons,
