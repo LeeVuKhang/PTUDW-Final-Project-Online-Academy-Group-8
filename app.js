@@ -1,4 +1,3 @@
-// app.js (đã hợp nhất)
 import express from 'express';
 import { engine } from 'express-handlebars';
 import hbs_sections from 'express-handlebars-sections';

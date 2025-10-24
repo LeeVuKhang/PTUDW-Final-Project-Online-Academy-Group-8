@@ -22,6 +22,20 @@
       }) --}}
     }
     document.querySelector('#frmSignin').addEventListener('submit', handleSubmit);
+
+
+
+     document.getElementById('btnGoogle')?.addEventListener('click', async () => {
+    const redirectTo = `${window.location.origin}/account/oauth-done`;
+    const { data, error } = await window.supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo }
+    });
+    if (error) {
+      alert('Google sign-in failed');
+      console.error(error);
+    }
+  });
   </script>
 {{/fill_section}}
 
@@ -42,13 +56,10 @@
       </form>
       <div class="text-center my-2 text-muted">or</div>
       <div class="d-grid gap-2 mb-2">
-        <a href="#" class="btn btn-outline-danger w-100">
-          <i class="bi bi-google"></i> Sign in with Google
-        </a>
-        <a href="#" class="btn btn-outline-primary w-100">
-          <i class="bi bi-facebook"></i> Sign in with Facebook
-        </a>
-      </div>
+  <button type="button" class="btn btn-outline-danger w-100" id="btnGoogle">
+    <i class="bi bi-google"></i> Sign in with Google
+  </button>
+</div>
       <div class="text-center">
         <small>Don't have an account? <a href="/account/signup">Register</a></small>
       </div>

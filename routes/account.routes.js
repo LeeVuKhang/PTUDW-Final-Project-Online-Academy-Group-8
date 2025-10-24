@@ -1,7 +1,11 @@
 import express from 'express';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import userModel from '../models/user.model.js';
-import { checkAuthenticated  } from '../models/auth.model.js';
+import { checkAuthenticated } from '../models/auth.model.js';
+
 const router = express.Router();
+
 
 
 router.get('/signup', (req, res) => {
@@ -10,8 +14,6 @@ router.get('/signup', (req, res) => {
 router.get('/signin', (req, res) => {
     res.render('vwAccount/signin');
 });
-
-import bcrypt from 'bcryptjs';
 
 router.post('/signup', async (req, res) => {
     const hash_password = bcrypt.hashSync(req.body.password, 10);
@@ -25,24 +27,23 @@ router.post('/signup', async (req, res) => {
     }
 
     await userModel.add(user);
-    res.render('vwAccount/signup');
+    res.redirect('signin');
+    console.log(user);
 });
 
 
 router.post('/signin', async (req, res) => {
     const user = await userModel.findByUsername(req.body.username);
+    if (!user) return res.redirect('signin');
     const matchPassword = bcrypt.compareSync(req.body.password, user.password)
-    if (matchPassword == false){
-        return res.redirect('signin');
-        
-    }
+    if (!matchPassword) return res.redirect('signin');
 
     req.session.isAuthenticated = true;
     req.session.authUser = user;
 
-    const reUrl = req.session.reUrl || '/';
-    delete req.session.reUrl;
-    return res.redirect(reUrl);
+    const retUrl = req.session.retUrl || '/';
+    delete req.session.retUrl;
+    return res.redirect(retUrl);
 });
 
 router.post('/signout', async (req, res) => {
@@ -102,6 +103,87 @@ router.post('/change-pwd', checkAuthenticated, async (req, res) => {
     }
 
     await userModel.patch(id, user);
-    res.render('vwAccount/signup');
+    req.session.authUser.password = hash_password;
+    return res.redirect('/account/profile');
 })
+router.post('/sync', async (req, res) => {
+    
+  try {
+    if (!req.body || typeof req.body !== 'object') {
+      return res.status(400).json({ ok: false, message: 'Missing JSON body' });
+    }
+    const { email, name, supabase_uid } = req.body;
+    if (!email) {
+      return res.status(400).json({ ok: false, message: 'Missing email' });
+    }
+
+    const existing = await userModel.findByEmail(email);
+    if (existing) {
+      req.session.isAuthenticated = true;
+      req.session.authUser = existing;
+      const retUrl = req.session.retUrl || '/';
+      delete req.session.retUrl;
+      return res.json({ ok: true, redirect: retUrl });
+    }
+
+    
+    req.session.pendingSocial = { email, name: name || '', supabase_uid };
+    return res.json({ ok: false, needSignup: true, redirect: '/account/complete' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, message: 'Server error' });
+  }
+});
+
+router.get('/oauth-done', (req, res) => {
+  res.render('vwAccount/oauth-done');
+});
+router.get('/complete', (req, res) => {
+  const pending = req.session.pendingSocial;
+  if (!pending) return res.redirect('/account/signin');
+  res.render('vwAccount/complete', { email: pending.email, name: pending.name });
+});
+router.post('/complete', async (req, res) => {
+  try {
+    const pending = req.session.pendingSocial;
+    if (!pending) return res.redirect('/account/signin');
+
+    const { username, name } = req.body;
+    let finalUsername = (username || '').trim();
+    if (!finalUsername) finalUsername = pending.email;
+
+    let suffix = 1;
+    while (await userModel.findByUsername(finalUsername)) {
+      finalUsername = `${(username || 'user')}${suffix++}`;
+    }
+
+    const randomPwd = crypto.randomBytes(16).toString('hex');
+    const hash_password = bcrypt.hashSync(randomPwd, 10);
+
+    const newUser = {
+      username: finalUsername,
+      password: hash_password,
+      name: (name || pending.name || '').trim(),
+      email: pending.email,
+      role: 1,
+    };
+
+    
+    const ids = await userModel.add(newUser);
+    const newId = Array.isArray(ids) ? ids[0] : ids;
+    const user = { ...newUser, user_id: newId, id: newId };
+
+    req.session.isAuthenticated = true;
+    req.session.authUser = user;
+    req.session.pendingSocial = null;
+
+    const retUrl = req.session.retUrl || '/';
+    delete req.session.retUrl;
+    return res.redirect(retUrl);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).render('403');
+  }
+});
+
 export default router;

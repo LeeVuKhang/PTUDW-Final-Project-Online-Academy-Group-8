@@ -55,7 +55,7 @@
     </div>
 </div>
 
-<section class="container-fluid my-5 px-5">
+<section class="container-fluid mt-5 px-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold">✨ Khóa học nổi bật trong tuần</h3>
         <a href="/courses" class="btn btn-outline-primary px-4 rounded-pill">Xem tất cả</a>
@@ -63,7 +63,7 @@
     <div class="row g-4 mb-3">
         <!-- Card 1 -->
         <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
+            <div class="card h-100 border-1 shadow-sm rounded-4 course-card">
                 <img src="https://picsum.photos/400/250?random=11" class="card-img-top" alt="course1">
                 <div class="card-body">
                     <h5 class="card-title fw-semibold">Lập trình Web cơ bản</h5>
@@ -130,15 +130,18 @@
                 </div>
             </div>
         </div>
+        <div class="px-5">
+            <h3 class="border-bottom mt-5"></h3>
+        </div>
     </div>
 </section>
 
 <!-- ====== Đánh giá ====== -->
-<section class="container my-5 px-5">
+<section class="container my-3 px-5">
     <h3 class="fw-bold mb-4 text-center">💬 Đánh giá từ học viên</h3>
     <div class="row g-4">
         <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 rounded-4 p-3">
+            <div class="card h-100 shadow-sm border-1 rounded-4 p-3">
                 <div class="d-flex align-items-center mb-3">
                     <img src="https://i.pravatar.cc/80?img=1" alt="avatar" class="rounded-circle me-3" width="60"
                         height="60">
@@ -157,7 +160,7 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 rounded-4 p-3">
+            <div class="card h-100 shadow-sm border-1 rounded-4 p-3">
                 <div class="d-flex align-items-center mb-3">
                     <img src="https://i.pravatar.cc/80?img=5" alt="avatar" class="rounded-circle me-3" width="60"
                         height="60">
@@ -176,7 +179,7 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-0 rounded-4 p-3">
+            <div class="card h-100 shadow-sm border-1 rounded-4 p-3">
                 <div class="d-flex align-items-center mb-3">
                     <img src="https://i.pravatar.cc/80?img=7" alt="avatar" class="rounded-circle me-3" width="60"
                         height="60">
@@ -193,192 +196,123 @@
                 </div>
             </div>
         </div>
+        <div class="px-5">
+            <h3 class="border-bottom mt-5"></h3>
+        </div>
     </div>
 </section>
 
 <!-- ====== KHÓA HỌC XEM NHIỀU NHẤT ====== -->
 
-<section class="container my-5 px-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+<section class="container my-3 px-5">
+    <div class="d-flex justify-content-between align-items-center mb-2">
         <h3 class="fw-bold text-primary">🔥 Khóa học được xem nhiều nhất</h3>
         <a href="/courses" class="btn btn-outline-primary px-4 rounded-pill">Xem tất cả</a>
     </div>
-
-    <div id="topViewedCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div id="mostViewsCoursesCarousel" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-inner">
-            <!-- Slide 1 -->
-            <div class="carousel-item active">
-                <div class="row g-4">
-                    <!-- Card 1 -->
-                    <div class="col-md-3 col-sm-6">
-                        <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                            <img src="https://picsum.photos/400/250?random=21" class="card-img-top" alt="course1">
+            {{#each mostViewsCourses}}
+            <div class="carousel-item {{#if @first}}active{{/if}}">
+                <div class="row g-3">
+                    {{#each this}}
+                    <div class="col-md-3 col-sm-4">
+                        <div class="card h-100 border-1 shadow-sm course-card">
+                            <img src="{{#if image_url}}{{image_url}}{{else}}https://picsum.photos/400/250?random={{course_id}}{{/if}}"
+                                class="card-img-top" alt="{{title}}">
                             <div class="card-body">
-                                <h6 class="fw-semibold">ReactJS từ cơ bản đến nâng cao</h6>
-                                <p class="text-muted small mb-1">Giảng viên: Nguyễn Thanh Bình</p>
-                                <p class="fw-bold text-primary">699.000đ</p>
+                                <h6 class="fw-semibold text-truncate">{{title}}</h6>
+                                <p class="text-muted small mb-1">
+                                    Lĩnh vực: {{#if category_name}}{{category_name}}{{else}}Chưa phân loại{{/if}}<br>
+                                    Giảng viên: {{#if instructor_name}}{{instructor_name}}{{else}}Đang cập
+                                    nhật{{/if}}<br>
+                                    Lượt xem: {{views}}
+                                </p>
+                                <p class="fw-bold text-success mb-0">
+                                    {{formatNumber discount_price}}
+                                    {{#if discount_price}}
+                                    <span class="text-decoration-line-through text-muted small">
+                                        {{formatNumber price}}
+                                    </span>
+                                    {{/if}}
+                                </p>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Card 2 -->
-                    <div class="col-md-3 col-sm-6">
-                        <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                            <img src="https://picsum.photos/400/250?random=22" class="card-img-top" alt="course2">
-                            <div class="card-body">
-                                <h6 class="fw-semibold">Phân tích dữ liệu với Python</h6>
-                                <p class="text-muted small mb-1">Giảng viên: Lê Minh Quân</p>
-                                <p class="fw-bold text-primary">599.000đ</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 3 -->
-                    <div class="col-md-3 col-sm-6">
-                        <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                            <img src="https://picsum.photos/400/250?random=23" class="card-img-top" alt="course3">
-                            <div class="card-body">
-                                <h6 class="fw-semibold">UI/UX Design cho người mới bắt đầu</h6>
-                                <p class="text-muted small mb-1">Giảng viên: Trần Ngọc Bảo</p>
-                                <p class="fw-bold text-primary">499.000đ</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 4 -->
-                    <div class="col-md-3 col-sm-6">
-                        <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                            <img src="https://picsum.photos/400/250?random=24" class="card-img-top" alt="course4">
-                            <div class="card-body">
-                                <h6 class="fw-semibold">SQL & Quản lý CSDL chuyên sâu</h6>
-                                <p class="text-muted small mb-1">Giảng viên: Đỗ Thị Phương</p>
-                                <p class="fw-bold text-primary">399.000đ</p>
-                            </div>
-                        </div>
-                    </div>
+                    {{/each}}
                 </div>
             </div>
-            <!-- Slide 2 -->
-            <div class="carousel-item">
-                <div class="row g-4">
-                    <!-- Card 1 -->
-                    <div class="col-md-3 col-sm-6">
-                        <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                            <img src="https://picsum.photos/400/250?random=21" class="card-img-top" alt="course1">
-                            <div class="card-body">
-                                <h6 class="fw-semibold">ReactJS từ cơ bản đến nâng cao</h6>
-                                <p class="text-muted small mb-1">Giảng viên: Nguyễn Thanh Bình</p>
-                                <p class="fw-bold text-primary">699.000đ</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 2 -->
-                    <div class="col-md-3 col-sm-6">
-                        <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                            <img src="https://picsum.photos/400/250?random=22" class="card-img-top" alt="course2">
-                            <div class="card-body">
-                                <h6 class="fw-semibold">Phân tích dữ liệu với Python</h6>
-                                <p class="text-muted small mb-1">Giảng viên: Lê Minh Quân</p>
-                                <p class="fw-bold text-primary">599.000đ</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 3 -->
-                    <div class="col-md-3 col-sm-6">
-                        <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                            <img src="https://picsum.photos/400/250?random=23" class="card-img-top" alt="course3">
-                            <div class="card-body">
-                                <h6 class="fw-semibold">UI/UX Design cho người mới bắt đầu</h6>
-                                <p class="text-muted small mb-1">Giảng viên: Trần Ngọc Bảo</p>
-                                <p class="fw-bold text-primary">499.000đ</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card 4 -->
-                    <div class="col-md-3 col-sm-6">
-                        <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                            <img src="https://picsum.photos/400/250?random=24" class="card-img-top" alt="course4">
-                            <div class="card-body">
-                                <h6 class="fw-semibold">SQL & Quản lý CSDL chuyên sâu</h6>
-                                <p class="text-muted small mb-1">Giảng viên: Đỗ Thị Phương</p>
-                                <p class="fw-bold text-primary">399.000đ</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Nút điều hướng -->
-            <button class="carousel-control-prev" type="button" data-bs-target="#topViewedCarousel"
-                data-bs-slide="prev">
-                <span class="carousel-control-prev-icon"></span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#topViewedCarousel"
-                data-bs-slide="next">
-                <span class="carousel-control-next-icon"></span>
-            </button>
+            {{/each}}
         </div>
+
+        <!-- Nút điều hướng -->
+        <button class="carousel-control-prev custom-control" type="button" data-bs-target="#mostViewsCoursesCarousel"
+            data-bs-slide="prev">
+            <span class="carousel-control-prev-icon custom-icon"></span>
+        </button>
+        <button class="carousel-control-next custom-control" type="button" data-bs-target="#mostViewsCoursesCarousel"
+            data-bs-slide="next">
+            <span class="carousel-control-next-icon custom-icon"></span>
+        </button>
+    </div>
+    <div class="px-5">
+        <h3 class="border-bottom mt-5"></h3>
     </div>
 </section>
 
 <!-- ====== KHÓA HỌC MỚI NHẤT ====== -->
-<section class="container my-5 px-5">
+<section class="container my-3 px-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold text-success">🆕 Khóa học mới nhất</h3>
         <a href="/courses" class="btn btn-outline-success px-4 rounded-pill">Khám phá</a>
     </div>
 
-    <div class="row g-4">
-        <!-- Card 1 -->
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                <img src="https://picsum.photos/400/250?random=31" class="card-img-top" alt="course1">
-                <div class="card-body">
-                    <h6 class="fw-semibold">Nhập môn Trí tuệ nhân tạo (AI)</h6>
-                    <p class="text-muted small mb-1">Giảng viên: Phạm Văn Dũng</p>
-                    <p class="fw-bold text-success">799.000đ</p>
+    <div id="newestCoursesCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner">
+            {{#each newestCourses}}
+            <div class="carousel-item {{#if @first}}active{{/if}}">
+                <div class="row g-3">
+                    {{#each this}}
+                    <div class="col-md-3 col-sm-4">
+                        <div class="card h-100 border-1 shadow-sm course-card">
+                            <img src="{{#if image_url}}{{image_url}}{{else}}https://picsum.photos/400/250?random={{course_id}}{{/if}}"
+                                class="card-img-top" alt="{{title}}">
+                            <div class="card-body">
+                                <h6 class="fw-semibold text-truncate">{{title}}</h6>
+                                <p class="text-muted small mb-1">
+                                    Lĩnh vực: {{#if category_name}}{{category_name}}{{else}}Chưa phân loại{{/if}}<br>
+                                    Giảng viên: {{#if instructor_name}}{{instructor_name}}{{else}}Đang cập
+                                    nhật{{/if}}<br>
+                                    Lượt xem: {{views}}
+                                </p>
+                                <p class="fw-bold text-success mb-0">
+                                    {{formatNumber discount_price}}
+                                    {{#if discount_price}}
+                                    <span class="text-decoration-line-through text-muted small">
+                                        {{formatNumber price}}
+                                    </span>
+                                    {{/if}}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {{/each}}
                 </div>
             </div>
+            {{/each}}
         </div>
 
-        <!-- Card 2 -->
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                <img src="https://picsum.photos/400/250?random=32" class="card-img-top" alt="course2">
-                <div class="card-body">
-                    <h6 class="fw-semibold">Thiết kế đồ họa với Canva Pro</h6>
-                    <p class="text-muted small mb-1">Giảng viên: Nguyễn Hồng Ánh</p>
-                    <p class="fw-bold text-success">349.000đ</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                <img src="https://picsum.photos/400/250?random=33" class="card-img-top" alt="course3">
-                <div class="card-body">
-                    <h6 class="fw-semibold">Phát triển game với Unity</h6>
-                    <p class="text-muted small mb-1">Giảng viên: Đặng Khánh Lâm</p>
-                    <p class="fw-bold text-success">999.000đ</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-0 shadow-sm rounded-4 course-card">
-                <img src="https://picsum.photos/400/250?random=34" class="card-img-top" alt="course4">
-                <div class="card-body">
-                    <h6 class="fw-semibold">Excel nâng cao cho dân văn phòng</h6>
-                    <p class="text-muted small mb-1">Giảng viên: Lê Hữu Thắng</p>
-                    <p class="fw-bold text-success">299.000đ</p>
-                </div>
-            </div>
-        </div>
+        <!-- Nút điều hướng -->
+        <button class="carousel-control-prev custom-control" type="button" data-bs-target="#newestCoursesCarousel"
+            data-bs-slide="prev">
+            <span class="carousel-control-prev-icon custom-icon"></span>
+        </button>
+        <button class="carousel-control-next custom-control" type="button" data-bs-target="#newestCoursesCarousel"
+            data-bs-slide="next">
+            <span class="carousel-control-next-icon custom-icon"></span>
+        </button>
+    </div>
+    <div class="px-5">
+        <h3 class="border-bottom mt-5"></h3>
     </div>
 </section>
 
@@ -390,7 +324,7 @@
 
     <div class="row g-4 justify-content-center">
         <div class="col-md-3 col-sm-6">
-            <div class="card text-center border-0 shadow-sm rounded-4 py-4">
+            <div class="card text-center border-1 shadow-sm rounded-4 py-4">
                 <div class="card-body">
                     <i class="bi bi-code-slash fs-1 text-warning mb-3"></i>
                     <h5 class="fw-semibold">Lập trình Web</h5>
@@ -400,7 +334,7 @@
         </div>
 
         <div class="col-md-3 col-sm-6">
-            <div class="card text-center border-0 shadow-sm rounded-4 py-4">
+            <div class="card text-center border-1 shadow-sm rounded-4 py-4">
                 <div class="card-body">
                     <i class="bi bi-bar-chart fs-1 text-warning mb-3"></i>
                     <h5 class="fw-semibold">Phân tích dữ liệu</h5>
@@ -410,7 +344,7 @@
         </div>
 
         <div class="col-md-3 col-sm-6">
-            <div class="card text-center border-0 shadow-sm rounded-4 py-4">
+            <div class="card text-center border-1 shadow-sm rounded-4 py-4">
                 <div class="card-body">
                     <i class="bi bi-brush fs-1 text-warning mb-3"></i>
                     <h5 class="fw-semibold">Thiết kế đồ họa</h5>
@@ -420,7 +354,7 @@
         </div>
 
         <div class="col-md-3 col-sm-6">
-            <div class="card text-center border-0 shadow-sm rounded-4 py-4">
+            <div class="card text-center border-1 shadow-sm rounded-4 py-4">
                 <div class="card-body">
                     <i class="bi bi-robot fs-1 text-warning mb-3"></i>
                     <h5 class="fw-semibold">Trí tuệ nhân tạo</h5>
