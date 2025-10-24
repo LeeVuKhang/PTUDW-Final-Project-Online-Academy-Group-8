@@ -1,0 +1,22 @@
+<h4>Signing you in...</h4>
+<script>
+  (async () => {
+    const { data: { user }, error } = await window.supabase.auth.getUser();
+    if (error || !user) { window.location = '/account/signin'; return; }
+
+    const email = user.email;
+    const name =
+      user?.user_metadata?.full_name ||
+      user?.identities?.[0]?.identity_data?.name || '';
+
+    const res = await fetch('/account/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, supabase_uid: user.id })
+    });
+    const out = await res.json();
+    if (out.ok)      window.location = out.redirect || '/';
+    else if (out.needSignup) window.location = out.redirect;
+    else             window.location = '/account/signin';
+  })();
+</script>

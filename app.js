@@ -1,4 +1,3 @@
-//console.log("Hello, World! This is my first Node.js app.");
 import express from 'express';
 import { engine } from 'express-handlebars';
 import hbs_sections from 'express-handlebars-sections';
@@ -75,11 +74,14 @@ app.engine('handlebars', engine({
         },
         selectOption (selectedValue, optionValue) {
             return String(selectedValue) === String(optionValue) ? 'selected' : '';
+        },
+        createPaginationLink: function(page, queryParams) {
+            const params = new URLSearchParams(queryParams);
+            params.set('page', page);
+            return '?' + params.toString();
         }
     }
 }));
-
-//lấy danh mục bỏ vào chỗ dùng chung để mọi file đều dùng được
 
 app.use(function(req, res, next) {
     if (req.session.isAuthenticated){
@@ -90,6 +92,7 @@ app.use(function(req, res, next) {
 });
 
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.set('view engine', 'handlebars');
 app.set('views', './views');
 
@@ -120,10 +123,6 @@ app.get('/', async (req, res) => {
     });
 });
 
-
-//signup
-
-
 import accountRouter from './routes/account.routes.js';
 app.use('/account', accountRouter);
 
@@ -137,7 +136,7 @@ app.use('/products', productRouter);
 import instructorRouter from './routes/instructor.routes.js'
 app.use('/instructor', instructorRouter)
 
-//lenh cuoi cung
+
 app.listen(3000, () => {
   console.log('Server is running on http://localhost:3000');
 });
