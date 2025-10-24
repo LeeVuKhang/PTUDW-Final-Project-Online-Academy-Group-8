@@ -9,18 +9,26 @@ export default {
     },
     add(category) {
         return db('categories').insert(category);
-    }, 
+    },
     del(id) {
         return db('categories').where('catid', id).del();
     },
     patch(id, category) {
         return db('categories').where('catid', id).update(category);
     },
-     findParents() {
+    findParents() {
         return db('categories').whereNull('parent_id');
     },
     findChildren(parentId) {
         return db('categories').where('parent_id', parentId);
+    },
+    findParentsWithChildren: async function () {
+        const parents = await db('categories').whereNull('parent_id');
+        for (const parent of parents) {
+            const children = await db('categories').where('parent_id', parent.cat_id);
+            parent.children = children;
+        }
+        return parents;
     }
 };
 

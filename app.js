@@ -130,6 +130,17 @@ app.get('/', async (req, res) => {
     });
 });
 
+app.use(async (req, res, next) => {
+  const parents = await categoryModel.findParents();
+
+    // Lấy children cho mỗi parent
+    for (const parent of parents) {
+      parent.children = await categoryModel.findChildren(parent.cat_id);
+    }
+  res.locals.parents = parents;
+  next();
+});
+
 import accountRouter from './routes/account.routes.js';
 app.use('/account', accountRouter);
 

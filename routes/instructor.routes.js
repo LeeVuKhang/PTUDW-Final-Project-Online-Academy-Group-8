@@ -30,7 +30,7 @@ router.get('/courses', async (req, res) => {
     }
 
     const list = await courseModels.findAll(LIMIT, offset, categoryId, searchTerm);
-    const categories = await categoryModel.findAll();
+    const categories = await categoryModel.findParentsWithChildren();
 
     res.render('vwInstructor/list-course', {
         courses: list,
