@@ -168,8 +168,8 @@ router.post("/checkout/:id", checkAuthenticated, async (req, res) => {
       status: "enrolled",
     });
   }
-
-  res.redirect(`/courses/learn/${course_id}`);
+  await db("cart_items").where({ course_id, student_id }).delete();
+  res.redirect(`/courses/my-courses`);
 });
 
 /*Thêm vào giỏ hàng*/
@@ -231,6 +231,38 @@ router.post("/cart/checkout", checkAuthenticated, async (req, res) => {
 
   res.redirect("/courses/my-courses");
 });
+
+/*Thanh toán riêng một khóa học trong giỏ hàng*/
+router.post("/cart/checkout/:id", checkAuthenticated, async (req, res) => {
+  const course_id = req.params.id;
+  const student_id = req.session.authUser.user_id;
+
+  try {
+    // Kiểm tra xem đã mua chưa
+    const exists = await db("enrollments")
+      .where({ course_id, student_id })
+      .first();
+
+    if (!exists) {
+      await db("enrollments").insert({
+        student_id,
+        course_id,
+        erm_date: new Date(),
+        progress: 0,
+        status: "enrolled",
+      });
+    }
+
+    // Xóa khỏi giỏ hàng sau khi thanh toán
+    await db("cart_items").where({ course_id, student_id }).delete();
+
+    res.redirect("/courses/my-courses");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Lỗi khi thanh toán khóa học!");
+  }
+});
+
 
 /*Trang liệt kê tất cả khóa học đã mua*/
 router.get("/my-courses", checkAuthenticated, async (req, res) => {
