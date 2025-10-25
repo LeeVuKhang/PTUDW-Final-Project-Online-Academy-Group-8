@@ -12,6 +12,7 @@ import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
 import courseRouter from './routes/course.routes.js';
 import accountRouter from './routes/account.routes.js';
 import categoryRouter from './routes/category.routes.js';
+import productRouter from './routes/product.routes.js';
 import instructorRouter from './routes/instructor.routes.js';
 
 const __dirname = import.meta.dirname;
@@ -156,6 +157,7 @@ app.get('/home', (req, res) => res.redirect('/'));
 // Gắn các router
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
+app.use('/product', productRouter);
 app.use('/instructor', instructorRouter);
 app.use('/course', courseRouter);
 
