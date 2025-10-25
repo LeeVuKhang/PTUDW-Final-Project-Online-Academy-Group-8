@@ -3,7 +3,7 @@ export function checkAuthenticated(req, res, next) {
     next();
   } else {
     req.session.reUrl = req.originalUrl;
-    return res.redirect('/account/signin'); // ✅ redirect đúng đến trang đăng nhập
+    return res.redirect('/account/signin'); 
   }
 }
 

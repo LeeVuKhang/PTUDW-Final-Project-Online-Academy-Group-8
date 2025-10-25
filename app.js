@@ -46,6 +46,9 @@ app.engine('handlebars', engine({
     eq(a, b) {
       return a === b;
     },
+    ne(a,b ){
+      return a !== b;
+    },  
 
     formatDate(date) {
       if (!date) return '';
