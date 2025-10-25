@@ -1,0 +1,209 @@
+{{! 4.2 Quản lý khóa học - Xem danh sách }}
+<div class="container-fluid mt-4">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">
+        <i class="bi bi-book"></i> Quản lý khóa học
+      </h4>
+      <div>
+        <span class="badge bg-primary">{{courses.length}} khóa học</span>
+      </div>
+    </div>
+    
+    <div class="card-body">
+      <!-- Search and Filter -->
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control" id="searchCourse" placeholder="Tìm kiếm khóa học...">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <select class="form-select" id="filterCategory">
+            <option value="">Tất cả danh mục</option>
+            {{#each categories}}
+            <option value="{{catid}}">{{catname}}</option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+
+      <!-- Courses Table -->
+      {{#if courses}}
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th scope="col">Hình ảnh</th>
+              <th scope="col">Tên khóa học</th>
+              <th scope="col">Danh mục</th>
+              <th scope="col">Giảng viên</th>
+              <th scope="col">Giá</th>
+              <th scope="col">Học viên</th>
+              <th scope="col">Trạng thái</th>
+              <th scope="col" class="text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each courses}}
+            <tr>
+              <td>
+                <img src="{{image_url}}" alt="{{title}}" 
+                     class="rounded" style="width: 60px; height: 40px; object-fit: cover;">
+              </td>
+              <td>
+                <div>
+                  <strong>{{title}}</strong>
+                  <br>
+                  <small class="text-muted">{{truncate tinydes 50}}</small>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-info">{{category_name}}</span>
+              </td>
+              <td>
+                <small>{{instructor_name}}</small>
+              </td>
+              <td>
+                <div>
+                  <strong class="text-success">{{formatNumber discount_price}}</strong>
+                  {{#if (isGreater price discount_price)}}
+                  <br>
+                  <small class="text-muted text-decoration-line-through">{{formatNumber price}}</small>
+                  {{/if}}
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-secondary">{{student_count}}</span>
+              </td>
+              <td>
+                {{#if is_active}}
+                  <span class="badge bg-success">Hoạt động</span>
+                {{else}}
+                  <span class="badge bg-warning">Tạm dừng</span>
+                {{/if}}
+              </td>
+              <td class="text-center">
+                <div class="btn-group" role="group">
+                  <a href="/admin/courses/{{course_id}}" 
+                     class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <button type="button" 
+                          class="btn btn-sm btn-outline-warning" 
+                          onclick="toggleCourse({{course_id}}, {{is_active}})" 
+                          title="{{#if is_active}}Tạm dừng{{else}}Kích hoạt{{/if}}">
+                    <i class="bi bi-{{#if is_active}}pause{{else}}play{{/if}}"></i>
+                  </button>
+                  <button type="button" 
+                          class="btn btn-sm btn-outline-danger" 
+                          onclick="confirmRemoveCourse({{course_id}}, '{{title}}')" 
+                          title="Gỡ bỏ khóa học">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+      {{else}}
+      <div class="text-center py-5">
+        <i class="bi bi-folder2-open display-1 text-muted"></i>
+        <h5 class="text-muted mt-3">Chưa có khóa học nào</h5>
+      </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+<!-- Remove Course Modal -->
+<div class="modal fade" id="removeCourseModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle"></i> Xác nhận gỡ bỏ
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Bạn có chắc chắn muốn gỡ bỏ khóa học:</p>
+        <p class="fw-bold" id="courseNameToRemove"></p>
+        <p class="text-warning">
+          <i class="bi bi-info-circle"></i>
+          Thao tác này không thể hoàn tác!
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <form id="removeCourseForm" method="post" style="display: inline;">
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash"></i> Xác nhận gỡ bỏ
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Search functionality
+  const searchInput = document.getElementById('searchCourse');
+  const filterCategory = document.getElementById('filterCategory');
+  const tableRows = document.querySelectorAll('tbody tr');
+
+  function filterTable() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const selectedCategory = filterCategory.value;
+
+    tableRows.forEach(row => {
+      const courseName = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+      const categoryBadge = row.querySelector('.badge');
+      const categoryMatch = !selectedCategory || categoryBadge.textContent === selectedCategory;
+      const searchMatch = courseName.includes(searchTerm);
+
+      row.style.display = (categoryMatch && searchMatch) ? '' : 'none';
+    });
+  }
+
+  searchInput.addEventListener('input', filterTable);
+  filterCategory.addEventListener('change', filterTable);
+});
+
+function confirmRemoveCourse(courseId, courseName) {
+  document.getElementById('courseNameToRemove').textContent = courseName;
+  document.getElementById('removeCourseForm').action = `/admin/courses/${courseId}/remove`;
+  
+  const modal = new bootstrap.Modal(document.getElementById('removeCourseModal'));
+  modal.show();
+}
+
+function toggleCourse(courseId, isActive) {
+  const action = isActive ? 'disable' : 'enable';
+  if (confirm(`Bạn có chắc muốn ${isActive ? 'tạm dừng' : 'kích hoạt'} khóa học này?`)) {
+    fetch(`/admin/courses/${courseId}/${action}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Có lỗi xảy ra: ' + data.message);
+      }
+    })
+    .catch(error => {
+      alert('Có lỗi xảy ra: ' + error.message);
+    });
+  }
+}
+</script>

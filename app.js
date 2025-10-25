@@ -14,6 +14,9 @@ import accountRouter from './routes/account.routes.js';
 import categoryRouter from './routes/category.routes.js';
 import productRouter from './routes/product.routes.js';
 import instructorRouter from './routes/instructor.routes.js';
+import adminCourseRouter from './routes/admin-course.routes.js';
+import adminUserRouter from './routes/admin-user.routes.js';
+import adminRouter from './routes/admin.routes.js';
 
 const __dirname = import.meta.dirname;
 const app = express();
@@ -49,6 +52,9 @@ app.engine('handlebars', engine({
     eq(a, b) {
       return a === b;
     },
+    ne(a,b ){
+      return a !== b;
+    },  
 
     formatDate(date) {
       if (!date) return '';
@@ -100,6 +106,18 @@ app.engine('handlebars', engine({
       return str.substring(start, start + len).toUpperCase();
     },
 
+    // Định dạng rating (số thập phân)
+    formatRating(rating) {
+      const num = parseFloat(rating);
+      if (isNaN(num)) return '0.0';
+      return num.toFixed(1);
+    },
+
+    // Chuyển đổi object thành JSON string
+    json(obj) {
+      return JSON.stringify(obj);
+    },
+
     moment(date, format) {
       if (!date) return '';
       if (format === 'fromNow') return moment(date).fromNow();
@@ -140,43 +158,58 @@ app.use('/static', express.static('static'));
 
 // Chia mảng thành nhóm (cho giao diện home)
 function chunkArray(array, size) {
-  const result = [];
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size));
-  }
-  return result;
+    const result = [];
+    for (let i = 0; i < array.length; i += size) {
+        result.push(array.slice(i, i + size));
+    }
+    return result;
 }
 
 // Trang chủ – hiển thị dữ liệu thật từ courseModel
 app.get('/', async (req, res) => {
-  if (req.session.isAuthenticated) {
-    console.log('User is authenticated');
-    console.log(req.session.authUser);
-  }
-  const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4);
-  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4);
-  res.render('home', { newestCourses, mostViewsCourses });
+    if (req.session.isAuthenticated) {
+        console.log('User is authenticated');
+        console.log(req.session.authUser)
+    }
+    const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4)
+    const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4)
+    const parents = await categoryModel.findParents();
+
+    // Lấy children cho mỗi parent
+    for (const parent of parents) {
+      parent.children = await categoryModel.findChildren(parent.cat_id);
+    }
+
+    res.render('home', {
+        newestCourses,
+        mostViewsCourses,
+        parents,
+    });
 });
 
-app.get('/home', (req, res) => res.redirect('/'));
+app.use(async (req, res, next) => {
+  const parents = await categoryModel.findParents();
 
-// Các route “About”
-app.get('/about-my-team', (req, res) => res.sendFile(__dirname + '/about-my-team.html'));
-app.get('/about-lvk', (req, res) => res.sendFile(__dirname + '/about-lvk.html'));
-app.get('/about-vhn', (req, res) => res.sendFile(__dirname + '/about-vhn.html'));
-app.get('/about-tpd', (req, res) => res.sendFile(__dirname + '/about-tpd.html'));
-app.get('/about-nngn', (req, res) => res.sendFile(__dirname + '/about-nngn.html'));
-app.get('/about-ntc', (req, res) => res.sendFile(__dirname + '/about-ntc.html'));
-app.get('/about-nhhl', (req, res) => res.sendFile(__dirname + '/about-nhhl.html'));
+    // Lấy children cho mỗi parent
+    for (const parent of parents) {
+      parent.children = await categoryModel.findChildren(parent.cat_id);
+    }
+  res.locals.parents = parents;
+  next();
+});
+
 
 // Gắn các router
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
-app.use('/products', productRouter);
+app.use('/product', productRouter);
 app.use('/instructor', instructorRouter);
 app.use('/course', courseRouter);
+app.use('/admin/courses', checkAuthenticated, checkAdmin, adminCourseRouter);
+app.use('/admin/users', checkAuthenticated, checkAdmin, adminUserRouter);
+app.use('/admin', checkAuthenticated, checkAdmin, adminRouter);
 
 // Khởi động server
 app.listen(3000, () => {
-  console.log('✅ Server is running on http://localhost:3000');
+    console.log('Server is running on http://localhost:3000');
 });
