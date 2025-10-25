@@ -24,7 +24,7 @@
         </div>
         <div class="list-group list-group-flush">
           {{#each lessons}}
-          <a href="/courses/learn/{{../course_id}}/{{lesson_id}}" 
+          <a href="/course/learn/{{../course_id}}/{{lesson_id}}" 
              class="list-group-item list-group-item-action {{#if (eq lesson_id ../currentLesson.lesson_id)}}active{{/if}}">
             <div class="d-flex w-100 justify-content-between">
               <h6 class="mb-1">{{title}}</h6>
@@ -55,7 +55,7 @@
       if (now - lastUpdate >= 5000) { // Update every 5 seconds
         const progress = (player.currentTime / player.duration) * 100;
         
-        fetch('/courses/progress', {
+        fetch('/course/progress', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'

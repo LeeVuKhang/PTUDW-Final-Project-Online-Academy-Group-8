@@ -24,6 +24,21 @@
   window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6ZnljcWptY29ndWVvZmdkeHljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDkzNzAsImV4cCI6MjA3NTgyNTM3MH0.XyO5GRMb8Z3W1w-WzBoJd2A4mALc2CkLIARjxS9cyso';
   window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
+  {{{_sections.stylesheet}}}
+  <style>
+    {
+        {
+          {
+          _sections.css
+        }
+      }
+    }
+  </style>
+  <script>
+    window.SUPABASE_URL = 'https://ezfycqjmcogueofgdxyc.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6ZnljcWptY29ndWVvZmdkeHljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDkzNzAsImV4cCI6MjA3NTgyNTM3MH0.XyO5GRMb8Z3W1w-WzBoJd2A4mALc2CkLIARjxS9cyso';
+    window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
 </head>
 
 <body>
@@ -41,15 +56,36 @@
               aria-expanded="false">
               Explore
             </a>
+
             <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
-              {{#each globalCategories}}
+              {{#each parents}}
+              {{#if children}}
+              <!-- Có con -->
+              <li class="dropdown-submenu position-relative">
+                <a class="dropdown-item dropdown-toggle" href="/course/byCat?id={{cat_id}}">
+                  {{cat_name}}
+                </a>
+                <ul class="dropdown-menu">
+                  {{#each children}}
+                  <li>
+                    <a class="dropdown-item" href="/course/byCat?id={{cat_id}}">
+                      {{cat_name}}
+                    </a>
+                  </li>
+                  {{/each}}
+                </ul>
+              </li>
+              {{else}}
+              <!-- Không có con -->
               <li>
-                <a class="dropdown-item" href="/products/byCat?id={{catid}}">
-                  {{catname}}
+                <a class="dropdown-item" href="/course/byCat?id={{cat_id}}">
+                  {{cat_name}}
                 </a>
               </li>
+              {{/if}}
               {{/each}}
             </ul>
+
           </li>
         </ul>
 
@@ -63,19 +99,34 @@
 
         <form id="frmSignout" action="/account/signout" method="post"></form>
         <li class="nav-item d-flex align-items-center">
-          {{#if authUser}}
-          <span class="me-3">Hello, {{authUser.name}}</span>
-          <button class="btn btn-outline-danger me-2 px-3 py-1" form="frmSignout">
-            Sign Out
+         {{#if isAuthenticated}}
+  <ul class="navbar-nav ms-auto">
+    <li class="nav-item dropdown">
+      <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="me-2">
+          {{#if authUser.name}}{{authUser.name}}{{else}}{{authUser.username}}{{/if}}
+        </span>
+        <i class="bi bi-person-circle fs-5"></i>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+        <li>
+          <a class="dropdown-item" href="/account/profile">Account details</a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <button class="dropdown-item text-danger" type="button" onclick="document.getElementById('frmSignout').submit()">
+            <i class="bi bi-box-arrow-right me-1"></i> Sign out
           </button>
-          {{else}}
-          <a class="btn btn-outline-primary me-2 px-3 py-1" href="/account/signin">
-            Sign In
-          </a>
-          <a class="btn btn-primary px-3 py-1" href="/account/signup">
-            Sign Up
-          </a>
-          {{/if}}
+        </li>
+      </ul>
+    </li>
+  </ul>
+{{else}}
+  <li class="nav-item d-flex align-items-center">
+    <a class="btn btn-outline-primary me-2 px-3 py-1" href="/account/signin">Sign In</a>
+    <a class="btn btn-primary px-3 py-1" href="/account/signup">Sign Up</a>
+  </li>
+{{/if}}
         </li>
       </div>
   </nav>
