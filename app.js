@@ -9,10 +9,9 @@ import categoryModel from './models/category.model.js';
 import * as courseModel from './models/course.model.js';
 import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
 
-import courseRouter from './routes/courses.routes.js';
+import courseRouter from './routes/course.routes.js';
 import accountRouter from './routes/account.routes.js';
 import categoryRouter from './routes/category.routes.js';
-import productRouter from './routes/product.routes.js';
 import instructorRouter from './routes/instructor.routes.js';
 
 const __dirname = import.meta.dirname;
@@ -154,21 +153,11 @@ app.get('/', async (req, res) => {
 
 app.get('/home', (req, res) => res.redirect('/'));
 
-// Các route “About”
-app.get('/about-my-team', (req, res) => res.sendFile(__dirname + '/about-my-team.html'));
-app.get('/about-lvk', (req, res) => res.sendFile(__dirname + '/about-lvk.html'));
-app.get('/about-vhn', (req, res) => res.sendFile(__dirname + '/about-vhn.html'));
-app.get('/about-tpd', (req, res) => res.sendFile(__dirname + '/about-tpd.html'));
-app.get('/about-nngn', (req, res) => res.sendFile(__dirname + '/about-nngn.html'));
-app.get('/about-ntc', (req, res) => res.sendFile(__dirname + '/about-ntc.html'));
-app.get('/about-nhhl', (req, res) => res.sendFile(__dirname + '/about-nhhl.html'));
-
 // Gắn các router
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
-app.use('/products', productRouter);
 app.use('/instructor', instructorRouter);
-app.use('/courses', courseRouter);
+app.use('/course', courseRouter);
 
 // Khởi động server
 app.listen(3000, () => {
