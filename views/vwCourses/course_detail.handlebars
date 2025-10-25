@@ -118,58 +118,60 @@ font-weight: bold;
 
       {{!-- Đánh giá của học viên --}}
       <div class="bg-white p-4 p-md-5 shadow-sm rounded-3 mb-4">
-        <h2 class="h3 fw-bold mb-4">Đánh giá của học viên</h2>
-        <div class="vstack gap-4">
+  <h2 class="h3 fw-bold mb-4">Đánh giá của học viên</h2>
 
-          {{!-- Đánh giá 1 --}}
-          <div class="border-bottom pb-3">
-            <div class="d-flex align-items-center mb-2">
-              <div class="avatar-circle rounded-circle bg-primary bg-opacity-25 text-primary me-3">
-                JD
-              </div>
-              <div>
-                <p class="fw-semibold mb-0">John Doe</p>
-                <div class="small text-muted">
-                  <span class="text-warning">
-                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
-                      class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-                  </span>
-                  <span class="ms-1">a week ago</span>
-                </div>
-              </div>
-            </div>
-            <p class="text-secondary">"Excellent course! The explanations were clear and concise. Highly recommended
-              for
-              beginners."</p>
+  {{#if isEnrolled}}
+  <!-- Form đánh giá -->
+  <form action="/course/rate/{{course.course_id}}" method="post" class="mb-5">
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Chọn số sao</label>
+      <select name="value" class="form-select" required>
+        <option value="5">⭐⭐⭐⭐⭐ - Xuất sắc</option>
+        <option value="4">⭐⭐⭐⭐ - Tốt</option>
+        <option value="3">⭐⭐⭐ - Trung bình</option>
+        <option value="2">⭐⭐ - Kém</option>
+        <option value="1">⭐ - Rất tệ</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Nhận xét của bạn</label>
+      <textarea name="comment" rows="3" class="form-control" placeholder="Viết cảm nhận của bạn về khóa học..." required></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary fw-semibold">Gửi đánh giá</button>
+  </form>
+  {{else}}
+  <p class="text-muted fst-italic">Bạn cần ghi danh khóa học trước khi có thể đánh giá.</p>
+  {{/if}}
+
+  <hr class="my-4">
+
+  <!-- Hiển thị danh sách đánh giá -->
+  {{#if ratings.length}}
+    <div class="vstack gap-4">
+      {{#each ratings}}
+      <div class="border-bottom pb-3">
+        <div class="d-flex align-items-center mb-2">
+          <div class="avatar-circle rounded-circle bg-primary bg-opacity-25 text-primary me-3">
+            {{substr name 0 2}}
           </div>
-
-          {{!-- Đánh giá 2 --}}
-          <div class="border-bottom pb-3">
-            <div class="d-flex align-items-center mb-2">
-              <div class="avatar-circle rounded-circle bg-danger bg-opacity-25 text-danger me-3">
-                AS
-              </div>
-              <div>
-                <p class="fw-semibold mb-0">Alice Smith</p>
-                <div class="small text-muted">
-                  <span class="text-warning">
-                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i
-                      class="fas fa-star"></i><i class="fas fa-star"></i>
-                  </span>
-                  <span class="ms-1">2 weeks ago</span>
-                </div>
-              </div>
+          <div>
+            <p class="fw-semibold mb-0">{{name}}</p>
+            <div class="small text-warning">
+              {{{renderStars value}}}
             </div>
-            <p class="text-secondary">"This is one of the best Python courses I've taken. The instructor is very
-              knowledgeable and the projects were very helpful. Great content!"</p>
           </div>
-
         </div>
-        <div class="mt-4 text-center">
-          <p class="text-muted small">Tổng cộng {{formatNumber course.total_reviews}} đánh giá</p>
-          <button class="btn btn-link fw-semibold text-decoration-none">Xem tất cả đánh giá</button>
-        </div>
+        <p class="text-secondary mb-0">"{{comment}}"</p>
       </div>
+      {{/each}}
+    </div>
+  {{else}}
+    <p class="text-muted">Chưa có đánh giá nào cho khóa học này.</p>
+  {{/if}}
+</div>
+
 
     </div>
     {{!--
@@ -191,9 +193,16 @@ font-weight: bold;
             </div>
 
             <div class="d-grid gap-2">
-              <button class="btn btn-primary btn-lg fw-bold">Thêm vào giỏ hàng</button>
-              <button class="btn btn-outline-dark btn-lg fw-bold">Mua ngay</button>
-            </div>
+              <form action="/course/add-to-cart/{{course.course_id}}" method="get">
+                <button type="submit" class="btn btn-primary btn-lg fw-bold w-100 mb-2">
+                  🛒 Thêm vào giỏ hàng
+                  </button>
+              </form>
+              <form action="/course/buy-now/{{course.course_id}}" method="get">
+                <button type="submit" class="btn btn-outline-dark btn-lg fw-bold w-100">
+                  💳 Mua ngay
+                </button>
+              </form>
 
             <p class="text-center text-muted small mt-3">Đảm bảo hoàn tiền trong 30 ngày</p>
 

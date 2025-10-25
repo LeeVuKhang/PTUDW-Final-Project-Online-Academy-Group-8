@@ -17,7 +17,7 @@ export default {
         .first();
     },
     add(course) {
-        return db('courses').insert(course);
+        return db('courses').insert(course).returning('course_id');
     },
     update(course_id, course) {
         return db('courses').where('course_id', course_id).update(course);
@@ -30,13 +30,24 @@ export default {
     findAll(limit, offset, categoryId, searchTerm) {
         const query = db('courses')
             .join('categories', 'courses.catid', '=', 'categories.cat_id')
-            .select('courses.*', 'categories.cat_name as category_name');
+            .leftJoin('ratings', 'courses.course_id', 'ratings.course_id')
+            .select(
+                'courses.*',
+                'categories.cat_name as category_name',
+                db.raw('COALESCE(AVG(ratings.value), 0) as avg_rating'),
+                db.raw('COUNT(ratings.rating_id) as rating_count')
+            )
+            .groupBy(
+                'courses.course_id', 
+                'categories.cat_name', 
+                'categories.cat_id'
+            );
 
         if (categoryId && categoryId !== 'all') {
             query.where('courses.catid', categoryId);
         }
         if (searchTerm) {
-            query.where(function() {
+            query.where(function () {
                 this.where('courses.title', 'like', `%${searchTerm}%`)
                     .orWhere('courses.tinydes', 'like', `%${searchTerm}%`);
             });
@@ -44,11 +55,10 @@ export default {
         if (limit) {
             query.limit(limit);
         }
-
         if (offset) {
             query.offset(offset);
         }
-        return query; 
+        return query;
     },
     countAll(categoryId, searchTerm) {
         const query = db('courses').count('course_id as total');
@@ -65,6 +75,108 @@ export default {
         }
 
         return query.first();
+    }, 
+    deleteCascade(course_id) {
+        return db.transaction(async trx => {
+            const chapterRows = await trx('chapters')
+                .where('course_id', course_id)
+                .select('chapter_id');
+
+            const chapterIds = chapterRows.map(row => row.chapter_id); 
+            if (chapterIds.length > 0) {
+                await trx('lessons').whereIn('chapter_id', chapterIds).del();
+            }
+
+            await trx('chapters').where('course_id', course_id).del();
+            await Promise.all([
+                trx('ratings').where('course_id', course_id).del(),
+                trx('enrollments').where('course_id', course_id).del(),
+                trx('watchlists').where('course_id', course_id).del(),
+                trx('cart_items').where('course_id', course_id).del()
+            ]);
+            const deletedCount = await trx('courses').where('course_id', course_id).del();
+            
+            if (deletedCount === 0) {
+                throw new Error('Không tìm thấy khóa học để xóa.');
+            }
+
+            return deletedCount;
+        });
+    },
+
+    // Admin functions 4.2
+    findAllForAdmin() {
+        return db('courses')
+            .leftJoin('categories', 'courses.catid', 'categories.cat_id')
+            .leftJoin('users', 'courses.instructor_id', 'users.user_id')
+            .leftJoin(
+                db('enrollments')
+                    .select('course_id')
+                    .count('* as student_count')
+                    .groupBy('course_id')
+                    .as('course_stats'),
+                'courses.course_id', 'course_stats.course_id'
+            )
+            .select(
+                'courses.*',
+                'categories.cat_name as category_name',
+                'users.name as instructor_name',
+                db.raw('COALESCE(course_stats.student_count, 0) as student_count')
+            )
+            .orderBy('courses.last_update', 'desc');
     },
     
+    findByIdForAdmin(id) {
+        return db('courses')
+            .leftJoin('categories', 'courses.catid', 'categories.cat_id')
+            .leftJoin('users', 'courses.instructor_id', 'users.user_id')
+            .leftJoin(
+                db('enrollments')
+                    .select('course_id')
+                    .count('* as student_count')
+                    .groupBy('course_id')
+                    .as('course_stats'),
+                'courses.course_id', 'course_stats.course_id'
+            )
+            .select(
+                'courses.*',
+                'categories.cat_name as category_name',
+                'users.name as instructor_name',
+                db.raw('COALESCE(course_stats.student_count, 0) as student_count')
+            )
+            .where('courses.course_id', id)
+            .first();
+    },
+    
+    removeCourse(id) {
+        return db('courses').where('course_id', id).del();
+    },
+    
+    // Dashboard helper functions
+    count() {
+        return db('courses').count('* as count').first();
+    },
+    
+    findRecentCourses(limit = 5) {
+        return db('courses')
+            .leftJoin('categories', 'courses.catid', 'categories.cat_id')
+            .leftJoin('users', 'courses.instructor_id', 'users.user_id')
+            .select(
+                'courses.*',
+                'categories.cat_name as category_name',
+                'users.name as instructor_name'
+            )
+            .orderBy('courses.last_update', 'desc')
+            .limit(limit);
+    },
+    
+    getTopCategories(limit = 5) {
+        return db('courses')
+            .leftJoin('categories', 'courses.catid', 'categories.cat_id')
+            .select('categories.cat_name', 'categories.cat_id')
+            .count('courses.course_id as course_count')
+            .groupBy('categories.cat_id', 'categories.cat_name')
+            .orderBy('course_count', 'desc')
+            .limit(limit);
+    }
 }   
