@@ -28,7 +28,7 @@
                     <h1 class="fw-bold display-4 text-white">Phát triển kỹ năng của bạn</h1>
                     <p class="lead text-light mb-4">Từ lập trình, thiết kế, đến kỹ năng mềm — tất cả trong tầm tay bạn.
                     </p>
-                    <a href="/categories" class="btn btn-lg btn-outline-light px-4 rounded-pill shadow">Khám phá danh
+                    <a href="/course" class="btn btn-lg btn-outline-light px-4 rounded-pill shadow">Khám phá danh
                         mục</a>
                 </div>
             </div>
@@ -62,7 +62,7 @@
 
   <div class="d-flex flex-wrap gap-3">
     {{#each parents}}
-      <a href="/categories/{{this.catid}}" 
+      <a href="/course/byCat?id={{cat_id}}" 
          class="btn btn-outline-primary rounded-pill px-4 py-2 d-flex align-items-center gap-2 shadow-sm">
         <i class="bi bi-folder2-open"></i>
         <span class="fw-semibold">{{cat_name}}</span>
