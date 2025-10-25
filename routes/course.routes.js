@@ -74,12 +74,24 @@ router.get("/details/:id", async (req, res) => {
     .where("course_id", course_id)
     .select("users.name", "ratings.value", "ratings.comment");
 
+    const chapters = await db("chapters")
+        .where({ course_id })
+        .orderBy("order_index");
+
+    for (const chapter of chapters) {
+        chapter.lessons = await db("lessons")
+            .where({ chapter_id: chapter.chapter_id })
+            .orderBy("order_index");
+    }
+
+
   res.render("vwCourses/course_detail", {
     layout: "main",
     course,
     lessons,
     isEnrolled,
     ratings,
+    chapters
   });
 });
 
@@ -103,8 +115,15 @@ router.get("/enroll/:id", checkAuthenticated, async (req, res) => {
 });
 
 /*Trang học khóa học*/
+// 1️⃣ Khi không có lesson_id (xem bài đầu tiên)
 router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
-  const course_id = req.params.course_id;
+  const { course_id } = req.params;
+  res.redirect(`/course/learn/${course_id}/first`);
+});
+
+// 2️⃣ Khi có lesson cụ thể
+router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) => {
+  const { course_id, lesson_id } = req.params;
   const student_id = req.session.authUser.user_id;
 
   const enrolled = await db("enrollments")
@@ -113,17 +132,31 @@ router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
   if (!enrolled) return res.redirect(`/course/details/${course_id}`);
 
   const course = await db("courses").where({ course_id }).first();
-  const lessons = await db("lessons")
-    .join("chapters", "lessons.chapter_id", "chapters.chapter_id")
-    .where("chapters.course_id", course_id)
-    .select("lessons.*")
-    .orderBy("lessons.order_index");
+  const chapters = await db("chapters")
+  .where({ course_id })
+  .orderBy("order_index", "asc");
 
-  const currentLesson = enrolled.last_watched_lesson
-    ? await db("lessons").where({ lesson_id: enrolled.last_watched_lesson }).first()
-    : lessons[0];
 
-  res.render("vwCourses/learn", { layout: "main", course, currentLesson, lessons, course_id });
+  for (const chapter of chapters) {
+    chapter.lessons = await db("lessons")
+      .where({ chapter_id: chapter.chapter_id })
+      .orderBy("order_index");
+  }
+
+  let currentLesson;
+  if (lesson_id === "first") {
+    currentLesson = chapters[0]?.lessons?.[0];
+  } else {
+    currentLesson = await db("lessons").where({ lesson_id }).first();
+  }
+
+  res.render("vwCourses/learn", {
+    layout: "main",
+    course,
+    chapters,
+    currentLesson,
+    course_id,
+  });
 });
 
 /*Đánh giá khóa học*/
@@ -256,7 +289,7 @@ router.post("/cart/checkout/:id", checkAuthenticated, async (req, res) => {
     // Xóa khỏi giỏ hàng sau khi thanh toán
     await db("cart_items").where({ course_id, student_id }).delete();
 
-    res.redirect("/course/my-courses");
+    res.redirect("/my-courses");
   } catch (err) {
     console.error(err);
     res.status(500).send("Lỗi khi thanh toán khóa học!");
