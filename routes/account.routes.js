@@ -2,8 +2,8 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import userModel from '../models/user.model.js';
-import watchlistModel from '../models/watchlist.model.js';
-import { checkAuthenticated  } from '../models/auth.model.js';
+import { checkAuthenticated } from '../models/auth.model.js';
+import watchlistModel from '../models/watchlist.model.js'
 const router = express.Router();
 
 
@@ -23,7 +23,7 @@ router.post('/signup', async (req, res) => {
         name: req.body.name,
         email: req.body.email,
         dob: req.body.dob,
-        role: 1
+        role: 1 // Mặc định là học viên
     }
 
     await userModel.add(user);
@@ -372,186 +372,6 @@ router.post('/change-pwd-social', checkAuthenticated, async (req, res) => {
 
 
 
-
-// --- CHANGE EMAIL FLOW ---
-router.get('/change-email', checkAuthenticated, (req, res) => {
-  res.render('vwAccount/change-email', {
-    user: req.session.authUser
-  });
-});
-
-
-router.post('/change-email', checkAuthenticated, async (req, res) => {
-  try {
-    const { currentPassword, newEmail } = req.body;
-    const user = req.session.authUser;
-
-    if (!newEmail) {
-      return res.render('vwAccount/profile', { user, tab: 'email', errEmail: 'Enter a new email.' });
-    }
-
-    if (!user.isSocial) {
-      const ok = bcrypt.compareSync(currentPassword || '', user.password);
-      if (!ok) {
-        return res.render('vwAccount/profile', { user, tab: 'email', errEmail: 'Current password is incorrect.' });
-      }
-    } else {
-    }
-
-    // unique
-    const taken = await userModel.findByEmail(newEmail.trim());
-    if (taken) {
-      return res.render('vwAccount/profile', { user, tab: 'email', errEmail: 'This email is already in use.' });
-    }
-
-    // make otp
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const expiration = new Date(Date.now() + 10 * 60 * 1000);
-
-    const db = (await import('../utils/db.js')).default;
-    await db('otps').insert({
-      user_id: user.user_id,
-      otp_code: otp,
-      expiration,
-      is_verified: false,
-    });
-
-    console.log('[change-email] OTP for', user.email, 'is', otp); // dev
-
-    req.session.pendingEmailChange = { user_id: user.user_id, newEmail: newEmail.trim() };
-
-    return res.redirect('/account/profile?tab=email-verify');
-  } catch (e) {
-    console.error(e);
-    return res.status(500).render('403');
-  }
-});
-router.get('/change-email/verify', checkAuthenticated, (req, res) => {
-  if (!req.session.pendingEmailChange) {
-    return res.redirect('/account/change-email');
-  }
-  res.render('vwAccount/change-email-verify', {
-    user: req.session.authUser,
-    newEmail: req.session.pendingEmailChange.newEmail
-  });
-});
-router.post('/change-email/verify', checkAuthenticated, async (req, res) => {
-  try {
-    const pending = req.session.pendingEmailChange;
-    if (!pending) return res.redirect('/account/profile?tab=email');
-
-    const { code } = req.body;
-    if (!code) {
-      return res.render('vwAccount/profile', {
-        user: req.session.authUser,
-        tab: 'email-verify',
-        pendingEmail: pending.newEmail,
-        errEmailVerify: 'Please enter the verification code.',
-      });
-    }
-
-    const db = (await import('../utils/db.js')).default;
-    const otpRow = await db('otps')
-      .where({
-        user_id: pending.user_id,
-        otp_code: code.trim(),
-        is_verified: false,
-      })
-      .andWhere('expiration', '>', new Date())
-      .first();
-
-    if (!otpRow) {
-      return res.render('vwAccount/profile', {
-        user: req.session.authUser,
-        tab: 'email-verify',
-        pendingEmail: pending.newEmail,
-        errEmailVerify: 'Invalid or expired code.',
-      });
-    }
-
-    await db('otps').where({ otp_id: otpRow.otp_id }).update({ is_verified: true });
-
-
-    await userModel.patch(pending.user_id, { email: pending.newEmail });
-
-
-
-    req.session.authUser.email = pending.newEmail;
-    req.session.pendingEmailChange = null;
-    return res.redirect('/account/profile?tab=info');
-  } catch (e) {
-    console.error(e);
-    return res.status(500).render('403');
-  }
-});
-
-
-
-
-router.post('/change-pwd-social/send', checkAuthenticated, async (req, res) => {
-  try {
-    const user = req.session.authUser;
-    if (!user.isSocial) {
-      return res.render('vwAccount/profile', { user, tab: 'pwd' });
-    }
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const expiration = new Date(Date.now() + 10 * 60 * 1000);
-
-    const db = (await import('../utils/db.js')).default;
-    await db('otps').insert({
-      user_id: user.user_id,
-      otp_code: otp,
-      expiration,
-      is_verified: false,
-    });
-
-    console.log('[pwd-social] OTP for', user.email, 'is', otp); 
-
-    return res.render('vwAccount/profile', { user, tab: 'pwd', pwdSent: true });
-  } catch (e) {
-    console.error(e);
-    return res.status(500).render('403');
-  }
-});
-
-
-router.post('/change-pwd-social', checkAuthenticated, async (req, res) => {
-  try {
-    const user = req.session.authUser;
-    if (!user.isSocial) {
-      return res.render('vwAccount/profile', { user, tab: 'pwd' });
-    }
-    const { code, newPassword } = req.body;
-    if (!code || !newPassword || newPassword.length < 8) {
-      return res.render('vwAccount/profile', { user, tab: 'pwd', pwdSent: true, errPwd: 'Enter code and a valid new password (min 8 chars).' });
-    }
-
-    const db = (await import('../utils/db.js')).default;
-    const otpRow = await db('otps')
-      .where({ user_id: user.user_id, otp_code: code.trim(), is_verified: false })
-      .andWhere('expiration', '>', new Date())
-      .first();
-
-    if (!otpRow) {
-      return res.render('vwAccount/profile', { user, tab: 'pwd', pwdSent: true, errPwd: 'Invalid or expired code.' });
-    }
-
-    await db('otps').where({ otp_id: otpRow.otp_id }).update({ is_verified: true });
-
-    const hash_password = bcrypt.hashSync(newPassword, 10);
-    await userModel.patch(user.user_id, { password: hash_password });
-    req.session.authUser.password = hash_password;
-    return res.redirect('/account/profile?tab=pwd');
-  } catch (e) {
-    console.error(e);
-    return res.status(500).render('403');
-  }
-});
-
-
-
-
-
 router.get('/watchlist', checkAuthenticated, async (req, res) => {
   try {
     const student_id = req.session.authUser.user_id;
@@ -583,7 +403,7 @@ router.post('/watchlist/add', checkAuthenticated, async (req, res) => {
   }
 });
 
-router.post('remove', checkAuthenticated, async (req, res) => {
+router.post('/watchlist/remove', checkAuthenticated, async (req, res) => {
   try {
     const student_id = req.session.authUser.user_id;
     const { course_id } = req.body; 
