@@ -152,25 +152,49 @@ app.use('/static', express.static('static'));
 
 // Chia mảng thành nhóm (cho giao diện home)
 function chunkArray(array, size) {
-  const result = [];
-  for (let i = 0; i < array.length; i += size) {
-    result.push(array.slice(i, i + size));
-  }
-  return result;
+    const result = [];
+    for (let i = 0; i < array.length; i += size) {
+        result.push(array.slice(i, i + size));
+    }
+    return result;
 }
 
 // Trang chủ – hiển thị dữ liệu thật từ courseModel
 app.get('/', async (req, res) => {
-  if (req.session.isAuthenticated) {
-    console.log('User is authenticated');
-    console.log(req.session.authUser);
-  }
-  const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4);
-  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4);
-  res.render('home', { newestCourses, mostViewsCourses });
+    if (req.session.isAuthenticated) {
+        console.log('User is authenticated');
+        console.log(req.session.authUser)
+    }
+    const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4)
+    const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4)
+    const parents = await categoryModel.findParents();
+
+    // Lấy children cho mỗi parent
+    for (const parent of parents) {
+      parent.children = await categoryModel.findChildren(parent.cat_id);
+    }
+
+    res.render('home', {
+        newestCourses,
+        mostViewsCourses,
+        parents,
+    });
 });
 
-app.get('/home', (req, res) => res.redirect('/'));
+app.use(async (req, res, next) => {
+  const parents = await categoryModel.findParents();
+
+    // Lấy children cho mỗi parent
+    for (const parent of parents) {
+      parent.children = await categoryModel.findChildren(parent.cat_id);
+    }
+  res.locals.parents = parents;
+  next();
+});
+
+import accountRouter from './routes/account.routes.js';
+app.use('/account', accountRouter);
+
 
 // Gắn các router
 app.use('/account', accountRouter);
@@ -184,5 +208,5 @@ app.use('/admin', checkAuthenticated, checkAdmin, adminRouter);
 
 // Khởi động server
 app.listen(3000, () => {
-  console.log('✅ Server is running on http://localhost:3000');
+    console.log('Server is running on http://localhost:3000');
 });
