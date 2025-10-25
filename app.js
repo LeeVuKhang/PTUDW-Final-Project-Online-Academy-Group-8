@@ -14,6 +14,9 @@ import accountRouter from './routes/account.routes.js';
 import categoryRouter from './routes/category.routes.js';
 import productRouter from './routes/product.routes.js';
 import instructorRouter from './routes/instructor.routes.js';
+import adminCourseRouter from './routes/admin-course.routes.js';
+import adminUserRouter from './routes/admin-user.routes.js';
+import adminRouter from './routes/admin.routes.js';
 
 const __dirname = import.meta.dirname;
 const app = express();
@@ -94,6 +97,18 @@ app.engine('handlebars', engine({
       return str.substring(start, start + len).toUpperCase();
     },
 
+    // Định dạng rating (số thập phân)
+    formatRating(rating) {
+      const num = parseFloat(rating);
+      if (isNaN(num)) return '0.0';
+      return num.toFixed(1);
+    },
+
+    // Chuyển đổi object thành JSON string
+    json(obj) {
+      return JSON.stringify(obj);
+    },
+
     moment(date, format) {
       if (!date) return '';
       if (format === 'fromNow') return moment(date).fromNow();
@@ -160,6 +175,9 @@ app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
 app.use('/product', productRouter);
 app.use('/instructor', instructorRouter);
 app.use('/course', courseRouter);
+app.use('/admin/courses', checkAuthenticated, checkAdmin, adminCourseRouter);
+app.use('/admin/users', checkAuthenticated, checkAdmin, adminUserRouter);
+app.use('/admin', checkAuthenticated, checkAdmin, adminRouter);
 
 // Khởi động server
 app.listen(3000, () => {

@@ -23,7 +23,7 @@ router.post('/signup', async (req, res) => {
         name: req.body.name,
         email: req.body.email,
         dob: req.body.dob,
-        //permission: 0
+        role: 1 // Mặc định là học viên
     }
 
     await userModel.add(user);

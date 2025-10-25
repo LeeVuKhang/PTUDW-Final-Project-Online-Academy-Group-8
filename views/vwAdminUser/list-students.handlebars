@@ -1,0 +1,202 @@
+{{! 4.3 Quản lý học viên - Xem danh sách }}
+<div class="container-fluid mt-4">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">
+        <i class="bi bi-people"></i> Quản lý học viên
+      </h4>
+      <div>
+        <span class="badge bg-primary">{{students.length}} học viên</span>
+      </div>
+    </div>
+    
+    <div class="card-body">
+      <!-- Search and Filter -->
+      <div class="row mb-3">
+        <div class="col-md-8">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control" id="searchStudent" placeholder="Tìm kiếm theo tên, email hoặc username...">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <select class="form-select" id="filterStatus">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">Hoạt động</option>
+            <option value="inactive">Tạm khóa</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Students Table -->
+      {{#if students}}
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th scope="col">Avatar</th>
+              <th scope="col">Thông tin</th>
+              <th scope="col">Email</th>
+              <th scope="col">Ngày tham gia</th>
+              <th scope="col">Khóa học</th>
+              <th scope="col">Trạng thái</th>
+              <th scope="col" class="text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each students}}
+            <tr>
+              <td>
+                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" 
+                     style="width: 40px; height: 40px;">
+                  <span class="text-white fw-bold">{{substr name 0 1}}</span>
+                </div>
+              </td>
+              <td>
+                <div>
+                  <strong>{{name}}</strong>
+                  <br>
+                  <small class="text-muted">@{{username}}</small>
+                  {{#if dob}}
+                  <br>
+                  <small class="text-muted">{{formatDate dob}}</small>
+                  {{/if}}
+                </div>
+              </td>
+              <td>
+                <a href="mailto:{{email}}" class="text-decoration-none">{{email}}</a>
+              </td>
+              <td>
+                <small>{{formatDate user_id}}</small>
+              </td>
+              <td>
+                <span class="badge bg-info">{{enrolled_courses_count}} khóa học</span>
+              </td>
+              <td>
+                <span class="badge bg-success">Hoạt động</span>
+              </td>
+              <td class="text-center">
+                <div class="btn-group" role="group">
+                  <a href="/admin/users/{{user_id}}" 
+                     class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  
+                  <button type="button" 
+                          class="btn btn-sm btn-outline-info" 
+                          onclick="promoteToInstructor({{user_id}}, '{{name}}')" 
+                          title="Nâng cấp thành giảng viên">
+                    <i class="bi bi-arrow-up"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+      {{else}}
+      <div class="text-center py-5">
+        <i class="bi bi-people display-1 text-muted"></i>
+        <h5 class="text-muted mt-3">Chưa có học viên nào</h5>
+      </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+<!-- Promote to Instructor Modal -->
+<div class="modal fade" id="promoteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-arrow-up"></i> Nâng cấp thành giảng viên
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Bạn có chắc chắn muốn nâng cấp tài khoản của:</p>
+        <p class="fw-bold" id="userNameToPromote"></p>
+        <p class="text-info">
+          <i class="bi bi-info-circle"></i>
+          Học viên sẽ có thể tạo và quản lý khóa học sau khi được nâng cấp.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <form id="promoteForm" method="post" style="display: inline;">
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-check-lg"></i> Xác nhận nâng cấp
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Search functionality
+  const searchInput = document.getElementById('searchStudent');
+  const filterStatus = document.getElementById('filterStatus');
+  const tableRows = document.querySelectorAll('tbody tr');
+
+  function filterTable() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const selectedStatus = filterStatus.value;
+
+    tableRows.forEach(row => {
+      const userInfo = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+      const email = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+      const statusBadge = row.querySelector('td:nth-child(7) .badge');
+      const isActive = statusBadge.classList.contains('bg-success');
+      
+      const statusMatch = !selectedStatus || 
+                         (selectedStatus === 'active' && isActive) || 
+                         (selectedStatus === 'inactive' && !isActive);
+      const searchMatch = userInfo.includes(searchTerm) || email.includes(searchTerm);
+
+      row.style.display = (statusMatch && searchMatch) ? '' : 'none';
+    });
+  }
+
+  searchInput.addEventListener('input', filterTable);
+  filterStatus.addEventListener('change', filterTable);
+});
+
+function toggleUserStatus(userId, activate) {
+  const action = activate ? 'activate' : 'deactivate';
+  const actionText = activate ? 'kích hoạt' : 'tạm khóa';
+  
+  if (confirm(`Bạn có chắc muốn ${actionText} tài khoản này?`)) {
+    fetch(`/admin/users/${userId}/${action}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Có lỗi xảy ra: ' + data.message);
+      }
+    })
+    .catch(error => {
+      alert('Có lỗi xảy ra: ' + error.message);
+    });
+  }
+}
+
+function promoteToInstructor(userId, userName) {
+  document.getElementById('userNameToPromote').textContent = userName;
+  document.getElementById('promoteForm').action = `/admin/users/${userId}/promote`;
+  
+  const modal = new bootstrap.Modal(document.getElementById('promoteModal'));
+  modal.show();
+}
+</script>

@@ -9,7 +9,7 @@ export function checkAuthenticated(req, res, next) {
 
 
 export function checkAdmin(req, res, next){
-    if (req.session.isAuthenticated && req.session.authUser.permission === 1){
+    if (req.session.isAuthenticated && req.session.authUser.role === 0){
         next();
     } else {
         res.render('vwAccount/403')

@@ -1,0 +1,312 @@
+{{! 4.3 Quản lý giảng viên - Thêm tài khoản giảng viên }}
+<div class="container-fluid mt-4">
+  <!-- Navigation -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/admin">Quản trị</a></li>
+      <li class="breadcrumb-item"><a href="/admin/users/instructors">Giảng viên</a></li>
+      <li class="breadcrumb-item active">Thêm mới</li>
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h4 class="mb-0">
+            <i class="bi bi-person-plus"></i> Tạo tài khoản giảng viên
+          </h4>
+        </div>
+        
+        <form method="post" action="/admin/users/create-instructor" id="instructorForm">
+          <div class="card-body">
+            {{#if error}}
+            <div class="alert alert-danger alert-dismissible fade show">
+              <i class="bi bi-exclamation-triangle"></i>
+              <strong>Lỗi!</strong> {{error}}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{/if}}
+
+            <!-- Account Information -->
+            <div class="mb-4">
+              <h5 class="text-primary mb-3">
+                <i class="bi bi-key"></i> Thông tin tài khoản
+              </h5>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="username" class="form-label">
+                    Tên đăng nhập <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" id="username" name="username" 
+                         required autocomplete="off" value="{{oldData.username}}">
+                  <div class="form-text">Tên đăng nhập phải từ 3-20 ký tự, không có khoảng trắng</div>
+                  <div id="usernameCheck" class="form-text"></div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="email" class="form-label">
+                    Email <span class="text-danger">*</span>
+                  </label>
+                  <input type="email" class="form-control" id="email" name="email" 
+                         required value="{{oldData.email}}">
+                  <div id="emailCheck" class="form-text"></div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="password" class="form-label">
+                    Mật khẩu <span class="text-danger">*</span>
+                  </label>
+                  <input type="password" class="form-control" id="password" name="password" 
+                         required autocomplete="new-password">
+                  <div class="form-text">Mật khẩu tối thiểu 6 ký tự</div>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="confirmPassword" class="form-label">
+                    Xác nhận mật khẩu <span class="text-danger">*</span>
+                  </label>
+                  <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" 
+                         required autocomplete="new-password">
+                  <div id="passwordMatch" class="form-text"></div>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- Personal Information -->
+            <div class="mb-4">
+              <h5 class="text-primary mb-3">
+                <i class="bi bi-person"></i> Thông tin cá nhân
+              </h5>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="name" class="form-label">
+                    Họ và tên <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" id="name" name="name" 
+                         required value="{{oldData.name}}">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="phone" class="form-label">Số điện thoại</label>
+                  <input type="tel" class="form-control" id="phone" name="phone" 
+                         value="{{oldData.phone}}">
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="dob" class="form-label">Ngày sinh</label>
+                  <input type="date" class="form-control" id="dob" name="dob" 
+                         value="{{oldData.dob}}">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="gender" class="form-label">Giới tính</label>
+                  <select class="form-select" id="gender" name="gender">
+                    <option value="">Chọn giới tính</option>
+                    <option value="male" {{#if (eq oldData.gender 'male')}}selected{{/if}}>Nam</option>
+                    <option value="female" {{#if (eq oldData.gender 'female')}}selected{{/if}}>Nữ</option>
+                    <option value="other" {{#if (eq oldData.gender 'other')}}selected{{/if}}>Khác</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="bio" class="form-label">Giới thiệu bản thân</label>
+                <textarea class="form-control" id="bio" name="bio" rows="4" 
+                          placeholder="Mô tả ngắn về kinh nghiệm và chuyên môn...">{{oldData.bio}}</textarea>
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- Professional Information -->
+            <div class="mb-4">
+              <h5 class="text-primary mb-3">
+                <i class="bi bi-mortarboard"></i> Thông tin chuyên môn
+              </h5>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="specialization" class="form-label">Chuyên môn</label>
+                  <input type="text" class="form-control" id="specialization" name="specialization" 
+                         placeholder="Ví dụ: Lập trình Web, Data Science..." 
+                         value="{{oldData.specialization}}">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="experience_years" class="form-label">Số năm kinh nghiệm</label>
+                  <input type="number" class="form-control" id="experience_years" name="experience_years" 
+                         min="0" max="50" value="{{oldData.experience_years}}">
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="education" class="form-label">Trình độ học vấn</label>
+                <input type="text" class="form-control" id="education" name="education" 
+                       placeholder="Ví dụ: Thạc sĩ Khoa học Máy tính - ĐH Bách Khoa..." 
+                       value="{{oldData.education}}">
+              </div>
+
+              <div class="mb-3">
+                <label for="certificates" class="form-label">Chứng chỉ</label>
+                <textarea class="form-control" id="certificates" name="certificates" rows="3" 
+                          placeholder="Liệt kê các chứng chỉ chuyên môn (mỗi chứng chỉ một dòng)">{{oldData.certificates}}</textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <div class="d-flex justify-content-between">
+              <a href="/admin/users/instructors" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Quay lại
+              </a>
+              
+              <div>
+                <button type="reset" class="btn btn-outline-warning me-2">
+                  <i class="bi bi-arrow-clockwise"></i> Đặt lại
+                </button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                  <i class="bi bi-check-lg"></i> Tạo tài khoản
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('instructorForm');
+  const usernameInput = document.getElementById('username');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const confirmPasswordInput = document.getElementById('confirmPassword');
+  const submitBtn = document.getElementById('submitBtn');
+  
+  let usernameValid = false;
+  let emailValid = false;
+  let passwordMatch = false;
+
+  // Check username availability
+  usernameInput.addEventListener('blur', async function() {
+    const username = this.value.trim();
+    const checkDiv = document.getElementById('usernameCheck');
+    
+    if (username.length < 3) {
+      checkDiv.innerHTML = '<span class="text-danger">Tên đăng nhập phải từ 3 ký tự trở lên</span>';
+      usernameValid = false;
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/account/is-available?username=${username}`);
+      const available = await response.json();
+      
+      if (available) {
+        checkDiv.innerHTML = '<span class="text-success">✓ Tên đăng nhập khả dụng</span>';
+        usernameValid = true;
+      } else {
+        checkDiv.innerHTML = '<span class="text-danger">✗ Tên đăng nhập đã tồn tại</span>';
+        usernameValid = false;
+      }
+    } catch (error) {
+      checkDiv.innerHTML = '<span class="text-warning">Không thể kiểm tra tên đăng nhập</span>';
+      usernameValid = false;
+    }
+    
+    updateSubmitButton();
+  });
+
+  // Check email format and availability
+  emailInput.addEventListener('blur', async function() {
+    const email = this.value.trim();
+    const checkDiv = document.getElementById('emailCheck');
+    
+    if (!email) {
+      checkDiv.innerHTML = '';
+      emailValid = false;
+      return;
+    }
+    
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      checkDiv.innerHTML = '<span class="text-danger">Email không hợp lệ</span>';
+      emailValid = false;
+      updateSubmitButton();
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/admin/users/check-email?email=${encodeURIComponent(email)}`);
+      const available = await response.json();
+      
+      if (available) {
+        checkDiv.innerHTML = '<span class="text-success">✓ Email khả dụng</span>';
+        emailValid = true;
+      } else {
+        checkDiv.innerHTML = '<span class="text-danger">✗ Email đã được sử dụng</span>';
+        emailValid = false;
+      }
+    } catch (error) {
+      checkDiv.innerHTML = '<span class="text-warning">Không thể kiểm tra email</span>';
+      emailValid = false;
+    }
+    
+    updateSubmitButton();
+  });
+
+  // Check password match
+  function checkPasswordMatch() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    const matchDiv = document.getElementById('passwordMatch');
+    
+    if (!confirmPassword) {
+      matchDiv.innerHTML = '';
+      passwordMatch = false;
+      return;
+    }
+    
+    if (password === confirmPassword) {
+      matchDiv.innerHTML = '<span class="text-success">✓ Mật khẩu khớp</span>';
+      passwordMatch = true;
+    } else {
+      matchDiv.innerHTML = '<span class="text-danger">✗ Mật khẩu không khớp</span>';
+      passwordMatch = false;
+    }
+    
+    updateSubmitButton();
+  }
+
+  passwordInput.addEventListener('input', checkPasswordMatch);
+  confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+  function updateSubmitButton() {
+    const isValid = usernameValid && emailValid && passwordMatch && 
+                   usernameInput.value.trim() && emailInput.value.trim() && 
+                   passwordInput.value && confirmPasswordInput.value;
+    
+    submitBtn.disabled = !isValid;
+  }
+
+  // Form submission
+  form.addEventListener('submit', function(e) {
+    if (!usernameValid || !emailValid || !passwordMatch) {
+      e.preventDefault();
+      alert('Vui lòng kiểm tra lại thông tin đã nhập');
+    }
+  });
+});
+</script>
