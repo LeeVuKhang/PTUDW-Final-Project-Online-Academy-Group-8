@@ -102,5 +102,81 @@ export default {
 
             return deletedCount;
         });
+    },
+
+    // Admin functions 4.2
+    findAllForAdmin() {
+        return db('courses')
+            .leftJoin('categories', 'courses.catid', 'categories.cat_id')
+            .leftJoin('users', 'courses.instructor_id', 'users.user_id')
+            .leftJoin(
+                db('enrollments')
+                    .select('course_id')
+                    .count('* as student_count')
+                    .groupBy('course_id')
+                    .as('course_stats'),
+                'courses.course_id', 'course_stats.course_id'
+            )
+            .select(
+                'courses.*',
+                'categories.cat_name as category_name',
+                'users.name as instructor_name',
+                db.raw('COALESCE(course_stats.student_count, 0) as student_count')
+            )
+            .orderBy('courses.last_update', 'desc');
+    },
+    
+    findByIdForAdmin(id) {
+        return db('courses')
+            .leftJoin('categories', 'courses.catid', 'categories.cat_id')
+            .leftJoin('users', 'courses.instructor_id', 'users.user_id')
+            .leftJoin(
+                db('enrollments')
+                    .select('course_id')
+                    .count('* as student_count')
+                    .groupBy('course_id')
+                    .as('course_stats'),
+                'courses.course_id', 'course_stats.course_id'
+            )
+            .select(
+                'courses.*',
+                'categories.cat_name as category_name',
+                'users.name as instructor_name',
+                db.raw('COALESCE(course_stats.student_count, 0) as student_count')
+            )
+            .where('courses.course_id', id)
+            .first();
+    },
+    
+    removeCourse(id) {
+        return db('courses').where('course_id', id).del();
+    },
+    
+    // Dashboard helper functions
+    count() {
+        return db('courses').count('* as count').first();
+    },
+    
+    findRecentCourses(limit = 5) {
+        return db('courses')
+            .leftJoin('categories', 'courses.catid', 'categories.cat_id')
+            .leftJoin('users', 'courses.instructor_id', 'users.user_id')
+            .select(
+                'courses.*',
+                'categories.cat_name as category_name',
+                'users.name as instructor_name'
+            )
+            .orderBy('courses.last_update', 'desc')
+            .limit(limit);
+    },
+    
+    getTopCategories(limit = 5) {
+        return db('courses')
+            .leftJoin('categories', 'courses.catid', 'categories.cat_id')
+            .select('categories.cat_name', 'categories.cat_id')
+            .count('courses.course_id as course_count')
+            .groupBy('categories.cat_id', 'categories.cat_name')
+            .orderBy('course_count', 'desc')
+            .limit(limit);
     }
 }   
