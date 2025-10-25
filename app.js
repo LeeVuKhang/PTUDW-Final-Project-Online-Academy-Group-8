@@ -50,7 +50,7 @@ app.engine('handlebars', engine({
             }
             return str;
         },
-        renderStars: function(rating) {
+        renderStars(rating) {
             rating = parseFloat(rating);
             if (isNaN(rating) || rating < 0) return '';
             let stars = '';
@@ -59,24 +59,32 @@ app.engine('handlebars', engine({
             const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
     
             for (let i = 0; i < fullStars; i++) {
-                stars += '<i class="fas fa-star"></i>'; // Font Awesome full star
+                stars += '<i class="fas fa-star"></i>'; 
             }
             if (halfStar) {
-                stars += '<i class="fas fa-star-half-alt"></i>'; // Font Awesome half star
+                stars += '<i class="fas fa-star-half-alt"></i>'; 
             }
             for (let i = 0; i < emptyStars; i++) {
-                stars += '<i class="far fa-star"></i>'; // Font Awesome empty star (regular style)
+                stars += '<i class="far fa-star"></i>'; 
             }
             return stars;
+        },
+        formatRating(rating) {
+            const num = parseFloat(rating);
+            if (isNaN(num) || num === 0) return 'Chưa có';
+            return num.toFixed(1); 
         },
         selectOption (selectedValue, optionValue) {
             return String(selectedValue) === String(optionValue) ? 'selected' : '';
         },
-        createPaginationLink: function(page, queryParams) {
+        createPaginationLink(page, queryParams) {
             const params = new URLSearchParams(queryParams);
             params.set('page', page);
             return '?' + params.toString();
-        }
+        },
+        json(context) {
+            return JSON.stringify(context);
+        },
     }
 }));
 
