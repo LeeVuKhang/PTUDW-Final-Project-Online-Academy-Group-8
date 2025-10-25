@@ -12,137 +12,153 @@ background-color: #f8f9fa;
 
 <div class="container my-5">
     <div class="card shadow-sm">
-
         <div class="card-header bg-white py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Khóa học của giảng viên</h3>
+
+                <a href="/instructor/create-course" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Thêm khóa học mới
+                </a>
+            </div>
         </div>
-            <form action="/instructor/courses" method="GET" id="filterForm">
-                <div class="card-body p-3 border-bottom">
-                    <div class="row g-2 align-items-center">
+        <form action="/instructor/courses" method="GET" id="filterForm">
+            <div class="card-body p-3 border-bottom">
+                <div class="row g-2 align-items-center">
 
-                        <div class="col-lg-8">
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                <input type="text" id="searchInput" class="form-control"
-                                    placeholder="Tìm theo tên hoặc mô tả..." name="search" 
-                                    value="{{currentSearchTerm}}"> 
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                                <select class="form-select" name="category" id="categorySelect"
-                                    aria-label="Lọc theo danh mục">
-                                    <option value="all" {{selectOption currentCategoryId 'all' }}>Tất cả danh mục
-                                    </option>
-                                    {{#each categories}}
-                                    <option value="{{this.cat_id}}" {{selectOption ../currentCategoryId this.cat_id}}>
-                                        {{this.cat_name}}
-                                    </option>
-                                    {{/each}}
-                                </select>
+                    <div class="col-lg-8">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="searchInput" class="form-control"
+                                placeholder="Tìm theo tên hoặc mô tả..." name="search" value="{{currentSearchTerm}}">
                         </div>
                     </div>
-                    <div class="row g-2 mt-2">
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-funnel-fill"></i> Lọc / Tìm kiếm
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </form> 
-
-            {{#fill_section 'js'}}
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    const categorySelect = document.getElementById('categorySelect');
-                    if (categorySelect) {
-                        categorySelect.addEventListener('change', function () {
-                            document.getElementById('filterForm').submit();
-                        });
-                    }
-                });
-            </script>
-            {{/fill_section}}
-
-            <div class="card-body p-0">
-                <div class="list-group list-group-flush" id="courseList">
-                    {{#each courses}}
-                    <div class="list-group-item course-item" data-category="{{this.category_name}}">
-                        <div class="row align-items-center">
-                            <div class="col-auto">
-                                <img src="{{this.image_url}}" class="course-thumbnail" alt="{{this.title}}">
-                            </div>
-                            <div class="col">
-                                <h5 class="mb-1 course-title">{{this.title}}</h5>
-                                <p class="mb-1 text-muted course-description">{{this.short_description}}</p>
-
-                                <small class="text-muted">
-                                    <span class="badge bg-primary me-2">{{this.category_name}}</span>
-                                    <i>{{this.tinydes}}| </i>
-                                    <i class="bi bi-people-fill"></i> {{this.student_count}} 1000 học viên |
-                                    <i class="bi bi-star-fill text-warning"></i> {{this.rating}}4.5/5.0
-                                </small>
-                            </div>
-                            <div class="col-auto">
-                                <div class="d-flex gap-2 flex-wrap justify-content-end">
-                                    <a href="/instructor/reviews/{{this.id}}" class="btn btn-sm btn-outline-warning">
-                                        <i class="bi bi-star"></i> Reviews
-                                    </a>
-
-                                    <a href="/instructor/update/{{this.course_id}}"
-                                        class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-pencil"></i> Chỉnh sửa
-                                    </a>
-
-                                    <a href="/instructor/courses/{{this.course_id}}"
-                                        class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i> Chi tiết
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {{/each}}
-
-                    {{#unless courses.length}}
-                    <div id="noResults" class="text-center py-5">
-                        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
-                        <p class="text-muted mt-3">Không tìm thấy khóa học nào phù hợp</p>
-                    </div>
-                    {{/unless}}
-
-                </div>
-            </div>
-
-            <div class="card-footer bg-white p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span id="courseCount" class="text-muted">
-                        Hiển thị {{courses.length}} trên tổng số {{totalCourses}} khóa học
-                    </span>
-
-                    {{#if (isGreater pagination.totalPages 1)}}
-                    <nav aria-label="Course pagination">
-                        <ul class="pagination justify-content-end mb-0">
-
-                            <li class="page-item {{#unless pagination.hasPrevPage}}disabled{{/unless}}">
-                                <a class="page-link" href="{{createPaginationLink pagination.prevPage ../queryParams}}"
-                                    tabindex="-1" aria-disabled="true">Previous</a>
-                            </li>
-                            {{#each pagination.pageNumbers}}
-                            <li class="page-item {{#if this.isCurrent}}active{{/if}}">
-                                <a class="page-link"
-                                    href="{{createPaginationLink this.value ../../queryParams}}">{{this.value}}</a>
-                            </li>
+                    <div class="col-lg-4">
+                        <select class="form-select" name="category" id="categorySelect" aria-label="Lọc theo danh mục">
+                            <option value="all" {{selectOption currentCategoryId 'all' }}>Tất cả danh mục
+                            </option>
+                            {{#each categories}}
+                            <option value="{{this.cat_id}}" {{selectOption ../currentCategoryId this.cat_id}}>
+                                {{this.cat_name}}
+                            </option>
                             {{/each}}
-
-                            <li class="page-item {{#unless pagination.hasNextPage}}disabled{{/unless}}">
-                                <a class="page-link"
-                                    href="{{createPaginationLink pagination.nextPage ../queryParams}}">Next</a>
-                            </li>
-
-                        </ul>
-                    </nav>
-                    {{/if}}
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-2 mt-2">
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-funnel-fill"></i> Lọc / Tìm kiếm
+                        </button>
+                    </div>
                 </div>
             </div>
+        </form>
+
+        {{#fill_section 'js'}}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const categorySelect = document.getElementById('categorySelect');
+                if (categorySelect) {
+                    categorySelect.addEventListener('change', function () {
+                        document.getElementById('filterForm').submit();
+                    });
+                }
+            });
+        </script>
+        {{/fill_section}}
+
+        <div class="card-body p-0">
+            <div class="list-group list-group-flush" id="courseList">
+                {{#each courses}}
+                <div class="list-group-item course-item" data-category="{{this.category_name}}">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <img src="{{this.image_url}}" class="course-thumbnail" alt="{{this.title}}">
+                        </div>
+                        <div class="col">
+                            <h5 class="mb-1 course-title">{{this.title}}</h5>
+                            <p class="mb-1 text-muted course-description">{{this.short_description}}</p>
+
+                            <small class="text-muted">
+                                <span class="badge bg-primary me-2">{{this.category_name}}</span>
+                                <i>{{this.tinydes}}| </i>
+                                {{#if this.is_complete}}
+                                <i class="bi bi-people-fill"></i> {{this.views}} học viên |
+                                {{#if (isGreater this.rating_count 0)}}
+                                <i class="bi bi-star-fill text-warning"></i>
+                                <strong>{{formatRating this.avg_rating}}</strong>
+                                ({{this.rating_count}} đánh giá) |
+                                {{else}}
+                                <i class="bi bi-star text-muted"></i>
+                                Chưa có đánh giá |
+                                {{/if}}
+
+                                <span class="text-success">Hoàn thành</span>
+                                {{else}}
+                                <span class="text-danger">Chưa hoàn thành</span>
+                                {{/if}}
+                            </small>
+                        </div>
+                        <div class="col-auto">
+                            <div class="d-flex gap-2 flex-wrap justify-content-end">
+                                <a href="/instructor/reviews/{{this.id}}" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-star"></i> Reviews
+                                </a>
+
+                                <a href="/instructor/update/{{this.course_id}}"
+                                    class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i> Chỉnh sửa
+                                </a>
+
+                                <a href="/instructor/courses/{{this.course_id}}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Chi tiết
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {{/each}}
+
+                {{#unless courses.length}}
+                <div id="noResults" class="text-center py-5">
+                    <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                    <p class="text-muted mt-3">Không tìm thấy khóa học nào phù hợp</p>
+                </div>
+                {{/unless}}
+
+            </div>
+        </div>
+
+        <div class="card-footer bg-white p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <span id="courseCount" class="text-muted">
+                    Hiển thị {{courses.length}} trên tổng số {{totalCourses}} khóa học
+                </span>
+
+                {{#if (isGreater pagination.totalPages 1)}}
+                <nav aria-label="Course pagination">
+                    <ul class="pagination justify-content-end mb-0">
+
+                        <li class="page-item {{#unless pagination.hasPrevPage}}disabled{{/unless}}">
+                            <a class="page-link" href="{{createPaginationLink pagination.prevPage ../queryParams}}"
+                                tabindex="-1" aria-disabled="true">Previous</a>
+                        </li>
+                        {{#each pagination.pageNumbers}}
+                        <li class="page-item {{#if this.isCurrent}}active{{/if}}">
+                            <a class="page-link"
+                                href="{{createPaginationLink this.value ../../queryParams}}">{{this.value}}</a>
+                        </li>
+                        {{/each}}
+
+                        <li class="page-item {{#unless pagination.hasNextPage}}disabled{{/unless}}">
+                            <a class="page-link"
+                                href="{{createPaginationLink pagination.nextPage ../queryParams}}">Next</a>
+                        </li>
+
+                    </ul>
+                </nav>
+                {{/if}}
+            </div>
+        </div>
     </div>
 </div>
