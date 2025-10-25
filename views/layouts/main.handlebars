@@ -62,13 +62,13 @@
               {{#if children}}
               <!-- Có con -->
               <li class="dropdown-submenu position-relative">
-                <a class="dropdown-item dropdown-toggle" href="/products/byCat?id={{cat_id}}">
+                <a class="dropdown-item dropdown-toggle" href="/course/byCat?id={{cat_id}}">
                   {{cat_name}}
                 </a>
                 <ul class="dropdown-menu">
                   {{#each children}}
                   <li>
-                    <a class="dropdown-item" href="/products/byCat?id={{cat_id}}">
+                    <a class="dropdown-item" href="/course/byCat?id={{cat_id}}">
                       {{cat_name}}
                     </a>
                   </li>
@@ -78,7 +78,7 @@
               {{else}}
               <!-- Không có con -->
               <li>
-                <a class="dropdown-item" href="/products/byCat?id={{cat_id}}">
+                <a class="dropdown-item" href="/course/byCat?id={{cat_id}}">
                   {{cat_name}}
                 </a>
               </li>

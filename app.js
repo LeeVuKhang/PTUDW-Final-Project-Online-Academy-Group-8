@@ -192,9 +192,6 @@ app.use(async (req, res, next) => {
   next();
 });
 
-import accountRouter from './routes/account.routes.js';
-app.use('/account', accountRouter);
-
 
 // Gắn các router
 app.use('/account', accountRouter);
