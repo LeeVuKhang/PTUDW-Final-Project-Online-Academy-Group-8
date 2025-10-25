@@ -1,0 +1,44 @@
+<div class="container my-5">
+  <h3 class="fw-bold mb-4 text-primary">
+    🏫{{catname}}
+  </h3>
+
+  {{#if (eq courses.length 0)}}
+    <p class="text-muted fst-italic">Không có khóa học nào trong danh mục này.</p>
+  {{else}}
+    <div class="row g-4">
+      {{#each courses}}
+        <div class="col-md-3 col-sm-6">
+  <div class="card h-100 d-flex flex-column shadow-sm border-0 rounded-4">
+    <img src="{{image_url}}" class="card-img-top" alt="{{title}}">
+    <div class="card-body d-flex flex-column">
+      <h6 class="fw-semibold mb-1">{{title}}</h6>
+      <p class="text-muted small flex-grow-1">{{tinydes}}</p>
+      <p class="fw-bold text-primary mb-3">
+        {{formatNumber discount_price}}đ
+        <span class="text-muted text-decoration-line-through">
+          {{formatNumber price}}
+        </span>
+      </p>
+      <a href="/courses/details/{{course_id}}"
+         class="btn btn-outline-primary w-100 mt-auto">Xem chi tiết</a>
+    </div>
+  </div>
+</div>
+
+      {{/each}}
+    </div>
+
+    <!-- Pagination -->
+    <nav class="mt-5 d-flex justify-content-center">
+      <ul class="pagination pagination-sm">
+        {{#each page_numbers}}
+          <li class="page-item {{#if isCurrent}}active{{/if}}">
+            <a class="page-link"
+               href="?id={{catid}}&page={{value}}">{{value}}</a>
+          </li>
+        {{/each}}
+      </ul>
+    </nav>
+  {{/if}}
+</div>

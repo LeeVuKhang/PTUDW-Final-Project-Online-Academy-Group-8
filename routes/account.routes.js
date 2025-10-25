@@ -23,7 +23,7 @@ router.post('/signup', async (req, res) => {
         name: req.body.name,
         email: req.body.email,
         dob: req.body.dob,
-        permission: 0
+        //permission: 0
     }
 
     await userModel.add(user);
