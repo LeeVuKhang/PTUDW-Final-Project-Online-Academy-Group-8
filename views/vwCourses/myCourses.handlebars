@@ -22,9 +22,9 @@
           <p class="text-primary fw-bold">{{formatNumber this.discount_price}}₫</p>
 
           <div class="mt-auto d-flex flex-column gap-2">
-            <a href="/courses/learn/{{this.course_id}}" class="btn btn-primary w-100">🎥 Học ngay</a>
+            <a href="/course/learn/{{this.course_id}}" class="btn btn-primary w-100">🎥 Học ngay</a>
             
-            <form action="/courses/my-courses/remove/{{this.course_id}}" method="post">
+            <form action="/course/my-courses/remove/{{this.course_id}}" method="post">
               <button type="submit" class="btn btn-danger w-100">❌ Xóa khóa học</button>
             </form>
 
@@ -40,10 +40,10 @@
   </div>
   {{else}}
   <p class="text-muted fst-italic">Bạn chưa mua khóa học nào.</p>
-  <a href="/courses" class="btn btn-primary">Xem khóa học</a>
+  <a href="/course" class="btn btn-primary">Xem khóa học</a>
   {{/if}}
   <div class="mb-3 d-flex gap-2">
-  <a href="/courses" class="btn btn-outline-primary btn-sm">
+  <a href="/course" class="btn btn-outline-primary btn-sm">
     ← Tất cả khóa học
   </a>
 </div>

@@ -122,7 +122,7 @@ font-weight: bold;
 
   {{#if isEnrolled}}
   <!-- Form đánh giá -->
-  <form action="/courses/rate/{{course.course_id}}" method="post" class="mb-5">
+  <form action="/course/rate/{{course.course_id}}" method="post" class="mb-5">
     <div class="mb-3">
       <label class="form-label fw-semibold">Chọn số sao</label>
       <select name="value" class="form-select" required>
@@ -193,12 +193,12 @@ font-weight: bold;
             </div>
 
             <div class="d-grid gap-2">
-              <form action="/courses/add-to-cart/{{course.course_id}}" method="get">
+              <form action="/course/add-to-cart/{{course.course_id}}" method="get">
                 <button type="submit" class="btn btn-primary btn-lg fw-bold w-100 mb-2">
                   🛒 Thêm vào giỏ hàng
                   </button>
               </form>
-              <form action="/courses/buy-now/{{course.course_id}}" method="get">
+              <form action="/course/buy-now/{{course.course_id}}" method="get">
                 <button type="submit" class="btn btn-outline-dark btn-lg fw-bold w-100">
                   💳 Mua ngay
                 </button>
