@@ -9,7 +9,7 @@ import categoryModel from './models/category.model.js';
 import * as courseModel from './models/course.model.js';
 import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
 
-import courseRouter from './routes/courses.routes.js';
+import courseRouter from './routes/course.routes.js';
 import accountRouter from './routes/account.routes.js';
 import categoryRouter from './routes/category.routes.js';
 import productRouter from './routes/product.routes.js';
@@ -179,7 +179,7 @@ app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
 app.use('/products', productRouter);
 app.use('/instructor', instructorRouter);
-app.use('/courses', courseRouter);
+app.use('/course', courseRouter);
 
 // Khởi động server
 app.listen(3000, () => {
