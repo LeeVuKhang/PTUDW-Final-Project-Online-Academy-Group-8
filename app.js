@@ -7,7 +7,7 @@ import Handlebars from 'handlebars';
 
 import categoryModel from './models/category.model.js';
 import * as courseModel from './models/course.model.js';
-import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
+import { checkAdmin, checkAuthenticated, checkInstructor } from './models/auth.model.js';
 
 import courseRouter from './routes/course.routes.js';
 import accountRouter from './routes/account.routes.js';
@@ -155,10 +155,10 @@ app.get('/', async (req, res) => {
 app.get('/home', (req, res) => res.redirect('/'));
 
 // Gắn các router
-app.use('/account', accountRouter);
+app.use('/account', checkAuthenticated, accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
 app.use('/product', productRouter);
-app.use('/instructor', instructorRouter);
+app.use('/instructor', checkAuthenticated, checkInstructor, instructorRouter);
 app.use('/course', courseRouter);
 
 // Khởi động server

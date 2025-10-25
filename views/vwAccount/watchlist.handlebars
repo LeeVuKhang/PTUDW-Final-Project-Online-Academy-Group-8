@@ -53,7 +53,12 @@
 
                       <form class="action-form" method="POST" action="/account/watchlist/remove">
                         <input type="hidden" name="course_id" value="{{this.course_id}}">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                        
+                        {{!-- 
+                          ĐÃ THÊM 'onclick' VÀO NÚT BÊN DƯỚI 
+                        --}}
+                        <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                onclick="return confirm('Bạn có chắc chắn muốn xóa khóa học này khỏi danh sách yêu thích?');">
                           <i class="bi bi-trash"></i> Xóa
                         </button>
                       </form>
