@@ -159,8 +159,6 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
   });
 });
 
-
-
 /*Đánh giá khóa học*/
 router.post("/rate/:id", checkAuthenticated, async (req, res) => {
   const course_id = req.params.id;
