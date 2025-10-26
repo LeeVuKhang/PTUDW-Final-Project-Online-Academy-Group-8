@@ -1,3 +1,6 @@
+import 'dotenv/config';
+
+
 import express from 'express';
 import { engine } from 'express-handlebars';
 import hbs_sections from 'express-handlebars-sections';
@@ -19,6 +22,8 @@ import instructorRouter from './routes/instructor.routes.js';
 import adminCourseRouter from './routes/admin-course.routes.js';
 import adminUserRouter from './routes/admin-user.routes.js';
 import adminRouter from './routes/admin.routes.js';
+
+
 
 const __dirname = import.meta.dirname;
 const app = express();
