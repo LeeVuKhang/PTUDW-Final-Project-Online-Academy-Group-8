@@ -7,7 +7,9 @@ import Handlebars from 'handlebars';
 
 import categoryModel from './models/category.model.js';
 import * as courseModel from './models/course.model.js';
-import { checkAdmin, checkAuthenticated, checkInstructor } from './models/auth.model.js';
+import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
+import ratingModel from './models/rating.model.js';
+
 
 import courseRouter from './routes/course.routes.js';
 import accountRouter from './routes/account.routes.js';
@@ -52,9 +54,9 @@ app.engine('handlebars', engine({
     eq(a, b) {
       return a === b;
     },
-    ne(a,b ){
+    ne(a, b) {
       return a !== b;
-    },  
+    },
 
     formatDate(date) {
       if (!date) return '';
@@ -158,42 +160,52 @@ app.use('/static', express.static('static'));
 
 // Chia mảng thành nhóm (cho giao diện home)
 function chunkArray(array, size) {
-    const result = [];
-    for (let i = 0; i < array.length; i += size) {
-        result.push(array.slice(i, i + size));
-    }
-    return result;
+  const result = [];
+  for (let i = 0; i < array.length; i += size) {
+    result.push(array.slice(i, i + size));
+  }
+  return result;
 }
 
 // Trang chủ – hiển thị dữ liệu thật từ courseModel
 app.get('/', async (req, res) => {
-    if (req.session.isAuthenticated) {
-        console.log('User is authenticated');
-        console.log(req.session.authUser)
-    }
-    const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4)
-    const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4)
-    const parents = await categoryModel.findParents();
+  if (req.session.isAuthenticated) {
+    console.log('User is authenticated');
+    console.log(req.session.authUser)
+  }
+  const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4)
+  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4)
+  const parents = await categoryModel.findParents();
+  const rating = await ratingModel.findTop3RecentFiveStarCourses();
+  const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek();
+  const topCate = await categoryModel.findTopCategoriesOfWeek(3);
+  // Thêm mảng stars để Handlebars each
+  rating.forEach(r => {
+    r.stars = Array.from({ length: r.value });
+  });
 
-    // Lấy children cho mỗi parent
-    for (const parent of parents) {
-      parent.children = await categoryModel.findChildren(parent.cat_id);
-    }
+  // Lấy children cho mỗi parent
+  for (const parent of parents) {
+    parent.children = await categoryModel.findChildren(parent.cat_id);
+  }
 
-    res.render('home', {
-        newestCourses,
-        mostViewsCourses,
-        parents,
-    });
+  res.render('home', {
+    newestCourses,
+    mostViewsCourses,
+    parents,
+    rating,
+    impressiveCourses,
+    topCate,
+  });
 });
 
 app.use(async (req, res, next) => {
   const parents = await categoryModel.findParents();
 
-    // Lấy children cho mỗi parent
-    for (const parent of parents) {
-      parent.children = await categoryModel.findChildren(parent.cat_id);
-    }
+  // Lấy children cho mỗi parent
+  for (const parent of parents) {
+    parent.children = await categoryModel.findChildren(parent.cat_id);
+  }
   res.locals.parents = parents;
   next();
 });
@@ -211,5 +223,5 @@ app.use('/admin', checkAuthenticated, checkAdmin, adminRouter);
 
 // Khởi động server
 app.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+  console.log('Server is running on http://localhost:3000');
 });

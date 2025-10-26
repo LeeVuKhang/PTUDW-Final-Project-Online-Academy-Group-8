@@ -42,6 +42,20 @@ export default {
     // Dashboard function
     count() {
         return db('categories').count('* as count').first();
+    },
+
+    // Top categories of week
+    async findTopCategoriesOfWeek(limit = 3) {
+    return db('enrollments as e')
+        .join('courses as c', 'e.course_id', 'c.course_id')
+        .join('categories as cat', 'c.catid', 'cat.cat_id') // chú ý alias đúng với DB của em
+        .where('e.erm_date', '>=', db.raw("NOW() - INTERVAL '7 DAYS'"))
+        .groupBy('cat.cat_id', 'cat.cat_name')
+        .select('cat.cat_id', 'cat.cat_name')
+        .count('e.erm_id as total_enrollments')
+        .orderBy('total_enrollments', 'desc')
+        .limit(limit);
     }
+
 };
 
