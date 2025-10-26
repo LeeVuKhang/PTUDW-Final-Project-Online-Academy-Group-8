@@ -7,7 +7,7 @@ import Handlebars from 'handlebars';
 
 import categoryModel from './models/category.model.js';
 import * as courseModel from './models/course.model.js';
-import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
+import { checkAdmin, checkAuthenticated, checkInstructor } from './models/auth.model.js';
 
 import courseRouter from './routes/course.routes.js';
 import accountRouter from './routes/account.routes.js';
@@ -203,7 +203,7 @@ app.use(async (req, res, next) => {
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
 app.use('/product', productRouter);
-app.use('/instructor', instructorRouter);
+app.use('/instructor', checkInstructor,instructorRouter);
 app.use('/course', courseRouter);
 app.use('/admin/courses', checkAuthenticated, checkAdmin, adminCourseRouter);
 app.use('/admin/users', checkAuthenticated, checkAdmin, adminUserRouter);

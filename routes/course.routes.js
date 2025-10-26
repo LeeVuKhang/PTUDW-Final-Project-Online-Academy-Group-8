@@ -29,26 +29,72 @@ router.get("/", async (req, res) => {
 
 /*Danh sách khóa học theo danh mục*/
 router.get("/byCat", async (req, res) => {
-  const catid = req.query.id || 0;
-  const category = await db("categories").where("cat_id", catid).first();
-  const catname = category ? category.cat_name : "Danh mục không tồn tại";
+  try {
+    const catid = req.query.id || 0;
+    const category = await db("categories").where("cat_id", catid).first();
+    const catname = category ? category.cat_name : "Danh mục không tồn tại";
 
-  const page = parseInt(req.query.page) || 1;
-  const limit = 8;
-  const offset = (page - 1) * limit;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 8;
+    const offset = (page - 1) * limit;
 
-  const courses = await db("courses").where("catid", catid).limit(limit).offset(offset);
-  const total = await db("courses").where("catid", catid).count("* as amount").first();
-  const nPages = Math.ceil(total.amount / limit);
+    const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null;
 
-  const page_numbers = [];
-  for (let i = 1; i <= nPages; i++) {
-    page_numbers.push({ value: i, catid, isCurrent: i === page });
+    let query = db("courses as c")
+      .join("categories as cat", "c.catid", "cat.cat_id")
+      .leftJoin("users as u", "c.instructor_id", "u.user_id")
+      .leftJoin("ratings as r", "c.course_id", "r.course_id")
+      .where("c.catid", catid)
+      .select(
+        "c.course_id",
+        "c.title",
+        "c.price",
+        "c.discount_price",
+        "c.image_url",
+        "cat.cat_name",
+        "u.name as instructor_name",
+        db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
+        db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
+      )
+      .groupBy("c.course_id", "cat.cat_name", "u.name")
+      .limit(limit)
+      .offset(offset);
+
+    if (student_id) {
+      query.select(
+        db.raw(
+          `EXISTS (
+            SELECT 1 FROM watchlists w 
+            WHERE w.course_id = c.course_id AND w.student_id = ?
+          ) as "isInWatchlist"`,
+          [student_id]
+        )
+      );
+    } else {
+      query.select(db.raw('false as "isInWatchlist"'));
+    }
+
+    const courses = await query;
+
+    const total = await db("courses").where("catid", catid).count("* as amount").first();
+    const nPages = Math.ceil(total.amount / limit);
+
+    const page_numbers = [];
+    for (let i = 1; i <= nPages; i++) {
+      page_numbers.push({ value: i, catid, isCurrent: i === page });
+    }
+
+    res.render("vwCourses/byCat", {
+      layout: "main",
+      courses,
+      catname,
+      page_numbers,
+    });
+  } catch (error) {
+    console.error("Lỗi trang byCat:", error);
+    res.status(500).send("Lỗi máy chủ");
   }
-
-  res.render("vwCourses/byCat", { layout: "main", courses, catname, page_numbers });
 });
-
 /*Chi tiết khóa học*/
 router.get("/details/:id", async (req, res) => {
   const course_id = req.params.id;
@@ -206,25 +252,38 @@ router.post("/checkout/:id", checkAuthenticated, async (req, res) => {
 });
 
 /*Thêm vào giỏ hàng*/
-router.get("/add-to-cart/:id", checkAuthenticated, async (req, res) => {
+router.post("/add-to-cart/:id", checkAuthenticated, async (req, res) => {
   const course_id = req.params.id;
   const student_id = req.session.authUser.user_id;
 
   try {
     const exists = await db("cart_items").where({ student_id, course_id }).first();
-    if (!exists) {
-      await db("cart_items").insert({
-        student_id,
-        course_id,
-        quantity: 1,
-        added_at: new Date(),
+
+    if (exists) {
+      return res.json({
+        status: 'exists',
+        message: 'Khóa học này đã có trong giỏ hàng của bạn.'
       });
     }
 
-    return res.redirect("/course/cart");
+    await db("cart_items").insert({
+      student_id,
+      course_id,
+      quantity: 1,
+      added_at: new Date(),
+    });
+
+    return res.json({
+      status: 'added',
+      message: 'Đã thêm vào giỏ hàng thành công!'
+    });
+
   } catch (err) {
     console.error(err);
-    return res.status(500).send("Lỗi thêm vào giỏ hàng!");
+    return res.status(500).json({
+      status: 'error',
+      message: 'Lỗi thêm vào giỏ hàng!'
+    });
   }
 });
 
