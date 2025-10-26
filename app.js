@@ -38,6 +38,12 @@ app.engine('handlebars', engine({
     section: hbs_sections(),
     fill_section: hbs_sections(),
 
+    extractYouTubeId(url) {
+        if (!url) return '';
+        const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^?&]+)/);
+        return match ? match[1] : '';
+    },
+
     // Định dạng tiền tệ VND
     formatNumber(num) {
       if (typeof num !== 'number') num = parseFloat(num);
@@ -204,14 +210,12 @@ app.use(async (req, res, next) => {
   next();
 });
 
-app.use('/account', accountRouter);
-
 
 // Gắn các router
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
 app.use('/product', productRouter);
-app.use('/instructor', instructorRouter);
+app.use('/instructor', checkInstructor,instructorRouter);
 app.use('/course', courseRouter);
 app.use('/admin/courses', checkAuthenticated, checkAdmin, adminCourseRouter);
 app.use('/admin/users', checkAuthenticated, checkAdmin, adminUserRouter);

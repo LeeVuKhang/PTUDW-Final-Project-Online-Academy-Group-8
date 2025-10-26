@@ -29,7 +29,7 @@ router.get('/byCat', async (req, res) => {
         })
     }
 
-    res.render('vwProducts/byCat', { 
+    res.render('vwCourses/byCat', { 
         products: list,
         catname: catname,
         page_numbers: page_numbers,
@@ -59,7 +59,7 @@ router.get('/details', async (req, res) => {
             catid: catid,
         });
     }
-    else res.render('vwProducts/byCat/?id="1"');
+    else res.render('vwCourses/byCat/?id="1"');
 });
 
 export default router; 
