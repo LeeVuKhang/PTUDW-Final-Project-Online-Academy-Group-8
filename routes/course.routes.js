@@ -1,83 +1,63 @@
 import express from "express";
 import db from "../utils/db.js";
 import { checkAuthenticated } from "../models/auth.model.js";
+import userModel from "../models/user.model.js";
+import * as courseModel from "../models/course.model.js";
+
 
 const router = express.Router();
+const pageLimit = 8;
 
 /*Trang danh sách tất cả khóa học*/
 router.get("/", async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = 8;
-  const offset = (page - 1) * limit;
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * pageLimit;
+    const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null;
 
-  const courses = await db("courses").limit(limit).offset(offset);
-  const total = await db("courses").count("* as amount").first();
-  const nPages = Math.ceil(total.amount / limit);
+    const [courses, totalResult] = await Promise.all([
+      courseModel.findCoursesByFilter('all', student_id, pageLimit, offset),
+      courseModel.countCoursesByFilter('all')
+    ]);
 
-  const page_numbers = [];
-  for (let i = 1; i <= nPages; i++) {
-    page_numbers.push({ value: i, isCurrent: i === page });
+    const total = totalResult.amount;
+    const nPages = Math.ceil(total / pageLimit);
+
+    const page_numbers = [];
+    for (let i = 1; i <= nPages; i++) {
+      page_numbers.push({ value: i, isCurrent: i === page });
+    }
+
+    res.render("vwCourses/byCat", {
+      layout: "main",
+      courses,
+      catname: "Tất cả khóa học",
+      page_numbers,
+    });
+  } catch (error) {
+    console.error("Lỗi trang /course:", error);
+    res.status(500).send("Lỗi máy chủ");
   }
-
-  res.render("vwCourses/byCat", {
-    layout: "main",
-    courses,
-    catname: "Tất cả khóa học",
-    page_numbers,
-  });
 });
 
 /*Danh sách khóa học theo danh mục*/
 router.get("/byCat", async (req, res) => {
   try {
     const catid = req.query.id || 0;
-    const category = await db("categories").where("cat_id", catid).first();
-    const catname = category ? category.cat_name : "Danh mục không tồn tại";
-
     const page = parseInt(req.query.page) || 1;
-    const limit = 8;
-    const offset = (page - 1) * limit;
-
+    const offset = (page - 1) * pageLimit;
     const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null;
 
-    let query = db("courses as c")
-      .join("categories as cat", "c.catid", "cat.cat_id")
-      .leftJoin("users as u", "c.instructor_id", "u.user_id")
-      .leftJoin("ratings as r", "c.course_id", "r.course_id")
-      .where("c.catid", catid)
-      .select(
-        "c.course_id",
-        "c.title",
-        "c.price",
-        "c.discount_price",
-        "c.image_url",
-        "cat.cat_name",
-        "u.name as instructor_name",
-        db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
-        db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
-      )
-      .groupBy("c.course_id", "cat.cat_name", "u.name")
-      .limit(limit)
-      .offset(offset);
+    const category = await categoryModel.findById(catid);
+    const catname = category ? category.cat_name : "Danh mục không tồn tại";
 
-    if (student_id) {
-      query.select(
-        db.raw(
-          `EXISTS (
-            SELECT 1 FROM watchlists w 
-            WHERE w.course_id = c.course_id AND w.student_id = ?
-          ) as "isInWatchlist"`,
-          [student_id]
-        )
-      );
-    } else {
-      query.select(db.raw('false as "isInWatchlist"'));
-    }
-
-    const courses = await query;
-
-    const total = await db("courses").where("catid", catid).count("* as amount").first();
-    const nPages = Math.ceil(total.amount / limit);
+    const [courses, totalResult] = await Promise.all([
+      courseModel.findCoursesByFilter(catid, student_id, pageLimit, offset),
+      courseModel.countCoursesByFilter(catid)
+    ]);
+    
+    const total = totalResult.amount;
+    const nPages = Math.ceil(total / pageLimit);
 
     const page_numbers = [];
     for (let i = 1; i <= nPages; i++) {
@@ -92,6 +72,33 @@ router.get("/byCat", async (req, res) => {
     });
   } catch (error) {
     console.error("Lỗi trang byCat:", error);
+    res.status(500).send("Lỗi máy chủ");
+  }
+});
+
+router.get("/instructorProfile", async (req, res) => {
+  try {
+    const instructor_id = req.query.id;
+    if (!instructor_id) {
+      return res.redirect('/');
+    }
+
+    const instructor = await userModel.findById(instructor_id);
+
+    if (!instructor || instructor.role !== 2) {
+      return res.status(404).send("Không tìm thấy giảng viên này.");
+    }
+
+    const courses = await db("courses").where("instructor_id", instructor_id);
+
+    res.render("vwCourses/instructorProfile", {
+      layout: "main",
+      instructor,
+      courses
+    });
+
+  } catch (error) {
+    console.error("Lỗi trang instructorProfile:", error);
     res.status(500).send("Lỗi máy chủ");
   }
 });
@@ -379,4 +386,30 @@ router.post("/my-courses/remove/:id", checkAuthenticated, async (req, res) => {
   res.redirect("/course/my-courses");
 });
 
+router.get("/instructorProfile", async (req, res) => {
+  try {
+    const instructor_id = req.query.id;
+    if (!instructor_id) {
+      return res.redirect('/');
+    }
+
+    const instructor = await userModel.findById(instructor_id);
+
+    if (!instructor || instructor.role !== 2) {
+      return res.status(404).send("Không tìm thấy giảng viên này.");
+    }
+
+    const courses = await db("courses").where("instructor_id", instructor_id);
+
+    res.render("vwCourses/instructorProfile", {
+      layout: "main",
+      instructor,
+      courses
+    });
+
+  } catch (error) {
+    console.error("Lỗi trang instructorProfile:", error);
+    res.status(500).send("Lỗi máy chủ");
+  }
+});
 export default router;
