@@ -178,11 +178,12 @@ app.get('/', async (req, res) => {
     console.log('User is authenticated');
     console.log(req.session.authUser)
   }
-  const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4)
-  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4)
+  const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null; 
+  const newestCourses = chunkArray(await courseModel.findNewestCourses(4, student_id), 4); 
+  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(4, student_id), 4); 
+  const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek(4, student_id); 
   const parents = await categoryModel.findParents();
   const rating = await ratingModel.findTop3RecentFiveStarCourses();
-  const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek();
   const topCate = await categoryModel.findTopCategoriesOfWeek(3);
   // Thêm mảng stars để Handlebars each
   rating.forEach(r => {

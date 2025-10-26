@@ -705,7 +705,7 @@ router.post('/watchlist/remove', checkAuthenticated, async (req, res) => {
 
     await watchlistModel.remove(student_id, course_id);
     
-    res.redirect('/account/watchlist'); 
+    res.redirect(req.headers.referer || '/');
   } catch (error) {
     console.error('Error removing from watchlist:', error);
     res.status(500).send('Error updating your watchlist.');
