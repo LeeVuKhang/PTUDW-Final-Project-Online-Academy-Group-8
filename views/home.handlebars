@@ -12,7 +12,7 @@
 
         <div class="carousel-inner">
             <div class="carousel-item active" data-bs-interval="4000">
-                <img src="https://picsum.photos/1920/600?random=11" class="d-block w-100" alt="slide 1">
+                <img src="/static/carousel1.jpg" class="d-block w-100 carousel-img" alt="slide 1">
                 <div class="carousel-caption d-flex flex-column justify-content-center align-items-center h-100">
                     <h1 class="fw-bold display-4 text-white">Khám phá khoá học hàng đầu</h1>
                     <p class="lead text-light mb-4">Cập nhật liên tục, học từ chuyên gia thật — trải nghiệm học tập hiện
@@ -23,7 +23,7 @@
             </div>
 
             <div class="carousel-item" data-bs-interval="4000">
-                <img src="https://picsum.photos/1920/600?random=12" class="d-block w-100" alt="slide 2">
+                <img src="/static/carousel2.jpg" class="d-block w-100 carousel-img" alt="slide 2">
                 <div class="carousel-caption d-flex flex-column justify-content-center align-items-center h-100">
                     <h1 class="fw-bold display-4 text-white">Phát triển kỹ năng của bạn</h1>
                     <p class="lead text-light mb-4">Từ lập trình, thiết kế, đến kỹ năng mềm — tất cả trong tầm tay bạn.
@@ -34,7 +34,7 @@
             </div>
 
             <div class="carousel-item" data-bs-interval="4000">
-                <img src="https://picsum.photos/1920/600?random=13" class="d-block w-100" alt="slide 3">
+                <img src="/static/carousel3.jpg" class="d-block w-100 carousel-img" alt="slide 3">
                 <div class="carousel-caption d-flex flex-column justify-content-center align-items-center h-100">
                     <h1 class="fw-bold display-4 text-white">Học mọi lúc, mọi nơi</h1>
                     <p class="lead text-light mb-4">Truy cập từ mọi thiết bị — học linh hoạt theo nhịp của bạn.</p>
@@ -62,7 +62,7 @@
 
     <div class="d-flex flex-wrap gap-3">
         {{#each parents}}
-        <a href="/categories/{{this.catid}}"
+        <a href="/course/byCat?id={{cat_id}}"
             class="btn btn-outline-primary rounded-pill px-4 py-2 d-flex align-items-center gap-2 shadow-sm">
             <i class="bi bi-folder2-open"></i>
             <span class="fw-semibold">{{cat_name}}</span>
@@ -70,84 +70,41 @@
         {{/each}}
     </div>
 </section>
-
+<!-- ====== Khoá học nổi bật ====== -->
 <section class="container-fluid mt-5 px-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold">✨ Khóa học nổi bật trong tuần</h3>
         <a href="/course" class="btn btn-outline-primary px-4 rounded-pill">Xem tất cả</a>
     </div>
     <div class="row g-4 mb-3">
-        <!-- Card 1 -->
-        <div class="col-md-3 col-sm-6">
+        {{#each impressiveCourses}}
+        <div class="col-md-3 col-sm-6 mb-3">
             <div class="card h-100 border-1 shadow-sm rounded-4 course-card">
-                <img src="https://picsum.photos/400/250?random=11" class="card-img-top" alt="course1">
+                <img src="{{image_url}}" class="card-img-top" alt="{{title}}">
                 <div class="card-body">
-                    <h5 class="card-title fw-semibold">Lập trình Web cơ bản</h5>
-                    <p class="text-muted mb-2">Giảng viên: <strong>Nguyễn Văn A</strong></p>
-                    <p class="text-primary fw-bold mb-2">499.000đ
-                        <span class="text-muted text-decoration-line-through">899.000đ</span>
+                    <h6 class="card-title fw-semibold">{{title}}</h6>
+                    <p class="text-muted mb-1">Giảng viên: <strong>{{instructor_name}}</strong></p>
+                    <p class="text-muted mb-1">Lĩnh vực: {{#if category_name}}{{category_name}}{{else}}Chưa phân
+                        loại{{/if}}<br></p>
+                    <p class="text-primary fw-bold mb-2">
+                        {{formatNumber discount_price}}
+                        <span class="text-muted text-decoration-line-through">{{formatNumber price}}</span>
                     </p>
                     <div class="d-flex align-items-center small text-warning">
-                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i><i class="bi bi-star"></i>
-                        <span class="text-muted ms-2">(210 học viên)</span>
+                        <span class="text-muted ms-2 mb-2">
+                            <i class="bi bi-eye"></i> {{views}}
+                        </span>
                     </div>
+                    <a href="/course/details/{{course_id}}" class="btn btn-outline-primary mt-auto w-100">Xem chi
+                        tiết</a>
                 </div>
             </div>
         </div>
+        {{/each}}
 
-        <!-- Card 2 -->
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-1 shadow-sm course-card">
-                <img src="https://picsum.photos/400/250?random=12" class="card-img-top" alt="course2">
-                <div class="card-body">
-                    <h5 class="card-title fw-semibold">Python nâng cao</h5>
-                    <p class="text-muted mb-2">Giảng viên: <strong>Trần Thị B</strong></p>
-                    <p class="text-primary fw-bold mb-2">599.000đ</p>
-                    <div class="d-flex align-items-center small text-warning">
-                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star"></i>
-                        <span class="text-muted ms-2">(330 học viên)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Card 3 -->
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-1 shadow-sm course-card">
-                <img src="https://picsum.photos/400/250?random=13" class="card-img-top" alt="course3">
-                <div class="card-body">
-                    <h5 class="card-title fw-semibold">Phát triển ứng dụng di động</h5>
-                    <p class="text-muted mb-2">Giảng viên: <strong>Phạm Văn C</strong></p>
-                    <p class="text-primary fw-bold mb-2">699.000đ</p>
-                    <div class="d-flex align-items-center small text-warning">
-                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i><i class="bi bi-star"></i>
-                        <span class="text-muted ms-2">(280 học viên)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Card 4 -->
-        <div class="col-md-3 col-sm-6">
-            <div class="card h-100 border-1 shadow-sm course-card">
-                <img src="https://picsum.photos/400/250?random=14" class="card-img-top" alt="course4">
-                <div class="card-body">
-                    <h5 class="card-title fw-semibold">Machine Learning cơ bản</h5>
-                    <p class="text-muted mb-2">Giảng viên: <strong>Lê Thị D</strong></p>
-                    <p class="text-primary fw-bold mb-2">799.000đ</p>
-                    <div class="d-flex align-items-center small text-warning">
-                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                        <span class="text-muted ms-2">(520 học viên)</span>
-                    </div>
-                </div>
-            </div>
-        </div>
         <div class="px-5">
-            <h3 class="border-bottom mt-5"></h3>
+            <h3 class="border-bottom mt-2"></h3>
         </div>
     </div>
 </section>
@@ -156,62 +113,25 @@
 <section class="container my-3 px-5">
     <h3 class="fw-bold mb-4 text-center">💬 Đánh giá từ học viên</h3>
     <div class="row g-4">
+        {{#each rating}}
         <div class="col-md-4">
             <div class="card h-100 shadow-sm border-1 rounded-4 p-3">
                 <div class="d-flex align-items-center mb-3">
-                    <img src="https://i.pravatar.cc/80?img=1" alt="avatar" class="rounded-circle me-3" width="60"
-                        height="60">
+                    <img src="https://i.pravatar.cc/80?img={{@index}}" alt="avatar" class="rounded-circle me-3"
+                        width="60" height="60">
                     <div>
-                        <h6 class="mb-0 fw-semibold">Nguyễn Văn A</h6>
-                        <small class="text-muted">Học viên khoá “Lập trình Web”</small>
+                        <h6 class="mb-0 fw-semibold">{{student_name}}</h6>
+                        <small class="text-muted">Học viên khoá học “{{title}}”</small>
                     </div>
                 </div>
-                <p class="fst-italic">"Khoá học rất hay, giảng viên giảng dễ hiểu, có nhiều ví dụ thực tế!"</p>
+                <p class="fst-italic">"{{comment}}"</p>
                 <div class="text-warning small">
-                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                    <i class="bi bi-star-half"></i>
+                    {{{renderStars value}}}
                 </div>
             </div>
         </div>
+        {{/each}}
 
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-1 rounded-4 p-3">
-                <div class="d-flex align-items-center mb-3">
-                    <img src="https://i.pravatar.cc/80?img=5" alt="avatar" class="rounded-circle me-3" width="60"
-                        height="60">
-                    <div>
-                        <h6 class="mb-0 fw-semibold">Trần Thị B</h6>
-                        <small class="text-muted">Học viên khoá “Python cơ bản”</small>
-                    </div>
-                </div>
-                <p class="fst-italic">"Nội dung dễ theo dõi, có bài tập thực hành sau mỗi chương, rất hữu ích."</p>
-                <div class="text-warning small">
-                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                    <i class="bi bi-star"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card h-100 shadow-sm border-1 rounded-4 p-3">
-                <div class="d-flex align-items-center mb-3">
-                    <img src="https://i.pravatar.cc/80?img=7" alt="avatar" class="rounded-circle me-3" width="60"
-                        height="60">
-                    <div>
-                        <h6 class="mb-0 fw-semibold">Lê Minh C</h6>
-                        <small class="text-muted">Học viên khoá “React nâng cao”</small>
-                    </div>
-                </div>
-                <p class="fst-italic">"Thầy giảng rất nhiệt tình, nội dung cập nhật xu hướng mới nhất."</p>
-                <div class="text-warning small">
-                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                    <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                    <i class="bi bi-star-fill"></i>
-                </div>
-            </div>
-        </div>
         <div class="px-5">
             <h3 class="border-bottom mt-5"></h3>
         </div>
@@ -231,32 +151,28 @@
             <div class="carousel-item {{#if @first}}active{{/if}}">
                 <div class="row g-3">
                     {{#each this}}
-                    <div class="col-md-3 col-sm-4">
-                        <div class="card h-100 border-1 shadow-sm course-card d-flex flex-column">
-                            <img src="{{#if image_url}}{{image_url}}{{else}}https://picsum.photos/400/250?random={{course_id}}{{/if}}"
-                                class="card-img-top" alt="{{title}}">
-
-                            <div class="card-body d-flex flex-column">
-                                <h6 class="fw-semibold text-truncate">{{title}}</h6>
-                                <p class="text-muted small mb-1 flex-grow-1">
-                                    Lĩnh vực: {{#if category_name}}{{category_name}}{{else}}Chưa phân loại{{/if}}<br>
-                                    Giảng viên: {{#if instructor_name}}{{instructor_name}}{{else}}Đang cập
-                                    nhật{{/if}}<br>
-                                    Lượt xem: {{views}}
-                                </p>
-                                <p class="fw-bold text-success mb-3">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card h-100 border-1 shadow-sm rounded-4 course-card">
+                            <img src="{{image_url}}" class="card-img-top" alt="{{title}}">
+                            <div class="card-body">
+                                <h6 class="card-title fw-semibold">{{title}}</h6>
+                                <p class="text-muted mb-1">Giảng viên: <strong>{{instructor_name}}</strong></p>
+                                <p class="text-muted mb-1">Lĩnh vực: {{#if category_name}}{{category_name}}{{else}}Chưa
+                                    phân
+                                    loại{{/if}}<br></p>
+                                <p class="text-primary fw-bold mb-2">
                                     {{formatNumber discount_price}}
-                                    {{#if discount_price}}
-                                    <span class="text-decoration-line-through text-muted small">
-                                        {{formatNumber price}}
-                                    </span>
-                                    {{/if}}
+                                    <span class="text-muted text-decoration-line-through">{{formatNumber price}}</span>
                                 </p>
+                                <div class="d-flex align-items-center small text-warning">
+                                    <span class="text-muted ms-2 mb-2">
+                                        <i class="bi bi-eye"></i> {{views}}
+                                    </span>
+                                </div>
                                 <a href="/course/details/{{course_id}}"
                                     class="btn btn-outline-primary mt-auto w-100">Xem chi tiết</a>
                             </div>
                         </div>
-
                     </div>
                     {{/each}}
                 </div>
@@ -292,32 +208,28 @@
             <div class="carousel-item {{#if @first}}active{{/if}}">
                 <div class="row g-3">
                     {{#each this}}
-                    <div class="col-md-3 col-sm-4">
-                        <div class="card h-100 border-1 shadow-sm course-card d-flex flex-column">
-                            <img src="{{#if image_url}}{{image_url}}{{else}}https://picsum.photos/400/250?random={{course_id}}{{/if}}"
-                                class="card-img-top" alt="{{title}}">
-
-                            <div class="card-body d-flex flex-column">
-                                <h6 class="fw-semibold text-truncate">{{title}}</h6>
-                                <p class="text-muted small mb-1 flex-grow-1">
-                                    Lĩnh vực: {{#if category_name}}{{category_name}}{{else}}Chưa phân loại{{/if}}<br>
-                                    Giảng viên: {{#if instructor_name}}{{instructor_name}}{{else}}Đang cập
-                                    nhật{{/if}}<br>
-                                    Lượt xem: {{views}}
-                                </p>
-                                <p class="fw-bold text-success mb-3">
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card h-100 border-1 shadow-sm rounded-4 course-card">
+                            <img src="{{image_url}}" class="card-img-top" alt="{{title}}">
+                            <div class="card-body">
+                                <h6 class="card-title fw-semibold">{{title}}</h6>
+                                <p class="text-muted mb-1">Giảng viên: <strong>{{instructor_name}}</strong></p>
+                                <p class="text-muted mb-1">Lĩnh vực: {{#if category_name}}{{category_name}}{{else}}Chưa
+                                    phân
+                                    loại{{/if}}<br></p>
+                                <p class="text-primary fw-bold mb-2">
                                     {{formatNumber discount_price}}
-                                    {{#if discount_price}}
-                                    <span class="text-decoration-line-through text-muted small">
-                                        {{formatNumber price}}
-                                    </span>
-                                    {{/if}}
+                                    <span class="text-muted text-decoration-line-through">{{formatNumber price}}</span>
                                 </p>
+                                <div class="d-flex align-items-center small text-warning">
+                                    <span class="text-muted ms-2 mb-2">
+                                        <i class="bi bi-eye"></i> {{views}}
+                                    </span>
+                                </div>
                                 <a href="/course/details/{{course_id}}"
                                     class="btn btn-outline-primary mt-auto w-100">Xem chi tiết</a>
                             </div>
                         </div>
-
                     </div>
                     {{/each}}
                 </div>
@@ -347,44 +259,20 @@
     </div>
 
     <div class="row g-4 justify-content-center">
-        <div class="col-md-3 col-sm-6">
-            <div class="card text-center border-1 shadow-sm rounded-4 py-4">
+        {{#each topCate}}
+        <div class="col-md-4 col-sm-6">
+            <div class="card h-100 border-1 shadow-sm rounded-4 course-card text-center">
                 <div class="card-body">
-                    <i class="bi bi-code-slash fs-1 text-warning mb-3"></i>
-                    <h5 class="fw-semibold">Lập trình Web</h5>
-                    <p class="text-muted small">(1.250 lượt đăng ký)</p>
+                    <div class="mb-3">
+                        <i class="bi bi-mortarboard-fill text-primary" style="font-size: 2rem;"></i>
+                    </div>
+                    <h5 class="card-title fw-semibold mb-2">{{cat_name}}</h5>
+                    <p class="text-muted mb-0">
+                        {{total_enrollments}} lượt học
+                    </p>
                 </div>
             </div>
         </div>
-
-        <div class="col-md-3 col-sm-6">
-            <div class="card text-center border-1 shadow-sm rounded-4 py-4">
-                <div class="card-body">
-                    <i class="bi bi-bar-chart fs-1 text-warning mb-3"></i>
-                    <h5 class="fw-semibold">Phân tích dữ liệu</h5>
-                    <p class="text-muted small">(980 lượt đăng ký)</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 col-sm-6">
-            <div class="card text-center border-1 shadow-sm rounded-4 py-4">
-                <div class="card-body">
-                    <i class="bi bi-brush fs-1 text-warning mb-3"></i>
-                    <h5 class="fw-semibold">Thiết kế đồ họa</h5>
-                    <p class="text-muted small">(860 lượt đăng ký)</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3 col-sm-6">
-            <div class="card text-center border-1 shadow-sm rounded-4 py-4">
-                <div class="card-body">
-                    <i class="bi bi-robot fs-1 text-warning mb-3"></i>
-                    <h5 class="fw-semibold">Trí tuệ nhân tạo</h5>
-                    <p class="text-muted small">(720 lượt đăng ký)</p>
-                </div>
-            </div>
-        </div>
+        {{/each}}
     </div>
 </section>
