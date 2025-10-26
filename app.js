@@ -7,7 +7,7 @@ import Handlebars from 'handlebars';
 
 import categoryModel from './models/category.model.js';
 import * as courseModel from './models/course.model.js';
-import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
+import { checkAdmin, checkAuthenticated, checkInstructor} from './models/auth.model.js';
 import ratingModel from './models/rating.model.js';
 
 
