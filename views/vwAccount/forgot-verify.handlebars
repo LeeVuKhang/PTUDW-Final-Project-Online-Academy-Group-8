@@ -1,0 +1,20 @@
+<div class="container my-4">
+  <h3 class="mb-3">Verify your code</h3>
+  {{#if email}}
+    <p>We sent a 6-digit code to <strong>{{email}}</strong>.</p>
+  {{else}}
+    <p>We sent a 6-digit code to your email.</p>
+  {{/if}}
+  {{#if err}}<div class="alert alert-danger py-2">{{err}}</div>{{/if}}
+
+  <form method="post" action="/account/forgot/verify" class="row g-3">
+    <div class="col-12">
+      <label class="form-label">Verification code</label>
+      <input class="form-control" name="code" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required>
+    </div>
+    <div class="col-12">
+      <button class="btn btn-primary">Continue</button>
+      <a class="btn btn-link" href="/account/signin">Back to sign in</a>
+    </div>
+  </form>
+</div>
