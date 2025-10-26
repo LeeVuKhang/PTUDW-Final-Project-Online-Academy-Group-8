@@ -62,7 +62,7 @@
             <h6 class="fw-bold mb-1 text-dark card-title-hover">{{this.title}}</h6>
           </a>
           
-          <p class="text-muted small mb-2">{{this.instructor_name}}</p>
+          <a href="/course/instructorProfile?id={{this.instructor_id}}" class="text-muted small mb-2 text-decoration-none card-title-hover">{{this.instructor_name}}</a>
           
           <div class="d-flex align-items-center small mb-3">
             {{#if (isGreater this.rating_count 0)}}
