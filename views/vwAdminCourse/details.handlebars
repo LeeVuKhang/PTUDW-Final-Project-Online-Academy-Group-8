@@ -1,0 +1,261 @@
+{{! 4.2 Quản lý khóa học - Xem chi tiết }}
+<div class="container-fluid mt-4">
+  <!-- Navigation -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/admin">Quản trị</a></li>
+      <li class="breadcrumb-item"><a href="/admin/courses">Khóa học</a></li>
+      <li class="breadcrumb-item active">Chi tiết</li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <!-- Course Info Card -->
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">
+            <i class="bi bi-book"></i> {{course.title}}
+          </h4>
+          <div>
+            {{#if course.is_active}}
+              <span class="badge bg-success">Hoạt động</span>
+            {{else}}
+              <span class="badge bg-warning">Tạm dừng</span>
+            {{/if}}
+          </div>
+        </div>
+        
+        <div class="card-body">
+          <!-- Course Image -->
+          <div class="row mb-4">
+            <div class="col-md-4">
+              <img src="{{course.image_url}}" alt="{{course.title}}" 
+                   class="img-fluid rounded shadow">
+            </div>
+            <div class="col-md-8">
+              <h5>Thông tin cơ bản</h5>
+              <table class="table table-sm">
+                <tr>
+                  <td><strong>ID:</strong></td>
+                  <td>{{course.course_id}}</td>
+                </tr>
+                <tr>
+                  <td><strong>Danh mục:</strong></td>
+                  <td><span class="badge bg-info">{{course.category_name}}</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Cấp độ:</strong></td>
+                  <td><span class="badge bg-secondary">{{course.level}}</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Thời lượng:</strong></td>
+                  <td>{{course.total_hours}} giờ</td>
+                </tr>
+                <tr>
+                  <td><strong>Bài giảng:</strong></td>
+                  <td>{{course.total_lectures}} bài</td>
+                </tr>
+                <tr>
+                  <td><strong>Giảng viên:</strong></td>
+                  <td>{{course.instructor_name}}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- Course Description -->
+          <div class="mb-4">
+            <h5>Mô tả ngắn</h5>
+            <p class="text-muted">{{course.tinydes}}</p>
+          </div>
+
+          <div class="mb-4">
+            <h5>Mô tả chi tiết</h5>
+            <div class="border rounded p-3 bg-light">
+              <div style="white-space: pre-wrap;">{{course.fulldes}}</div>
+            </div>
+          </div>
+
+          <!-- Statistics -->
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Thống kê</h5>
+              <div class="row g-3">
+                <div class="col-6">
+                  <div class="card text-center bg-primary text-white">
+                    <div class="card-body">
+                      <h4>{{course.student_count}}</h4>
+                      <small>Học viên</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="card text-center bg-warning">
+                    <div class="card-body">
+                      <h4>{{course.rating}}/5</h4>
+                      <small>Đánh giá</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Sidebar -->
+    <div class="col-lg-4">
+      <!-- Pricing Card -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">Thông tin giá</h6>
+        </div>
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <h3 class="text-success">{{formatNumber course.discount_price}}</h3>
+            {{#if (isGreater course.price course.discount_price)}}
+            <p class="text-muted">
+              Giá gốc: <span class="text-decoration-line-through">{{formatNumber course.price}}</span>
+            </p>
+            <p class="text-danger">
+              Giảm {{calculateDiscount course.price course.discount_price}}%
+            </p>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions Card -->
+      <div class="card mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">Thao tác quản trị</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            {{#if course.is_active}}
+              <button type="button" class="btn btn-warning" 
+                      onclick="toggleCourse({{course.course_id}}, true)">
+                <i class="bi bi-pause"></i> Tạm dừng khóa học
+              </button>
+            {{else}}
+              <button type="button" class="btn btn-success" 
+                      onclick="toggleCourse({{course.course_id}}, false)">
+                <i class="bi bi-play"></i> Kích hoạt khóa học
+              </button>
+            {{/if}}
+            
+            <button type="button" class="btn btn-danger" 
+                    onclick="confirmRemoveCourse({{course.course_id}}, '{{course.title}}')">
+              <i class="bi bi-trash"></i> Gỡ bỏ khóa học
+            </button>
+            
+            <hr>
+            
+            <a href="/instructor/update/{{course.course_id}}" class="btn btn-outline-primary">
+              <i class="bi bi-pencil"></i> Chỉnh sửa
+            </a>
+            
+            <a href="/courses/{{course.course_id}}" class="btn btn-outline-info" target="_blank">
+              <i class="bi bi-eye"></i> Xem trang khóa học
+            </a>
+            
+            <a href="/admin/courses" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Quay lại danh sách
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Card -->
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">Lịch sử</h6>
+        </div>
+        <div class="card-body">
+          <div class="timeline">
+            <div class="timeline-item">
+              <small class="text-muted">Tạo lúc:</small>
+              <p>{{formatDate course.created_at}}</p>
+            </div>
+            {{#if course.updated_at}}
+            <div class="timeline-item">
+              <small class="text-muted">Cập nhật lần cuối:</small>
+              <p>{{formatDate course.updated_at}}</p>
+            </div>
+            {{/if}}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Course Modal -->
+<div class="modal fade" id="removeCourseModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle"></i> Xác nhận gỡ bỏ
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Bạn có chắc chắn muốn gỡ bỏ khóa học này?</p>
+        <div class="alert alert-warning">
+          <i class="bi bi-info-circle"></i>
+          <strong>Lưu ý:</strong> Thao tác này sẽ:
+          <ul class="mb-0 mt-2">
+            <li>Gỡ bỏ khóa học khỏi hệ thống</li>
+            <li>Học viên không thể truy cập</li>
+            <li>Không thể hoàn tác</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <form id="removeCourseForm" method="post" style="display: inline;">
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash"></i> Xác nhận gỡ bỏ
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function confirmRemoveCourse(courseId, courseName) {
+  document.getElementById('removeCourseForm').action = `/admin/courses/${courseId}/remove`;
+  
+  const modal = new bootstrap.Modal(document.getElementById('removeCourseModal'));
+  modal.show();
+}
+
+function toggleCourse(courseId, isActive) {
+  const action = isActive ? 'disable' : 'enable';
+  const actionText = isActive ? 'tạm dừng' : 'kích hoạt';
+  
+  if (confirm(`Bạn có chắc muốn ${actionText} khóa học này?`)) {
+    fetch(`/admin/courses/${courseId}/${action}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Có lỗi xảy ra: ' + data.message);
+      }
+    })
+    .catch(error => {
+      alert('Có lỗi xảy ra: ' + error.message);
+    });
+  }
+}
+</script>

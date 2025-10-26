@@ -10,13 +10,18 @@ import Handlebars from 'handlebars';
 
 import categoryModel from './models/category.model.js';
 import * as courseModel from './models/course.model.js';
-import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
+import { checkAdmin, checkAuthenticated, checkInstructor} from './models/auth.model.js';
+import ratingModel from './models/rating.model.js';
+
 
 import courseRouter from './routes/course.routes.js';
 import accountRouter from './routes/account.routes.js';
 import categoryRouter from './routes/category.routes.js';
 import productRouter from './routes/product.routes.js';
 import instructorRouter from './routes/instructor.routes.js';
+import adminCourseRouter from './routes/admin-course.routes.js';
+import adminUserRouter from './routes/admin-user.routes.js';
+import adminRouter from './routes/admin.routes.js';
 
 
 
@@ -38,6 +43,12 @@ app.engine('handlebars', engine({
     section: hbs_sections(),
     fill_section: hbs_sections(),
 
+    extractYouTubeId(url) {
+        if (!url) return '';
+        const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^?&]+)/);
+        return match ? match[1] : '';
+    },
+
     // Định dạng tiền tệ VND
     formatNumber(num) {
       if (typeof num !== 'number') num = parseFloat(num);
@@ -48,9 +59,9 @@ app.engine('handlebars', engine({
     eq(a, b) {
       return a === b;
     },
-    ne(a,b ){
+    ne(a, b) {
       return a !== b;
-    },  
+    },
 
     formatDate(date) {
       if (!date) return '';
@@ -100,6 +111,18 @@ app.engine('handlebars', engine({
     substr(str, start, len) {
       if (!str) return '';
       return str.substring(start, start + len).toUpperCase();
+    },
+
+    // Định dạng rating (số thập phân)
+    formatRating(rating) {
+      const num = parseFloat(rating);
+      if (isNaN(num)) return '0.0';
+      return num.toFixed(1);
+    },
+
+    // Chuyển đổi object thành JSON string
+    json(obj) {
+      return JSON.stringify(obj);
     },
 
     moment(date, format) {
@@ -153,23 +176,57 @@ function chunkArray(array, size) {
 app.get('/', async (req, res) => {
   if (req.session.isAuthenticated) {
     console.log('User is authenticated');
-    console.log(req.session.authUser);
+    console.log(req.session.authUser)
   }
-  const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4);
-  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4);
-  res.render('home', { newestCourses, mostViewsCourses });
+  const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4)
+  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4)
+  const parents = await categoryModel.findParents();
+  const rating = await ratingModel.findTop3RecentFiveStarCourses();
+  const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek();
+  const topCate = await categoryModel.findTopCategoriesOfWeek(3);
+  // Thêm mảng stars để Handlebars each
+  rating.forEach(r => {
+    r.stars = Array.from({ length: r.value });
+  });
+
+  // Lấy children cho mỗi parent
+  for (const parent of parents) {
+    parent.children = await categoryModel.findChildren(parent.cat_id);
+  }
+
+  res.render('home', {
+    newestCourses,
+    mostViewsCourses,
+    parents,
+    rating,
+    impressiveCourses,
+    topCate,
+  });
 });
 
-app.get('/home', (req, res) => res.redirect('/'));
+app.use(async (req, res, next) => {
+  const parents = await categoryModel.findParents();
+
+  // Lấy children cho mỗi parent
+  for (const parent of parents) {
+    parent.children = await categoryModel.findChildren(parent.cat_id);
+  }
+  res.locals.parents = parents;
+  next();
+});
+
 
 // Gắn các router
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
 app.use('/product', productRouter);
-app.use('/instructor', instructorRouter);
+app.use('/instructor', checkInstructor,instructorRouter);
 app.use('/course', courseRouter);
+app.use('/admin/courses', checkAuthenticated, checkAdmin, adminCourseRouter);
+app.use('/admin/users', checkAuthenticated, checkAdmin, adminUserRouter);
+app.use('/admin', checkAuthenticated, checkAdmin, adminRouter);
 
 // Khởi động server
 app.listen(3000, () => {
-  console.log('✅ Server is running on http://localhost:3000');
+  console.log('Server is running on http://localhost:3000');
 });

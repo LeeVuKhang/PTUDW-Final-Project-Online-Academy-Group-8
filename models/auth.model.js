@@ -9,9 +9,23 @@ export function checkAuthenticated(req, res, next) {
 
 
 export function checkAdmin(req, res, next){
-    if (req.session.isAuthenticated && req.session.authUser.role === 1){
+    if (req.session.isAuthenticated && req.session.authUser.role === 0){
         next();
     } else {
         res.render('vwAccount/403')
+    }
+}
+export function checkInstructor(req, res, next){
+    if (req.session.isAuthenticated && req.session.authUser.role === 2){
+        next();
+    } else {
+        res.render('vwAccount/403') 
+    }
+}
+export function checkUser(req, res, next){
+    if (req.session.isAuthenticated && req.session.authUser.role === 1 || eq.session.authUser.role === 2){
+        next();
+    } else {
+        res.render('vwAccount/403') 
     }
 }

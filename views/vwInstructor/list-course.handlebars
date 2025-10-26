@@ -9,7 +9,7 @@ border-radius: 4px;
 background-color: #f8f9fa;
 }
 {{/fill_section}}
-
+  <link rel="stylesheet" href="/static/css/main.css">
 <div class="container my-5">
     <div class="card shadow-sm">
         <div class="card-header bg-white py-3">
@@ -38,8 +38,15 @@ background-color: #f8f9fa;
                             </option>
                             {{#each categories}}
                             <option value="{{this.cat_id}}" {{selectOption ../currentCategoryId this.cat_id}}>
-                                {{this.cat_name}}
+                               {{this.cat_name}}
                             </option>
+
+                            {{#each this.children}}
+                            <option value="{{this.cat_id}}" {{selectOption ../../currentCategoryId this.cat_id}}>
+                                &nbsp;&nbsp;&nbsp;{{this.cat_name}}
+                            </option>
+                            {{/each}}
+
                             {{/each}}
                         </select>
                     </div>
