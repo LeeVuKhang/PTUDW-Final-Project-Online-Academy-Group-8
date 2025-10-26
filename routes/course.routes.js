@@ -3,7 +3,7 @@ import db from "../utils/db.js";
 import { checkAuthenticated } from "../models/auth.model.js";
 import userModel from "../models/user.model.js";
 import * as courseModel from "../models/course.model.js";
-
+import categoryModel from '../models/category.model.js';
 
 const router = express.Router();
 const pageLimit = 8;
