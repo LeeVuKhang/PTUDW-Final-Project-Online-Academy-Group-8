@@ -236,7 +236,6 @@ router.post('/update/:course_id', async (req, res) => {
             tinydes: req.body.tinydes,
             fulldes: req.body.fulldes,
             total_hours: req.body.total_hours || 0,
-            total_lectures: req.body.total_lectures || 0,
             price: req.body.price,
             discount_price: req.body.discount_price,
             catid: req.body.catid,

@@ -160,7 +160,7 @@ export default {
         .count('catid as amount')
         .first();
     },
-    add(course) {
+    add(course, instrucID) {
         return db('courses').insert(course).returning('course_id');
     },
     update(course_id, course) {
@@ -181,14 +181,16 @@ export default {
         const query = db('courses as c')
             .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
             .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
+            .leftJoin('enrollments as e', 'c.course_id', 'e.course_id') 
             .where('c.instructor_id', instructor_id)
             .select(
                 'c.course_id', 'c.title', 'c.tinydes as short_description', 'c.image_url', 'c.is_complete', 'c.views',
                 'cat.cat_name as category_name',
                 db.raw('COALESCE(AVG(r.value), 0) as avg_rating'),
-                db.raw('COUNT(DISTINCT r.rating_id) as rating_count')
+                db.raw('COUNT(DISTINCT r.rating_id) as rating_count'),
+                db.raw('COUNT(DISTINCT e.erm_id) as student_count') 
             )
-            .groupBy('c.course_id', 'cat.cat_name')
+            .groupBy('c.course_id', 'c.title', 'c.tinydes', 'c.image_url', 'c.is_complete', 'c.views', 'cat.cat_name')
             .orderBy('c.course_id', 'desc');
 
         if (categoryIds.length > 0) {
