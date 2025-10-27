@@ -1,0 +1,329 @@
+{{! Chi tiết học viên/giảng viên }}
+<div class="container-fluid mt-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h4 class="mb-0">
+        <i class="bi bi-person-circle"></i> Chi tiết người dùng
+      </h4>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item">
+            <a href="/admin">Dashboard</a>
+          </li>
+          <li class="breadcrumb-item">
+            {{#if (eq user.role 1)}}
+            <a href="/admin/users/students">Quản lý học viên</a>
+            {{else if (eq user.role 2)}}
+            <a href="/admin/users/instructors">Quản lý giảng viên</a>
+            {{else}}
+            <a href="/admin/users/students">Quản lý người dùng</a>
+            {{/if}}
+          </li>
+          <li class="breadcrumb-item active">{{user.name}}</li>
+        </ol>
+      </nav>
+    </div>
+    <div>
+      <a href="javascript:history.back()" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Quay lại
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Thông tin cá nhân -->
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-person-fill"></i> Thông tin cá nhân
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <!-- Avatar -->
+          <div class="mb-3">
+            {{#if user.image_url}}
+            <img src="{{user.image_url}}" alt="Avatar" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+            {{else}}
+            <div class="rounded-circle bg-primary d-inline-flex align-items-center justify-content-center" 
+                 style="width: 80px; height: 80px;">
+              <span class="text-white h3 mb-0">{{substr user.name 0 1}}</span>
+            </div>
+            {{/if}}
+          </div>
+
+          <!-- Thông tin -->
+          <h5 class="card-title">{{user.name}}</h5>
+          <p class="text-muted">@{{user.username}}</p>
+          
+          {{#if (eq user.role 1)}}
+          <span class="badge bg-success fs-6">Học viên</span>
+          {{else if (eq user.role 2)}}
+          <span class="badge bg-warning fs-6">Giảng viên</span>
+          {{else if (eq user.role 3)}}
+          <span class="badge bg-danger fs-6">Quản trị viên</span>
+          {{else}}
+          <span class="badge bg-secondary fs-6">Chưa xác định</span>
+          {{/if}}
+        </div>
+        <div class="card-body border-top">
+          <div class="row text-center">
+            <div class="col-6">
+              <i class="bi bi-person-badge text-primary"></i>
+              <div class="mt-1">
+                <small class="text-muted">ID</small>
+                <div class="fw-bold">{{user.user_id}}</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <i class="bi bi-calendar-event text-success"></i>
+              <div class="mt-1">
+                <small class="text-muted">Sinh nhật</small>
+                <div class="fw-bold">
+                  {{#if user.dob}}
+                  {{formatDate user.dob "DD/MM/YYYY"}}
+                  {{else}}
+                  <span class="text-muted">Chưa cập nhật</span>
+                  {{/if}}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Liên hệ -->
+      <div class="card mt-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="bi bi-envelope"></i> Thông tin liên hệ
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-2">
+            <i class="bi bi-envelope-fill text-primary me-2"></i>
+            <a href="mailto:{{user.email}}" class="text-decoration-none">{{user.email}}</a>
+          </div>
+        </div>
+      </div>
+
+      {{#if user.self_introduction}}
+      <!-- Giới thiệu -->
+      <div class="card mt-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="bi bi-chat-quote"></i> Giới thiệu bản thân
+          </h6>
+        </div>
+        <div class="card-body">
+          <p class="mb-0">{{user.self_introduction}}</p>
+        </div>
+      </div>
+      {{/if}}
+    </div>
+
+    <!-- Thống kê và hoạt động -->
+    <div class="col-lg-8">
+      {{#if (eq user.role 1)}}
+      <!-- Thống kê học viên -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-graph-up"></i> Thống kê học tập
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="border rounded p-3 text-center">
+                <i class="bi bi-book display-6 text-primary"></i>
+                <h4 class="mt-2 mb-1">{{user.enrolled_courses_count}}</h4>
+                <small class="text-muted">Khóa học đã đăng ký</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="border rounded p-3 text-center">
+                <i class="bi bi-heart display-6 text-danger"></i>
+                <h4 class="mt-2 mb-1">{{user.watchlist_count}}</h4>
+                <small class="text-muted">Khóa học yêu thích</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="border rounded p-3 text-center">
+                <i class="bi bi-star display-6 text-warning"></i>
+                <h4 class="mt-2 mb-1">{{user.ratings_count}}</h4>
+                <small class="text-muted">Đánh giá đã đưa</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Khóa học đã đăng ký -->
+      {{#if user.enrolled_courses}}
+      <div class="card mt-3">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-journal-bookmark"></i> Khóa học đã đăng ký ({{user.enrolled_courses.length}})
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Khóa học</th>
+                  <th>Tiến độ</th>
+                  <th>Ngày đăng ký</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each user.enrolled_courses}}
+                <tr>
+                  <td>
+                    <strong>{{title}}</strong>
+                    <br>
+                    <small class="text-muted">{{instructor_name}}</small>
+                  </td>
+                  <td>
+                    <div class="progress" style="height: 8px;">
+                      <div class="progress-bar" role="progressbar" 
+                           style="width: {{progress}}%" 
+                           aria-valuenow="{{progress}}" aria-valuemin="0" aria-valuemax="100">
+                      </div>
+                    </div>
+                    <small>{{progress}}%</small>
+                  </td>
+                  <td>
+                    <small>{{formatDate erm_date "DD/MM/YYYY"}}</small>
+                  </td>
+                  <td>
+                    {{#if status}}
+                    <span class="badge bg-success">{{status}}</span>
+                    {{else}}
+                    <span class="badge bg-primary">Đang học</span>
+                    {{/if}}
+                  </td>
+                </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {{/if}}
+
+      {{else if (eq user.role 2)}}
+      <!-- Thống kê giảng viên -->
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-graph-up"></i> Thống kê giảng dạy
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="border rounded p-3 text-center">
+                <i class="bi bi-book display-6 text-primary"></i>
+                <h4 class="mt-2 mb-1">{{user.courses_count}}</h4>
+                <small class="text-muted">Khóa học đã tạo</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="border rounded p-3 text-center">
+                <i class="bi bi-people display-6 text-success"></i>
+                <h4 class="mt-2 mb-1">{{user.total_students}}</h4>
+                <small class="text-muted">Tổng học viên</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="border rounded p-3 text-center">
+                <i class="bi bi-star display-6 text-warning"></i>
+                <h4 class="mt-2 mb-1">{{formatRating user.avg_rating}}</h4>
+                <small class="text-muted">Điểm trung bình</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Khóa học của giảng viên -->
+      {{#if user.instructor_courses}}
+      <div class="card mt-3">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-journal-bookmark"></i> Khóa học đã tạo ({{user.instructor_courses.length}})
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Khóa học</th>
+                  <th>Học viên</th>
+                  <th>Giá</th>
+                  <th>Cập nhật</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each user.instructor_courses}}
+                <tr>
+                  <td>
+                    <strong>{{title}}</strong>
+                    <br>
+                    <small class="text-muted">{{category_name}}</small>
+                  </td>
+                  <td>
+                    <span class="badge bg-info">{{student_count}} học viên</span>
+                  </td>
+                  <td>
+                    {{#if discount_price}}
+                    <span class="text-decoration-line-through text-muted">{{price}}đ</span>
+                    <strong class="text-danger">{{discount_price}}đ</strong>
+                    {{else}}
+                    <strong>{{price}}đ</strong>
+                    {{/if}}
+                  </td>
+                  <td>
+                    <small>{{formatDate last_update "DD/MM/YYYY"}}</small>
+                  </td>
+                  <td>
+                    {{#if is_complete}}
+                    <span class="badge bg-success">Hoàn thành</span>
+                    {{else}}
+                    <span class="badge bg-warning">Đang cập nhật</span>
+                    {{/if}}
+                  </td>
+                </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {{/if}}
+
+      {{/if}}
+
+      <!-- Hoạt động gần đây -->
+      <div class="card mt-3">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-clock-history"></i> Hoạt động gần đây
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="text-center py-4">
+            <i class="bi bi-info-circle text-muted display-6"></i>
+            <p class="text-muted mt-2">Chức năng đang được phát triển</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
