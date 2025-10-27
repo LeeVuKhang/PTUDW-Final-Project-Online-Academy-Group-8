@@ -105,15 +105,26 @@ router.get("/instructorProfile", async (req, res) => {
 /*Chi tiết khóa học*/
 router.get("/details/:id", async (req, res) => {
   const course_id = req.params.id;
-  const course = await db("courses").where("course_id", course_id).first();
+  const course = await db("courses")
+    .join("categories", "courses.catid", "categories.cat_id")
+    .select("courses.*", "categories.cat_name as category_name")
+    .where("course_id", course_id)
+    .first();
+
   if (!course) return res.render("vwCourses/not-found", { layout: "main" });
 
-  const lessons = await db("lessons")
-    .join("chapters", "lessons.chapter_id", "chapters.chapter_id")
-    .where("chapters.course_id", course_id)
-    .select("lessons.*")
-    .orderBy("lessons.order_index");
+  // --- Lấy danh sách bài học ---
+  const chapters = await db("chapters")
+    .where({ course_id })
+    .orderBy("order_index");
 
+  for (const chapter of chapters) {
+    chapter.lessons = await db("lessons")
+      .where({ chapter_id: chapter.chapter_id })
+      .orderBy("order_index");
+  }
+
+  // --- Kiểm tra học viên đã ghi danh chưa ---
   let isEnrolled = false;
   if (req.session.isAuthenticated) {
     const enrollment = await db("enrollments")
@@ -122,31 +133,44 @@ router.get("/details/:id", async (req, res) => {
     isEnrolled = !!enrollment;
   }
 
+  // --- Lấy danh sách đánh giá ---
   const ratings = await db("ratings")
     .join("users", "ratings.student_id", "users.user_id")
     .where("course_id", course_id)
     .select("users.name", "ratings.value", "ratings.comment");
 
-    const chapters = await db("chapters")
-        .where({ course_id })
-        .orderBy("order_index");
+  // --- Lấy thông tin giảng viên ---
+  const instructor = await db("users")
+    .where("user_id", course.instructor_id)
+    .first();
 
-    for (const chapter of chapters) {
-        chapter.lessons = await db("lessons")
-            .where({ chapter_id: chapter.chapter_id })
-            .orderBy("order_index");
-    }
-
+  // --- Lấy 5 khóa học cùng lĩnh vực được mua nhiều nhất ---
+  const relatedCourses = await db("courses")
+    .leftJoin("enrollments", "courses.course_id", "enrollments.course_id")
+    .where("courses.catid", course.catid)
+    .andWhereNot("courses.course_id", course.course_id)
+    .groupBy("courses.course_id")
+    .orderByRaw("COUNT(enrollments.erm_id) DESC")
+    .limit(5)
+    .select(
+      "courses.course_id",
+      "courses.title",
+      "courses.image_url",
+      "courses.discount_price",
+      db.raw("COUNT(enrollments.erm_id) as total_enrollments")
+    );
 
   res.render("vwCourses/course_detail", {
     layout: "main",
     course,
-    lessons,
     isEnrolled,
     ratings,
-    chapters
+    chapters,
+    instructor,
+    relatedCourses,
   });
 });
+
 
 /*Ghi danh khóa học*/
 router.get("/enroll/:id", checkAuthenticated, async (req, res) => {
@@ -168,49 +192,137 @@ router.get("/enroll/:id", checkAuthenticated, async (req, res) => {
 });
 
 /*Trang học khóa học*/
-// 1️⃣ Khi không có lesson_id (xem bài đầu tiên)
+/* Mở khóa học → tự động mở bài gần nhất */
 router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
-  const { course_id } = req.params;
-  res.redirect(`/course/learn/${course_id}/first`);
+  try {
+    const { course_id } = req.params;
+    const student_id = req.session.authUser.user_id;
+
+    // Kiểm tra học viên có ghi danh không
+    const enrolled = await db("enrollments")
+      .where({ student_id, course_id, status: "enrolled" })
+      .first();
+
+    if (!enrolled) return res.redirect(`/course/details/${course_id}`);
+
+    // Nếu đã xem dở thì vào bài đó, ngược lại vào bài đầu tiên
+    const lastLesson = enrolled.last_watched_lesson;
+    if (lastLesson) {
+      return res.redirect(`/course/learn/${course_id}/${lastLesson}`);
+    }
+
+    // Lấy bài đầu tiên
+    const firstChapter = await db("chapters")
+      .where({ course_id })
+      .orderBy("order_index")
+      .first();
+
+    const firstLesson = await db("lessons")
+      .where({ chapter_id: firstChapter.chapter_id })
+      .orderBy("order_index")
+      .first();
+
+    if (firstLesson) {
+      return res.redirect(`/course/learn/${course_id}/${firstLesson.lesson_id}`);
+    }
+
+    res.status(404).send("Không tìm thấy bài học nào trong khóa học này.");
+  } catch (err) {
+    console.error("Lỗi khi mở khóa học:", err);
+    res.status(500).send("Lỗi máy chủ khi mở khóa học.");
+  }
 });
 
-// 2️⃣ Khi có lesson cụ thể
+
+/* Học bài cụ thể */
 router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) => {
-  const { course_id, lesson_id } = req.params;
-  const student_id = req.session.authUser.user_id;
+  try {
+    const { course_id, lesson_id } = req.params;
+    const student_id = req.session.authUser.user_id;
 
-  const enrolled = await db("enrollments")
-    .where({ student_id, course_id, status: "enrolled" })
-    .first();
-  if (!enrolled) return res.redirect(`/course/details/${course_id}`);
+    const enrolled = await db("enrollments")
+      .where({ student_id, course_id, status: "enrolled" })
+      .first();
 
-  const course = await db("courses").where({ course_id }).first();
-  const chapters = await db("chapters")
-  .where({ course_id })
-  .orderBy("order_index", "asc");
+    if (!enrolled) return res.redirect(`/course/details/${course_id}`);
 
+    const course = await db("courses").where({ course_id }).first();
 
-  for (const chapter of chapters) {
-    chapter.lessons = await db("lessons")
-      .where({ chapter_id: chapter.chapter_id })
-      .orderBy("order_index");
+    const chapters = await db("chapters")
+      .where({ course_id })
+      .orderBy("order_index", "asc");
+
+    for (const chapter of chapters) {
+      chapter.lessons = await db("lessons")
+        .where({ chapter_id: chapter.chapter_id })
+        .orderBy("order_index");
+    }
+
+    const currentLesson = await db("lessons").where({ lesson_id }).first();
+
+    // --- Lấy đánh giá ---
+    const ratings = await db("ratings")
+      .join("users", "ratings.student_id", "users.user_id")
+      .where("ratings.course_id", course_id)
+      .select("users.name", "ratings.value", "ratings.comment", "ratings.create_time");
+
+    const avgRatingResult = await db("ratings")
+      .where({ course_id })
+      .avg("value as avgRating")
+      .count("value as totalRatings")
+      .first();
+
+    const avgRating = parseFloat(avgRatingResult.avgRating || 0).toFixed(1);
+    const totalRatings = avgRatingResult.totalRatings || 0;
+
+    const userRatingData = await db("ratings")
+      .where({ course_id, student_id })
+      .first();
+
+    const userRating = userRatingData ? userRatingData.value : 0;
+    const userComment = userRatingData ? userRatingData.comment : "";
+
+    res.render("vwCourses/learn", {
+      layout: "main",
+      course,
+      chapters,
+      currentLesson,
+      course_id,
+      avgRating,
+      totalRatings,
+      ratings,
+      isStudent: true,
+      userRating,
+      userComment,
+    });
+  } catch (err) {
+    console.error("Lỗi khi load bài học:", err);
+    res.status(500).send("Lỗi máy chủ khi tải bài học.");
   }
-
-  let currentLesson;
-  if (lesson_id === "first") {
-    currentLesson = chapters[0]?.lessons?.[0];
-  } else {
-    currentLesson = await db("lessons").where({ lesson_id }).first();
-  }
-
-  res.render("vwCourses/learn", {
-    layout: "main",
-    course,
-    chapters,
-    currentLesson,
-    course_id,
-  });
 });
+
+
+
+/* Cập nhật last_watched_lesson */
+router.post("/update-last-watch", checkAuthenticated, async (req, res) => {
+  try {
+    const { course_id, lesson_id, progress } = req.body;
+    const student_id = req.session.authUser.user_id;
+
+    await db("enrollments")
+      .where({ course_id, student_id })
+      .update({
+        last_watched_lesson: lesson_id,
+        progress,
+      });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Lỗi cập nhật last_watched_lesson:", err);
+    res.status(500).json({ success: false, error: "Không thể cập nhật tiến độ học." });
+  }
+});
+
 
 /*Đánh giá khóa học*/
 router.post("/rate/:id", checkAuthenticated, async (req, res) => {
@@ -218,12 +330,37 @@ router.post("/rate/:id", checkAuthenticated, async (req, res) => {
   const student_id = req.session.authUser.user_id;
   const { value, comment } = req.body;
 
-  const enrolled = await db("enrollments").where({ course_id, student_id }).first();
-  if (!enrolled) return res.redirect(`/course/details/${course_id}`);
+  try {
+    const enrolled = await db("enrollments").where({ course_id, student_id }).first();
+    if (!enrolled) return res.status(403).json({ error: "Bạn chưa ghi danh khóa học này." });
 
-  await db("ratings").insert({ course_id, student_id, value, comment, create_time: new Date() });
-  res.redirect(`/course/details/${course_id}`);
+    const existing = await db("ratings").where({ course_id, student_id }).first();
+
+    if (existing) {
+      await db("ratings")
+        .where({ course_id, student_id })
+        .update({
+          value,
+          comment,
+          create_time: new Date(),
+        });
+    } else {
+      await db("ratings").insert({
+        course_id,
+        student_id,
+        value,
+        comment,
+        create_time: new Date(),
+      });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Lỗi khi đánh giá khóa học:", err);
+    res.status(500).json({ error: "Không thể lưu đánh giá." });
+  }
 });
+
 
 /*Mua ngay → chuyển đến checkout*/
 router.get("/buy-now/:id", checkAuthenticated, (req, res) => {
