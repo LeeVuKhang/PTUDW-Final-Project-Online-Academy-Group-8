@@ -221,7 +221,7 @@ app.use(async (req, res, next) => {
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
 app.use('/product', productRouter);
-app.use('/instructor', checkInstructor,instructorRouter);
+app.use('/instructor', checkAuthenticated , checkInstructor,instructorRouter);
 app.use('/course', courseRouter);
 app.use('/admin/courses', checkAuthenticated, checkAdmin, adminCourseRouter);
 app.use('/admin/users', checkAuthenticated, checkAdmin, adminUserRouter);

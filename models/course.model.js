@@ -18,20 +18,42 @@ function addWatchlistSubquery(query, studentId) {
   return query;
 }
 
+function addEnrollmentSubquery(query, studentId) {
+  if (studentId) {
+    query.select(
+      db.raw(
+        `EXISTS (
+          SELECT 1 FROM enrollments e 
+          WHERE e.course_id = c.course_id AND e.student_id = ?
+        ) as "isEnrolled"`,
+        [studentId]
+      )
+    );
+  } else {
+    query.select(db.raw('false as "isEnrolled"'));
+  }
+  return query;
+}
+
 export async function findNewestCourses(limit = 12, studentId = null) {
   let query = db('courses as c')
     .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
     .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
+    .leftJoin("ratings as r", "c.course_id", "r.course_id") 
     .select(
       'c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views',
       'cat.cat_name',
       'u.name as instructor_name', 'u.user_id as instructor_id',
-      'c.last_update'
+      'c.last_update',
+      db.raw("COALESCE(AVG(r.value), 0) as avg_rating"), 
+      db.raw("COUNT(DISTINCT r.rating_id) as rating_count") 
     )
     .orderBy('c.last_update', 'desc')
+    .groupBy('c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views', 'cat.cat_name', 'u.name', 'u.user_id', 'c.last_update') // THÊM GROUP BY
     .limit(limit);
 
   query = addWatchlistSubquery(query, studentId);
+  query = addEnrollmentSubquery(query, studentId);
   return await query;
 }
 
@@ -39,15 +61,20 @@ export async function findMostViewsCourses(limit = 12, studentId = null) {
   let query = db('courses as c')
     .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
     .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
+    .leftJoin("ratings as r", "c.course_id", "r.course_id") 
     .select(
       'c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views',
       'cat.cat_name',
-      'u.name as instructor_name', 'u.user_id as instructor_id'
+      'u.name as instructor_name', 'u.user_id as instructor_id',
+      db.raw("COALESCE(AVG(r.value), 0) as avg_rating"), 
+      db.raw("COUNT(DISTINCT r.rating_id) as rating_count") 
     )
     .orderBy('c.views', 'desc')
+    .groupBy('c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views', 'cat.cat_name', 'u.name', 'u.user_id') // THÊM GROUP BY
     .limit(limit);
 
   query = addWatchlistSubquery(query, studentId);
+  query = addEnrollmentSubquery(query, studentId);
   return await query;
 }
 
@@ -58,17 +85,22 @@ export async function findImpressiveCoursesLastWeek(limit = 4, studentId = null)
   let query = db('courses as c')
     .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
     .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
+    .leftJoin("ratings as r", "c.course_id", "r.course_id") 
     .select(
       'c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views',
       'cat.cat_name',
       'u.name as instructor_name', 'u.user_id as instructor_id',
-      'c.last_update'
+      'c.last_update',
+      db.raw("COALESCE(AVG(r.value), 0) as avg_rating"), 
+      db.raw("COUNT(DISTINCT r.rating_id) as rating_count") 
     )
     .where('c.last_update', '>=', sevenDaysAgo)
     .orderBy('c.views', 'desc')
+    .groupBy('c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views', 'cat.cat_name', 'u.name', 'u.user_id', 'c.last_update') // THÊM GROUP BY
     .limit(limit);
 
   query = addWatchlistSubquery(query, studentId);
+  query = addEnrollmentSubquery(query, studentId);
   return await query;
 }
 
@@ -85,26 +117,21 @@ export async function findCoursesByFilter(categoryId, studentId, limit, offset) 
     .leftJoin("users as u", "c.instructor_id", "u.user_id")
     .leftJoin("ratings as r", "c.course_id", "r.course_id")
     .select(
-      "c.course_id", 
-      "c.title", 
-      "c.price", 
-      "c.discount_price", 
-      "c.image_url", 
-      "c.views", // Added c.views here
+      "c.course_id", "c.title", "c.price", "c.discount_price", "c.image_url", "c.views", 
       "cat.cat_name",
       "u.name as instructor_name", 
       "u.user_id as instructor_id",
       db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
       db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
     )
-    .groupBy("c.course_id", "cat.cat_name", "u.name", "u.user_id");
+    .groupBy("c.course_id", "c.title", "c.price", "c.discount_price", "c.image_url", "c.views", "cat.cat_name", "u.name", "u.user_id"); // Đã SỬA LẠI GROUP BY cho chính xác
 
   if (categoryIds.length > 0) {
     query.whereIn("c.catid", categoryIds);
   }
 
   query = addWatchlistSubquery(query, studentId);
-
+  query = addEnrollmentSubquery(query, studentId);
   return query.limit(limit).offset(offset);
 }
 
