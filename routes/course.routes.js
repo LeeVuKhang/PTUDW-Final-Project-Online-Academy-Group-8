@@ -43,29 +43,35 @@ router.get("/", async (req, res) => {
 /*Danh sách khóa học theo danh mục*/
 router.get("/byCat", async (req, res) => {
   try {
-    const catid = req.query.id || 0;
+    const catid = parseInt(req.query.id) || 0; // Ép kiểu rõ ràng
     const page = parseInt(req.query.page) || 1;
+    const sort = req.query.sort || 'newest';
     const offset = (page - 1) * pageLimit;
     const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null;
 
-    const category = await categoryModel.findById(catid);
-    const catname = category ? category.cat_name : "Danh mục không tồn tại";
+    // Kiểm tra danh mục
+    const category = catid ? await categoryModel.findById(catid) : null;
+    const catname = category ? category.cat_name : "Tất cả khóa học";
 
-    const childCategories = await categoryModel.findChildren(catid);
+    const childCategories = category ? await categoryModel.findChildren(catid) : [];
 
     const [courses, totalResult] = await Promise.all([
-      courseModel.findCoursesByFilter(catid, student_id, pageLimit, offset),
+      courseModel.findCoursesByFilter(catid, student_id, pageLimit, offset, sort),
       courseModel.countCoursesByFilter(catid)
     ]);
-    
-    const total = totalResult.amount;
+
+    const total = totalResult.amount || 0;
     const nPages = Math.ceil(total / pageLimit);
 
     const page_numbers = [];
     for (let i = 1; i <= nPages; i++) {
-      page_numbers.push({ value: i, catid, isCurrent: i === page });
+      page_numbers.push({
+        value: i,
+        catid,
+        sort,
+        isCurrent: i === page
+      });
     }
-    
 
     res.render("vwCourses/byCat", {
       layout: "main",
@@ -73,12 +79,15 @@ router.get("/byCat", async (req, res) => {
       catname,
       page_numbers,
       childCategories,
+      sort,
+      catid,
     });
   } catch (error) {
     console.error("Lỗi trang byCat:", error);
     res.status(500).send("Lỗi máy chủ");
   }
 });
+
 
 router.get("/instructorProfile", async (req, res) => {
   try {
@@ -416,4 +425,53 @@ router.get("/instructorProfile", async (req, res) => {
     res.status(500).send("Lỗi máy chủ");
   }
 });
+
+router.get('/search', async function (req, res) {
+  try {
+    const q = req.query.q || '';
+    if (q.trim().length === 0) {
+      return res.render('vwCourses/search', {
+        q,
+        empty: true,
+      });
+    }
+
+    const keywords = q.replace(/ /g, ' & ');
+
+    // Lấy trang hiện tại
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * pageLimit;
+
+    // Gọi DB song song (dữ liệu + tổng số dòng)
+    const [courses, totalResult] = await Promise.all([
+      courseModel.search(keywords, pageLimit, offset),
+      courseModel.countSearch(keywords)
+    ]);
+
+    const total = totalResult.amount;
+    const nPages = Math.ceil(total / pageLimit);
+
+    const page_numbers = [];
+    for (let i = 1; i <= nPages; i++) {
+      page_numbers.push({
+        value: i,
+        isCurrent: i === page,
+        q
+      });
+    }
+
+    res.render('vwCourses/search', {
+      layout: 'main',
+      q,
+      courses,
+      empty: courses.length === 0,
+      page_numbers,
+    });
+
+  } catch (error) {
+    console.error('Lỗi trang search:', error);
+    res.status(500).send('Lỗi máy chủ');
+  }
+});
+
 export default router;
