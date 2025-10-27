@@ -17,7 +17,9 @@ export default {
         return db('categories').where('cat_id', id).update(category);
     },
     findParents() {
-        return db('categories').whereNull('parent_id');
+    return db('categories')
+        .whereNull('parent_id')
+        .orderBy('cat_id', 'asc'); // sắp theo ID tăng dần
     },
     findChildren(parentId) {
         return db('categories').where('parent_id', parentId);
