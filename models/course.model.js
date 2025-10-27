@@ -17,6 +17,23 @@ function addWatchlistSubquery(query, studentId) {
   return query;
 }
 
+function addEnrollmentSubquery(query, studentId) {
+  if (studentId) {
+    query.select(
+      db.raw(
+        `EXISTS (
+          SELECT 1 FROM enrollments e 
+          WHERE e.course_id = c.course_id AND e.student_id = ?
+        ) as "isEnrolled"`,
+        [studentId]
+      )
+    );
+  } else {
+    query.select(db.raw('false as "isEnrolled"'));
+  }
+  return query;
+}
+
 export async function findNewestCourses(limit = 12, studentId = null) {
   let query = db('courses as c')
     .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
@@ -35,6 +52,7 @@ export async function findNewestCourses(limit = 12, studentId = null) {
     .limit(limit);
 
   query = addWatchlistSubquery(query, studentId);
+  query = addEnrollmentSubquery(query, studentId);
   return await query;
 }
 
@@ -55,6 +73,7 @@ export async function findMostViewsCourses(limit = 12, studentId = null) {
     .limit(limit);
 
   query = addWatchlistSubquery(query, studentId);
+  query = addEnrollmentSubquery(query, studentId);
   return await query;
 }
 
@@ -80,6 +99,7 @@ export async function findImpressiveCoursesLastWeek(limit = 4, studentId = null)
     .limit(limit);
 
   query = addWatchlistSubquery(query, studentId);
+  query = addEnrollmentSubquery(query, studentId);
   return await query;
 }
 
@@ -102,7 +122,7 @@ export async function findCoursesByFilter(categoryId, studentId, limit, offset) 
   }
 
   query = addWatchlistSubquery(query, studentId);
-
+  query = addEnrollmentSubquery(query, studentId);
   return query.limit(limit).offset(offset);
 }
 
