@@ -1,4 +1,5 @@
 import db from '../utils/db.js';
+import categoryModel from "./category.model.js";
 
 function addWatchlistSubquery(query, studentId) {
   if (studentId) {
@@ -72,21 +73,34 @@ export async function findImpressiveCoursesLastWeek(limit = 4, studentId = null)
 }
 
 export async function findCoursesByFilter(categoryId, studentId, limit, offset) {
+  // Lấy toàn bộ ID danh mục con (bao gồm cả chính nó)
+  let categoryIds = [];
+  if (categoryId && categoryId !== 0 && categoryId !== 'all') {
+    categoryIds = await categoryModel.findAllDescendants(categoryId);
+    categoryIds.push(categoryId); // thêm chính nó
+  }
+
   let query = db("courses as c")
     .join("categories as cat", "c.catid", "cat.cat_id")
     .leftJoin("users as u", "c.instructor_id", "u.user_id")
     .leftJoin("ratings as r", "c.course_id", "r.course_id")
     .select(
-      "c.course_id", "c.title", "c.price", "c.discount_price", "c.image_url", "c.views", // Added c.views here
+      "c.course_id", 
+      "c.title", 
+      "c.price", 
+      "c.discount_price", 
+      "c.image_url", 
+      "c.views", // Added c.views here
       "cat.cat_name",
-      "u.name as instructor_name", "u.user_id as instructor_id",
+      "u.name as instructor_name", 
+      "u.user_id as instructor_id",
       db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
       db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
     )
     .groupBy("c.course_id", "cat.cat_name", "u.name", "u.user_id");
 
-  if (categoryId && categoryId !== 0 && categoryId !== 'all') {
-    query.where("c.catid", categoryId);
+  if (categoryIds.length > 0) {
+    query.whereIn("c.catid", categoryIds);
   }
 
   query = addWatchlistSubquery(query, studentId);

@@ -51,6 +51,8 @@ router.get("/byCat", async (req, res) => {
     const category = await categoryModel.findById(catid);
     const catname = category ? category.cat_name : "Danh mục không tồn tại";
 
+    const childCategories = await categoryModel.findChildren(catid);
+
     const [courses, totalResult] = await Promise.all([
       courseModel.findCoursesByFilter(catid, student_id, pageLimit, offset),
       courseModel.countCoursesByFilter(catid)
@@ -63,12 +65,14 @@ router.get("/byCat", async (req, res) => {
     for (let i = 1; i <= nPages; i++) {
       page_numbers.push({ value: i, catid, isCurrent: i === page });
     }
+    
 
     res.render("vwCourses/byCat", {
       layout: "main",
       courses,
       catname,
       page_numbers,
+      childCategories,
     });
   } catch (error) {
     console.error("Lỗi trang byCat:", error);
