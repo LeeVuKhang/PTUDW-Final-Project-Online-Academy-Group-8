@@ -140,6 +140,11 @@ app.engine('handlebars', engine({
       const params = new URLSearchParams(queryParams);
       params.set('page', page);
       return '?' + params.toString();
+    },
+
+    // Ss bằng
+    eq(a, b) {
+      return a === b;
     }
   },
   allowProtoPropertiesByDefault: true,
