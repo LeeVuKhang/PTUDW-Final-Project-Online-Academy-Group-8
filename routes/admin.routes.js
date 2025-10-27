@@ -5,10 +5,8 @@ import categoryModel from '../models/category.model.js';
 
 const router = express.Router();
 
-// Admin Dashboard - Trang chủ quản trị - VERSION ĐƠN GIẢN CHO TEST
 router.get('/', async (req, res) => {
     try {
-        // Get basic statistics 
         const [
             totalCourses,
             totalStudents,
@@ -27,10 +25,10 @@ router.get('/', async (req, res) => {
 
         // Biến chứa thống kê trong dashboard
         const stats = {
-            totalCourses: totalCourses.count || 0, // Tổng số courses
-            totalStudents: totalStudents.count || 0, // Tổng số học viên
-            totalInstructors: totalInstructors.count || 0, // Tổng số giảng viên
-            totalCategories: totalCategories.count || 0 // Tổng số lĩnh vực
+            totalCourses: totalCourses.count || 0,
+            totalStudents: totalStudents.count || 0,
+            totalInstructors: totalInstructors.count || 0,
+            totalCategories: totalCategories.count || 0
         };
 
         res.render('vwAdmin/dashboard', {
