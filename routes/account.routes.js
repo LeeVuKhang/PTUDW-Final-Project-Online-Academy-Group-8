@@ -16,19 +16,42 @@ router.get('/signin', (req, res) => {
 });
 
 router.post('/signup', async (req, res) => {
-    const hash_password = bcrypt.hashSync(req.body.password, 10);
-    const user = {
-        username: req.body.username,
-        password: hash_password,
-        name: req.body.name,
-        email: req.body.email,
-        dob: req.body.dob,
-        role: 1 // Mặc định là học viên
-    }
+    try {
+        // Kiểm tra email đã tồn tại
+        const existingEmail = await userModel.findByEmail(req.body.email);
+        if (existingEmail) {
+            return res.render('vwAccount/signup', {
+                error: 'Email already exists'
+            });
+        }
 
-    await userModel.add(user);
-    res.redirect('/account/signin');
-    console.log(user);
+        // Kiểm tra username đã tồn tại
+        const existingUser = await userModel.findByUsername(req.body.username);
+        if (existingUser) {
+            return res.render('vwAccount/signup', {
+                error: 'Username already exists'
+            });
+        }
+
+        const hash_password = bcrypt.hashSync(req.body.password, 10);
+        const user = {
+            username: req.body.username,
+            password: hash_password,
+            name: req.body.name,
+            email: req.body.email,
+            dob: req.body.dob,
+            role: 1 // Mặc định là học viên
+        }
+
+        await userModel.add(user);
+        res.redirect('/account/signin');
+        console.log(user);
+    } catch (error) {
+        console.error('Signup error:', error);
+        res.render('vwAccount/signup', {
+            error: 'Registration failed. Please try again.'
+        });
+    }
 });
 
 
@@ -69,9 +92,6 @@ router.get('/profile', checkAuthenticated, (req, res) => {
     pendingEmail: req.session.pendingEmailChange ? req.session.pendingEmailChange.newEmail : null,
   });
 });
-
-
-
 
 router.post('/profile', checkAuthenticated, async (req, res) => {
   const id = req.session.authUser.user_id;

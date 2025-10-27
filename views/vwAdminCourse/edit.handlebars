@@ -1,0 +1,184 @@
+{{! Quản lý khóa học - Chỉnh sửa khóa học }}
+<div class="container-fluid mt-4">
+  <!-- Navigation -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/admin">Quản trị</a></li>
+      <li class="breadcrumb-item"><a href="/admin/courses">Khóa học</a></li>
+      <li class="breadcrumb-item"><a href="/admin/courses/{{course.course_id}}">{{course.title}}</a></li>
+      <li class="breadcrumb-item active">Chỉnh sửa</li>
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card">
+        <div class="card-header">
+          <h4 class="mb-0">
+            <i class="bi bi-pencil"></i> Chỉnh sửa khóa học
+          </h4>
+        </div>
+        
+        <form method="post" action="/admin/courses/{{course.course_id}}/edit" id="editCourseForm">
+          <div class="card-body">
+            {{#if error}}
+            <div class="alert alert-danger alert-dismissible fade show">
+              <i class="bi bi-exclamation-triangle"></i>
+              <strong>Lỗi!</strong> {{error}}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {{/if}}
+
+            <!-- Basic Information -->
+            <div class="mb-4">
+              <h5 class="text-primary mb-3">
+                <i class="bi bi-info-circle"></i> Thông tin cơ bản
+              </h5>
+              
+              <div class="row">
+                <div class="col-md-8 mb-3">
+                  <label for="title" class="form-label">
+                    Tên khóa học <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" id="title" name="title" 
+                         required placeholder="Nhập tên khóa học..." value="{{course.title}}">
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                  <label for="catid" class="form-label">
+                    Danh mục <span class="text-danger">*</span>
+                  </label>
+                  <select class="form-select" id="catid" name="catid" required>
+                    <option value="">Chọn danh mục</option>
+                    {{#each categories}}
+                    <option value="{{catid}}" {{#if (eq catid ../course.catid)}}selected{{/if}}>{{catname}}</option>
+                    {{/each}}
+                  </select>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="tinydes" class="form-label">Mô tả ngắn</label>
+                <input type="text" class="form-control" id="tinydes" name="tinydes" 
+                       maxlength="200" placeholder="Mô tả ngắn gọn về khóa học..." value="{{course.tinydes}}">
+                <div class="form-text">Tối đa 200 ký tự</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="fulldes" class="form-label">Mô tả chi tiết</label>
+                <textarea class="form-control" id="fulldes" name="fulldes" rows="5" 
+                          placeholder="Mô tả chi tiết về khóa học, nội dung, mục tiêu học tập...">{{course.fulldes}}</textarea>
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- Course Details -->
+            <div class="mb-4">
+              <h5 class="text-primary mb-3">
+                <i class="bi bi-gear"></i> Thông tin khóa học
+              </h5>
+              
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label for="price" class="form-label">
+                    Giá gốc <span class="text-danger">*</span>
+                  </label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="price" name="price" 
+                           min="0" step="1000" required placeholder="0" value="{{course.price}}">
+                    <span class="input-group-text">VNĐ</span>
+                  </div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                  <label for="discount_price" class="form-label">Giá khuyến mãi</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="discount_price" name="discount_price" 
+                           min="0" step="1000" placeholder="0" value="{{course.discount_price}}">
+                    <span class="input-group-text">VNĐ</span>
+                  </div>
+                  <div class="form-text">Để trống nếu không có khuyến mãi</div>
+                </div>
+                
+                <div class="col-md-4 mb-3">
+                  <label for="total_hours" class="form-label">Tổng thời lượng</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="total_hours" name="total_hours" 
+                           min="0" step="0.5" placeholder="0" value="{{course.total_hours}}">
+                    <span class="input-group-text">giờ</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="level" class="form-label">Trình độ</label>
+                  <select class="form-select" id="level" name="level">
+                    <option value="">Chọn trình độ</option>
+                    <option value="Beginner" {{#if (eq course.level 'Beginner')}}selected{{/if}}>Người mới bắt đầu</option>
+                    <option value="Intermediate" {{#if (eq course.level 'Intermediate')}}selected{{/if}}>Trung cấp</option>
+                    <option value="Advanced" {{#if (eq course.level 'Advanced')}}selected{{/if}}>Nâng cao</option>
+                    <option value="Expert" {{#if (eq course.level 'Expert')}}selected{{/if}}>Chuyên gia</option>
+                  </select>
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                  <label for="image_url" class="form-label">Hình ảnh khóa học</label>
+                  <input type="url" class="form-control" id="image_url" name="image_url" 
+                         placeholder="https://example.com/image.jpg" value="{{course.image_url}}">
+                  <div class="form-text">URL hình ảnh đại diện cho khóa học</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card-footer">
+            <div class="d-flex justify-content-between">
+              <a href="/admin/courses/{{course.course_id}}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Hủy
+              </a>
+              <div>
+                <button type="reset" class="btn btn-outline-warning me-2">
+                  <i class="bi bi-arrow-clockwise"></i> Đặt lại
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check2"></i> Cập nhật khóa học
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('editCourseForm');
+  const priceInput = document.getElementById('price');
+  const discountPriceInput = document.getElementById('discount_price');
+
+  // Validate discount price is not greater than original price
+  function validatePrices() {
+    const price = parseFloat(priceInput.value) || 0;
+    const discountPrice = parseFloat(discountPriceInput.value) || 0;
+    
+    if (discountPrice > 0 && discountPrice >= price) {
+      discountPriceInput.setCustomValidity('Giá khuyến mãi phải nhỏ hơn giá gốc');
+    } else {
+      discountPriceInput.setCustomValidity('');
+    }
+  }
+
+  priceInput.addEventListener('input', validatePrices);
+  discountPriceInput.addEventListener('input', validatePrices);
+
+  // Form submission handling
+  form.addEventListener('submit', function(e) {
+    validatePrices();
+    console.log('Form is being submitted...');
+  });
+});
+</script>

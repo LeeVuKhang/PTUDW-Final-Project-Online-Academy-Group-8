@@ -33,14 +33,30 @@ router.get('/edit', async (req, res) => {
 });
 
 router.post('/add', async (req, res) => {
-    const category = {
-        catname: req.body.catname
-    };
-    await categoryModel.add(category);
-    res.render('vwAdminCategory/add', {
-        layout: 'admin',
-        title: 'Thêm danh mục mới'
-    });
+    try {
+        const catname = req.body.catname;
+        console.log('Adding category:', catname);
+        
+        if (!catname || !catname.trim()) {
+            return res.render('vwAdminCategory/add', {
+                layout: 'admin',
+                title: 'Thêm danh mục mới',
+                error: 'Tên danh mục không được để trống'
+            });
+        }
+        
+        await categoryModel.add({ catname: catname.trim() });
+        res.redirect('/admin/categories');
+    } catch (error) {
+        console.error('Error adding category:', error);
+        console.error('Error details:', error.message);
+        console.error('Error code:', error.code);
+        res.render('vwAdminCategory/add', {
+            layout: 'admin',
+            title: 'Thêm danh mục mới',
+            error: 'Có lỗi xảy ra khi thêm danh mục: ' + error.message
+        });
+    }
 });
 
 router.post('/patch', async (req, res) => { 

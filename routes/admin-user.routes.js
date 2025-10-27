@@ -96,23 +96,14 @@ router.post('/create-instructor', async (req, res) => {
         // Hash password
         const hashedPassword = bcrypt.hashSync(password, 10);
 
-        // Create instructor account
+        // Create instructor account (only fields that exist in database)
         const newInstructor = {
             username,
             email,
             password: hashedPassword,
             name,
-            phone: phone || null,
             dob: dob || null,
-            gender: gender || null,
-            bio: bio || null,
-            specialization: specialization || null,
-            experience_years: experience_years || null,
-            education: education || null,
-            certificates: certificates || null,
-            role: 2, // 2 = Instructor role
-            is_active: true,
-            created_at: new Date()
+            role: 1 // 1 = Instructor role
         };
 
         await userModel.addInstructor(newInstructor);

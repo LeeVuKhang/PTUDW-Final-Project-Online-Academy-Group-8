@@ -36,6 +36,11 @@
 <div class="card">
         <h5 class="card-header">Account registration</h5>
         <div class="card-body">
+            {{#if error}}
+            <div class="alert alert-danger" role="alert">
+                {{error}}
+            </div>
+            {{/if}}
             <form method = "post" action = "/account/signup" id="frmRegister">
             <div class="mb-3">
                 <label for="txtUsername" class="form-label">Username</label>
@@ -62,7 +67,7 @@
                 <div id="emailHelp" class="form-text">We'll never share your email with anyone else.(nah we will)</div>
             </div>
             <div class="mb-3">
-                <label for="txtdob" class="form-label">Day of Birth</label>
+                <label for="txtdob" class="form-label">Date of Birth</label>
                 <input type="date" class="form-control" id="txtdob"  name = "dob" required>
             </div>
             <button type="submit" class="btn btn-primary">
