@@ -13,33 +13,60 @@ const router = express.Router();
 router.get('/signup', (req, res) => {
     res.render('vwAccount/signup');
 }); 
+router.post('/signup', async (req, res) => {
+  try {
+    const { username, password, confirm, name, email, dob } = req.body;
+    if (!username || !password || !confirm || !name || !email) {
+      return res.render('vwAccount/signup', { err: 'Please fill all required fields.' });
+    }
+    if (password !== confirm) {
+      return res.render('vwAccount/signup', { err: 'Passwords do not match.' });
+    }
+    const existedUser = await userModel.findByUsername(username.trim());
+    if (existedUser) {
+      return res.render('vwAccount/signup', { err: 'Username is already taken.' });
+    }
+    const existedEmail = await userModel.findByEmail(email.trim());
+    if (existedEmail) {
+      return res.render('vwAccount/signup', { err: 'Email is already registered.' });
+    }
+    const hash = bcrypt.hashSync(password, 10);
+
+    req.session.pendingSignup = {
+      username: username.trim(),
+      password: hash,
+      name: name.trim(),
+      email: email.trim(),
+      dob: dob,
+      role: 1,
+    };
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    req.session.signupOtp = {
+      code: otp,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    };
+    const { sendOtpEmail } = await import('../utils/mailer.js');
+    await sendOtpEmail(email.trim(), otp, 'Complete your registration');
+    return res.render('vwAccount/signup-verify', { email: email.trim() });
+  } catch (e) {
+    console.error('[signup] error:', e);
+    return res.status(500).render('vwAccount/403');
+  }
+});
 router.get('/signin', (req, res) => {
     res.render('vwAccount/signin');
 });
-
-router.post('/signup', async (req, res) => {
-    const hash_password = bcrypt.hashSync(req.body.password, 10);
-    const user = {
-        username: req.body.username,
-        password: hash_password,
-        name: req.body.name,
-        email: req.body.email,
-        dob: req.body.dob,
-        role: 1,
-    }
-
-    await userModel.add(user);
-    res.redirect('/account/signin');
-    console.log(user);
-});
-
-
 router.post('/signin', async (req, res) => {
-    const user = await userModel.findByUsername(req.body.username);
-    if (!user) return res.redirect('signin');
-    const matchPassword = bcrypt.compareSync(req.body.password, user.password)
-    if (!matchPassword) return res.redirect('signin');
-
+    const { username, password } = req.body;
+    const user = await userModel.findByUsername(username);
+    const invalid = () =>
+      res.status(401).render('vwAccount/signin', {
+        err: 'Invalid username or password.',
+        lastUsername: username || '',
+      });
+    if (!user) return invalid();
+    const matchPassword = bcrypt.compareSync(password, user.password)
+    if (!matchPassword) return invalid();
     req.session.isAuthenticated = true;
     req.session.authUser = user;
 
@@ -47,6 +74,53 @@ router.post('/signin', async (req, res) => {
     delete req.session.retUrl;
     return res.redirect(retUrl);
 });
+router.get('/signup/verify', (req, res) => {
+  const pending = req.session.pendingSignup;
+  if (!pending) return res.redirect('/account/signup');
+  res.render('vwAccount/signup-verify', { email: pending.email });
+});
+router.post('/signup/verify', async (req, res) => {
+  try {
+    const pending = req.session.pendingSignup;
+    const hold = req.session.signupOtp;
+
+    if (!pending || !hold) return res.redirect('/account/signup');
+
+    const code = (req.body.code || '').trim();
+    if (!code) {
+      return res.render('vwAccount/signup-verify', { email: pending.email, err: 'Please enter the code.' });
+    }
+    if (Date.now() > hold.expiresAt) {
+      req.session.pendingSignup = null;
+      req.session.signupOtp = null;
+      return res.render('vwAccount/signup', { err: 'Code expired. Please sign up again.' });
+    }
+    if (code !== hold.code) {
+      return res.render('vwAccount/signup-verify', { email: pending.email, err: 'Invalid code. Try again.' });
+    }
+    const newId = await userModel.add({
+      username: pending.username,
+      password: pending.password,
+      name: pending.name,
+      email: pending.email,
+      dob: pending.dob,
+      role: pending.role,
+    });
+    req.session.pendingSignup = null;
+    req.session.signupOtp = null;
+    const user = await userModel.findByUsername(pending.username);
+    req.session.isAuthenticated = true;
+    req.session.authUser = user;
+    return res.redirect('/account/profile');
+  } catch (e) {
+    console.error('[signup/verify] error:', e);
+    return res.status(500).render('vwAccount/403');
+  }
+});
+
+
+
+
 
 router.post('/signout', async (req, res) => {
     req.session.isAuthenticated = false;
@@ -122,16 +196,19 @@ router.post('/change-pwd', checkAuthenticated, async (req, res) => {
 
   return res.redirect('/account/profile');
 });
-
 router.post('/sync', async (req, res) => {
-    
   try {
     if (!req.body || typeof req.body !== 'object') {
-      return res.status(400).json({ ok: false, message: 'Missing JSON body' });
+      return res
+        .status(400)
+        .json({ ok: false, needSignup: true, redirect: '/account/complete', message: 'Missing JSON body' });
     }
-    const { email, name, supabase_uid } = req.body;
+
+    const { email, name, supabase_uid } = req.body || {};
     if (!email) {
-      return res.status(400).json({ ok: false, message: 'Missing email' });
+      return res
+        .status(400)
+        .json({ ok: false, needSignup: true, redirect: '/account/complete', message: 'Missing email' });
     }
 
     const existing = await userModel.findByEmail(email);
@@ -139,19 +216,21 @@ router.post('/sync', async (req, res) => {
       req.session.isAuthenticated = true;
       req.session.authUser = existing;
       req.session.authUser.isSocial = true;
+
       const retUrl = req.session.retUrl || '/';
       delete req.session.retUrl;
       return res.json({ ok: true, redirect: retUrl });
     }
-
-    
     req.session.pendingSocial = { email, name: name || '', supabase_uid };
     return res.json({ ok: false, needSignup: true, redirect: '/account/complete' });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ ok: false, message: 'Server error' });
+    console.error('[sync] error:', err);
+    return res
+      .status(500)
+      .json({ ok: false, needSignup: true, redirect: '/account/complete', message: 'Server error' });
   }
 });
+
 router.get('/oauth-done', (req, res) => {
   res.render('vwAccount/oauth-done');
 });
