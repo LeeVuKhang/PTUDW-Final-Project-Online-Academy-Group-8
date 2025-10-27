@@ -55,7 +55,22 @@ export default {
         .count('e.erm_id as total_enrollments')
         .orderBy('total_enrollments', 'desc')
         .limit(limit);
-    }
-
+    },
+    // lấy id của cả cate cha và con
+    async findAllDescendants(catId) {
+    const rows = await db.raw(`
+      WITH RECURSIVE subcategories AS (
+        SELECT cat_id, parent_id
+        FROM categories
+        WHERE cat_id = ?
+        UNION ALL
+        SELECT c.cat_id, c.parent_id
+        FROM categories c
+        INNER JOIN subcategories s ON c.parent_id = s.cat_id
+      )
+      SELECT cat_id FROM subcategories;
+    `, [catId]);
+    return rows.rows.map(r => r.cat_id);
+  },
 };
 
