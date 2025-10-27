@@ -152,7 +152,7 @@ router.post('/courses/edit-syllabus/:course_id', async (req, res) => {
 
      try {
         const course = await courseModel.findByID(course_id);
-        if (!course || course.instructor_id !== instructor_id) {
+        if (!course || course.instructor_id !== instructor_id && req.session.authUser.role != 0) {
             return res.status(403).send('Bạn không có quyền lưu syllabus cho khóa học này.');
         }
 
@@ -227,7 +227,7 @@ router.post('/update/:course_id', async (req, res) => {
 
     try {
         const existingCourse = await courseModel.findByID(course_id);
-        if (!existingCourse || existingCourse.instructor_id !== instructor_id) {
+        if (!existingCourse || existingCourse.instructor_id !== instructor_id && req.session.authUser.role != 0) {
             return res.status(403).send("Không có quyền cập nhật khóa học này.");
         }
 
