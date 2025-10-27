@@ -2,7 +2,7 @@ import db from '../utils/db.js';
 
 export default {
     findAll() {
-        return db('categories');
+        return db('categories').orderBy('cat_id', 'asc');
     },
     findById(id) {
         return db('categories').where('cat_id', id).first();

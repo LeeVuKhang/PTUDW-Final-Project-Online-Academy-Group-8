@@ -34,7 +34,7 @@ router.get('/edit', async (req, res) => {
 
 router.post('/add', async (req, res) => {
     const category = {
-        catname: req.body.catname
+        cat_name: req.body.catname
     };
     await categoryModel.add(category);
     res.render('vwAdminCategory/add', {
@@ -44,9 +44,9 @@ router.post('/add', async (req, res) => {
 });
 
 router.post('/patch', async (req, res) => { 
-    const id = req.body.catid;
+    const id = req.body.cat_id;
     const category = {
-        catname: req.body.catname
+        cat_name: req.body.cat_name
     };
 
     await categoryModel.patch(id, category);
@@ -54,7 +54,7 @@ router.post('/patch', async (req, res) => {
 });
 
 router.post('/delete', async (req, res) => {
-    const id = req.body.catid;
+    const id = req.body.cat_id;
     await categoryModel.del(id);
     res.redirect('/admin/categories');
 });
