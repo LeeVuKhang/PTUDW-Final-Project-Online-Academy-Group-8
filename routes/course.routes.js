@@ -4,6 +4,15 @@ import { checkAuthenticated } from "../models/auth.model.js";
 import userModel from "../models/user.model.js";
 import * as courseModel from "../models/course.model.js";
 import categoryModel from '../models/category.model.js';
+import instructorModel from '../models/instructor.models.js';
+
+const formatNumber = (num) => {
+    if (typeof num === 'number' && num > 0) {
+        return num.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+    }
+    return 'Miễn phí'; 
+};
+
 
 const router = express.Router();
 const pageLimit = 8;
@@ -77,30 +86,49 @@ router.get("/byCat", async (req, res) => {
 });
 
 router.get("/instructorProfile", async (req, res) => {
-  try {
-    const instructor_id = req.query.id;
-    if (!instructor_id) {
-      return res.redirect('/');
+    try {
+        const instructorId = req.query.id;
+
+        if (!instructorId) {
+            return res.redirect('/');
+        }
+
+        const [profile, stats, courses] = await Promise.all([
+            instructorModel.findProfileById(instructorId), 
+            instructorModel.getInstructorStats(instructorId),
+            instructorModel.findCoursesByInstructor(instructorId) 
+        ]);
+
+        if (!profile || profile.role !== 2) { 
+            return res.status(404).send("Không tìm thấy giảng viên hợp lệ này.");
+        }
+
+        const context = {
+            layout: "main",
+            instructor: {
+                name: profile.name,
+                email: profile.email,
+                image_url: profile.image_url || '/static/avt1.png',
+                bio: profile.bio || '',
+                
+                avg_rating: stats.avg_rating,
+                total_reviews: stats.total_reviews.toLocaleString('en-US'), 
+                total_students: stats.total_students.toLocaleString('en-US'),
+                total_courses: stats.total_courses,
+            },
+            courses: courses.map(course => ({
+                ...course,
+                discount_price: formatNumber(course.discount_price), 
+            }))
+        };
+        
+        console.log("Context Giảng viên cuối cùng:", context.instructor); 
+        res.render("vwCourses/instructorProfile", context);
+
+    } catch (error) {
+        console.error("Lỗi trang instructorProfile:", error);
+        res.status(500).send("Lỗi máy chủ");
     }
-
-    const instructor = await userModel.findById(instructor_id);
-
-    if (!instructor || instructor.role !== 2) {
-      return res.status(404).send("Không tìm thấy giảng viên này.");
-    }
-
-    const courses = await db("courses").where("instructor_id", instructor_id);
-
-    res.render("vwCourses/instructorProfile", {
-      layout: "main",
-      instructor,
-      courses
-    });
-
-  } catch (error) {
-    console.error("Lỗi trang instructorProfile:", error);
-    res.status(500).send("Lỗi máy chủ");
-  }
 });
 /*Chi tiết khóa học*/
 router.get("/details/:id", async (req, res) => {
@@ -523,30 +551,4 @@ router.post("/my-courses/remove/:id", checkAuthenticated, async (req, res) => {
   res.redirect("/course/my-courses");
 });
 
-router.get("/instructorProfile", async (req, res) => {
-  try {
-    const instructor_id = req.query.id;
-    if (!instructor_id) {
-      return res.redirect('/');
-    }
-
-    const instructor = await userModel.findById(instructor_id);
-
-    if (!instructor || instructor.role !== 2) {
-      return res.status(404).send("Không tìm thấy giảng viên này.");
-    }
-
-    const courses = await db("courses").where("instructor_id", instructor_id);
-
-    res.render("vwCourses/instructorProfile", {
-      layout: "main",
-      instructor,
-      courses
-    });
-
-  } catch (error) {
-    console.error("Lỗi trang instructorProfile:", error);
-    res.status(500).send("Lỗi máy chủ");
-  }
-});
 export default router;

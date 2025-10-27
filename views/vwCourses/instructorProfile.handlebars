@@ -1,14 +1,75 @@
 {{#fill_section 'css'}}
 <style>
-  .instructor-header {
-    background-color: #f8f9fa;
-    border-radius: .5rem;
-  }
   .list-group-item .course-thumbnail {
     width: 100px;
     height: 60px;
     object-fit: cover;
     border-radius: 4px;
+  }
+
+  .instructor-profile-box {
+    margin-bottom: 3.5rem;
+  }
+  .instructor-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #563d7c; 
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+  }
+  .instructor-name {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.25rem;
+  }
+  .instructor-subtitle {
+    font-size: 1.15rem;
+    color: #555;
+    margin-bottom: 2rem;
+  }
+  .instructor-avatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1rem;
+  }
+  .instructor-stats {
+    list-style: none;
+    padding-left: 0;
+    font-size: 1rem;
+  }
+  .instructor-stats li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    color: #212529;
+  }
+  .instructor-stats i {
+    font-size: 1.1rem;
+    color: #111;
+    width: 28px; 
+    margin-right: 0.75rem;
+  }
+  .instructor-bio {
+    margin-top: 2.5rem;
+  }
+  .instructor-bio h4 {
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+  .instructor-bio .bio-content p {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .show-more-link {
+    font-weight: 700;
+    color: #563d7c;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
   }
 </style>
 {{/fill_section}}
@@ -17,37 +78,91 @@
   <div class="row">
     <div class="col-lg-10 mx-auto">
 
-      <div class="instructor-header p-4 p-md-5 mb-5 text-center">
-        <h1 class="display-5 fw-bold">{{instructor.name}}</h1>
-        <p class="fs-5 text-muted">{{instructor.email}}</p>
-        <p class="text-dark">Giảng viên tại CourseCademy</p>
+      <div class="instructor-profile-box">
+        <p class="instructor-title">Instructor</p>
+        <h1 class="instructor-name">{{instructor.name}}</h1>
+        <p class="instructor-subtitle">Giảng viên tại CourseCademy</p>
+
+        <div class="row">
+          <div class="col-md-3">
+            <img src="{{instructor.image_url}}" alt="{{instructor.name}}" class="instructor-avatar">
+          </div>
+
+          <div class="col-md-9 d-flex align-items-center">
+            <div class="row text-center mt-4">
+              <div class="col-6 col-md-3 mb-3">
+                <div class="stat-box">
+                  <i class="bi bi-star-fill text-warning fs-2 mb-1"></i>
+                  <div class="stat-number">{{instructor.avg_rating}}</div>
+                  <div class="stat-label"> Rating</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 mb-3">
+                <div class="stat-box">
+                  <i class="bi bi-patch-check-fill text-success fs-2 mb-1"></i>
+                  <div class="stat-number">{{instructor.total_reviews}}</div>
+                  <div class="stat-label">Reviews</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 mb-3">
+                <div class="stat-box">
+                  <i class="bi bi-people-fill text-primary fs-2 mb-1"></i>
+                  <div class="stat-number">{{instructor.total_students}}</div>
+                  <div class="stat-label">Students</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3 mb-3">
+                <div class="stat-box">
+                  <i class="bi bi-play-circle-fill text-danger fs-2 mb-1"></i>
+                  <div class="stat-number">{{instructor.total_courses}}</div>
+                  <div class="stat-label">Courses</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="instructor-bio">
+          <h4>Giới thiệu</h4>
+          <div class="bio-content">
+            {{{instructor.bio}}}
+            {{#unless instructor.bio}}
+              <p>Chào mừng!</p>
+              <p>Tôi là **{{instructor.name}}**, một giảng viên tại CourseCademy.</p>
+              <p class="text-muted small">(Giảng viên chưa cập nhật tiểu sử.)</p>
+            {{/unless}}
+          </div>
+        </div>
       </div>
+
+      <hr class="my-5">
 
       <h2 class="fw-bold mb-4">Các khóa học của {{instructor.name}}</h2>
       
-      <div class="list-group shadow-sm">
+      <div class="row g-4">
         {{#each courses}}
-          <a href="/course/details/{{this.course_id}}" class="list-group-item list-group-item-action p-3">
-            <div class="row align-items-center g-3">
-              <div class="col-auto">
-                <img src="{{this.image_url}}" alt="{{this.title}}" class="course-thumbnail">
-              </div>
-              <div class="col">
-                <h5 class="mb-1 fw-semibold">{{this.title}}</h5>
-                <p class="mb-1 text-muted small">{{this.tinydes}}</p>
-              </div>
-              <div class="col-md-2 text-md-end">
-                <h6 class="text-primary fw-bold mb-0">{{formatNumber this.discount_price}}</h6>
+          <div class="col-md-4 col-lg-3">
+            <div class="card h-100 shadow-sm border-0">
+              <a href="/course/details/{{this.course_id}}">
+                <img src="{{this.image_url}}" class="card-img-top" alt="{{this.title}}" style="height: 180px; object-fit: cover;">
+              </a>
+              <div class="card-body">
+                <h6 class="card-title fw-semibold mb-2">
+                  <a href="/course/details/{{this.course_id}}" class="text-dark text-decoration-none">
+                    {{this.title}}
+                  </a>
+                </h6>
+                <p class="text-muted small mb-2">{{this.tinydes}}</p>
+                <div class="text-primary fw-bold">{{formatNumber this.discount_price}}</div>
               </div>
             </div>
-          </a>
+          </div>
         {{else}}
-          <div class="list-group-item p-4 text-center text-muted">
+          <div class="text-center text-muted py-4">
             Giảng viên này chưa đăng tải khóa học nào.
           </div>
         {{/each}}
-      </div>
-      
+      </div>    
     </div>
   </div>
 </div>
