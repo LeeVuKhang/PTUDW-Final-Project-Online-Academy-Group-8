@@ -83,6 +83,13 @@
 
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0 d-flex flex-row align-items-center">
           {{#if isAuthenticated}}
+            {{#if (eq authUser.role 2)}}
+            <li class="nav-item me-3">
+              <a class="nav-link" href="/instructor/courses" title="My Teaching">
+                My Teaching
+              </a>
+            </li>
+            {{/if}}
           <li class="nav-item me-3">
             <a class="nav-link" href="/course/my-courses" title="My Learning">
               My learning
