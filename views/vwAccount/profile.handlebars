@@ -1,5 +1,8 @@
 <div class="container my-4">
-  <h3 class="mb-3">Account details</h3>
+      <h3 class="mb-0">Account details</h3>
+  <div class="d-flex align-items-baseline gap-3 mb-5">
+    <span class="text-muted username-large">@{{user.username}}</span>
+  </div>
 
   <ul class="nav nav-tabs" id="accountTabs" role="tablist">
     <li class="nav-item" role="presentation">
@@ -19,10 +22,17 @@
     </li>
     {{#if pendingEmail}}
       <li class="nav-item" role="presentation">
-        <button class="nav-link {{#if (eq tab 'email-verify')}}active{{/if}}" data-bs-toggle="tab" data-bs-target="#pane-email-verify" type="button" role="tab">
-          Verify email
+        <button class="nav-link {{#if (eq tab 'email-verify-old')}}active{{/if}}" data-bs-toggle="tab" data-bs-target="#pane-email-verify-old" type="button" role="tab">
+          Verify old email
         </button>
       </li>
+      {{#if (eq pendingStage 'new')}}
+        <li class="nav-item" role="presentation">
+          <button class="nav-link {{#if (eq tab 'email-verify-new')}}active{{/if}}" data-bs-toggle="tab" data-bs-target="#pane-email-verify-new" type="button" role="tab">
+            Verify new email
+          </button>
+        </li>
+      {{/if}}
     {{/if}}
   </ul>
 
@@ -30,107 +40,102 @@
     <div id="pane-info" class="tab-pane fade {{#if (eq tab 'info')}}show active{{/if}}">
       {{#if saved}}<div class="alert alert-success py-2">Profile updated.</div>{{/if}}
       <form method="post" action="/account/profile" class="row g-3">
-        <div class="col-md-6">
+        <div class="col-12">
           <label class="form-label">Full name</label>
           <input class="form-control" name="name" value="{{user.name}}" required>
         </div>
-        <div class="col-md-6">
+
+        <div class="col-12">
           <label class="form-label">Email</label>
           <div class="input-group">
             <input class="form-control" type="email" value="{{user.email}}" readonly>
             <a class="btn btn-outline-secondary" href="/account/profile?tab=email">Change</a>
           </div>
+          <div class="form-text">Email is your unique ID. Use the Change Email tab.</div>
         </div>
-        <div class="col-md-6">
+
+        <div class="col-12">
           <label for="txtdob" class="form-label">Date of Birth</label>
           <input id="txtdob" class="form-control" type="date" name="dob" value="{{formatDate user.dob}}">
         </div>
+
         <div class="col-12">
           <button class="btn btn-primary">Save changes</button>
         </div>
       </form>
     </div>
     <div id="pane-pwd" class="tab-pane fade {{#if (eq tab 'pwd')}}show active{{/if}}">
-  {{#if user.isSocial}}
-    {{#if pwdSent}}
-      {{#if errPwd}}<div class="alert alert-danger py-2">{{errPwd}}</div>{{/if}}
-      <form method="post" action="/account/change-pwd-social" class="row g-3" onsubmit="return checkPwdMatch()">
-        <div class="col-md-4">
-          <label class="form-label">Verification code</label>
-          <input class="form-control" name="code" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">New password</label>
-          <input id="newPwd" class="form-control" type="password" name="newPassword" minlength="8" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Confirm new password</label>
-          <input id="confirmPwd" class="form-control" type="password" minlength="8" required>
+      {{#if error}}<div class="alert alert-danger py-2">Current password is incorrect.</div>{{/if}}
+      <form method="post" action="/account/change-pwd" class="row g-3" onsubmit="return checkPwdMatchA()">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+          <label class="form-label mb-0">Current password</label>
+          <a class="link-primary" href="/account/forgot">Forgot password?</a>
         </div>
         <div class="col-12">
-          <button class="btn btn-primary">Set password</button>
+          <input class="form-control" type="password" name="currentPassword" required>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">New password</label>
+          <input id="newPwdA" class="form-control" type="password" name="newPassword" minlength="6" required>
+          <div class="form-text">At least 6 characters.</div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Confirm new password</label>
+          <input id="confirmPwdA" class="form-control" type="password" minlength="6" required>
+        </div>
+
+        <div class="col-12">
+          <button class="btn btn-primary">Update password</button>
         </div>
       </form>
-    {{else}}
-      {{#if errPwd}}<div class="alert alert-danger py-2">{{errPwd}}</div>{{/if}}
-      <p>Since you signed in with Google, you don’t have a local password yet. We’ll verify by sending a code to <strong>{{user.email}}</strong>.</p>
-      <form method="post" action="/account/change-pwd-social/send">
-        <button class="btn btn-primary">Send code</button>
-      </form>
-    {{/if}}
-  {{else}}
-    {{#if error}}<div class="alert alert-danger py-2">Current password is incorrect.</div>{{/if}}
-    <form method="post" action="/account/change-pwd" class="row g-3" onsubmit="return checkPwdMatch()">
-      <div class="col-md-6">
-        <label class="form-label">Current password</label>
-        <input class="form-control" type="password" name="currentPassword" required>
-      </div>
-      <div class="col-md-6"></div>
-      <div class="col-md-6">
-        <label class="form-label">New password</label>
-        <input id="newPwd" class="form-control" type="password" name="newPassword" minlength="8" required>
-        <div class="form-text">At least 8 characters.</div>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Confirm new password</label>
-        <input id="confirmPwd" class="form-control" type="password" minlength="8" required>
-      </div>
-      <div class="col-12">
-        <button class="btn btn-primary">Update password</button>
-      </div>
-    </form>
-  {{/if}}
-</div>
+    </div>
     <div id="pane-email" class="tab-pane fade {{#if (eq tab 'email')}}show active{{/if}}">
-  {{#if errEmail}}<div class="alert alert-danger py-2">{{errEmail}}</div>{{/if}}
-  <form method="post" action="/account/change-email" class="row g-3">
-    {{#unless user.isSocial}}
-      <div class="col-md-6">
-        <label class="form-label">Current password</label>
-        <input class="form-control" type="password" name="currentPassword" required>
-      </div>
-    {{/unless}}
-    <div class="{{#if user.isSocial}}col-md-6{{else}}col-md-6{{/if}}">
-      <label class="form-label">New email</label>
-      <input class="form-control" type="email" name="newEmail" required>
-      <div class="form-text">We’ll send a 6-digit code to your current email ({{user.email}}). (tbh ts is just for show nothing actually being sent to email but actually pre generated inside console )</div>
+      {{#if errEmail}}<div class="alert alert-danger py-2">{{errEmail}}</div>{{/if}}
+      <form method="post" action="/account/change-email" class="row g-3">
+        <div class="col-12">
+          <label class="form-label">New email</label>
+          <input class="form-control" type="email" name="newEmail" required>
+          <div class="form-text">We’ll send a code to your current email ({{user.email}}) first.</div>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-primary">Send code to current email</button>
+        </div>
+      </form>
     </div>
-    <div class="col-12">
-      <button class="btn btn-primary">Send code</button>
-    </div>
-  </form>
-</div>
+
+    <!-- Verify old email -->
     {{#if pendingEmail}}
-      <div id="pane-email-verify" class="tab-pane fade {{#if (eq tab 'email-verify')}}show active{{/if}}">
-        {{#if errEmailVerify}}<div class="alert alert-danger py-2">{{errEmailVerify}}</div>{{/if}}
-        <p>We sent a 6-digit code to <strong>{{pendingEmail}}</strong>. Enter it below. (tbh ts is just for show nothing actually being sent to email but actually pre generated inside console )</p>
-        <form method="post" action="/account/change-email/verify" class="row g-3">
-          <div class="col-md-4">
+      <div id="pane-email-verify-old" class="tab-pane fade {{#if (eq tab 'email-verify-old')}}show active{{/if}}">
+        {{#if errEmailVerifyOld}}<div class="alert alert-danger py-2">{{errEmailVerifyOld}}</div>{{/if}}
+        <p>We sent a 6-digit code to your current email <strong>{{user.email}}</strong>.</p>
+        <form method="post" action="/account/change-email/verify-old" class="row g-3">
+          <div class="col-12">
             <label class="form-label">Verification code</label>
             <input class="form-control" name="code" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required>
           </div>
           <div class="col-12">
-            <button class="btn btn-primary">Verify & Update</button>
+            <button class="btn btn-primary">Verify current email</button>
+          </div>
+        </form>
+        <hr>
+        <p class="text-muted mb-0">Next step (after this): we’ll send a code to your new email <strong>{{pendingEmail}}</strong>.</p>
+      </div>
+    {{/if}}
+
+    <!-- Verify new email -->
+    {{#if (eq pendingStage 'new')}}
+      <div id="pane-email-verify-new" class="tab-pane fade {{#if (eq tab 'email-verify-new')}}show active{{/if}}">
+        {{#if errEmailVerifyNew}}<div class="alert alert-danger py-2">{{errEmailVerifyNew}}</div>{{/if}}
+        <p>We sent a 6-digit code to your new email <strong>{{pendingEmail}}</strong>.</p>
+        <form method="post" action="/account/change-email/verify-new" class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Verification code</label>
+            <input class="form-control" name="code" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-primary">Confirm new email</button>
           </div>
         </form>
       </div>
@@ -139,9 +144,9 @@
 </div>
 
 <script>
-function checkPwdMatch() {
-  const a = document.getElementById('newPwd').value;
-  const b = document.getElementById('confirmPwd').value;
+function checkPwdMatchA() {
+  const a = document.getElementById('newPwdA').value;
+  const b = document.getElementById('confirmPwdA').value;
   if (a !== b) { alert('New passwords do not match.'); return false; }
   return true;
 }

@@ -1,3 +1,6 @@
+import 'dotenv/config';
+
+
 import express from 'express';
 import { engine } from 'express-handlebars';
 import hbs_sections from 'express-handlebars-sections';
@@ -7,16 +10,19 @@ import Handlebars from 'handlebars';
 
 import categoryModel from './models/category.model.js';
 import * as courseModel from './models/course.model.js';
-import { checkAdmin, checkAuthenticated } from './models/auth.model.js';
+import { checkAdmin, checkAuthenticated, checkInstructor} from './models/auth.model.js';
+import ratingModel from './models/rating.model.js';
+
 
 import courseRouter from './routes/course.routes.js';
 import accountRouter from './routes/account.routes.js';
 import categoryRouter from './routes/category.routes.js';
-import productRouter from './routes/product.routes.js';
 import instructorRouter from './routes/instructor.routes.js';
 import adminCourseRouter from './routes/admin-course.routes.js';
 import adminUserRouter from './routes/admin-user.routes.js';
 import adminRouter from './routes/admin.routes.js';
+
+
 
 const __dirname = import.meta.dirname;
 const app = express();
@@ -36,6 +42,12 @@ app.engine('handlebars', engine({
     section: hbs_sections(),
     fill_section: hbs_sections(),
 
+    extractYouTubeId(url) {
+        if (!url) return '';
+        const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^?&]+)/);
+        return match ? match[1] : '';
+    },
+
     // Định dạng tiền tệ VND
     formatNumber(num) {
       if (typeof num !== 'number') num = parseFloat(num);
@@ -46,9 +58,9 @@ app.engine('handlebars', engine({
     eq(a, b) {
       return a === b;
     },
-    ne(a,b ){
+    ne(a, b) {
       return a !== b;
-    },  
+    },
 
     formatDate(date) {
       if (!date) return '';
@@ -163,20 +175,51 @@ function chunkArray(array, size) {
 app.get('/', async (req, res) => {
   if (req.session.isAuthenticated) {
     console.log('User is authenticated');
-    console.log(req.session.authUser);
+    console.log(req.session.authUser)
   }
-  const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4);
-  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4);
-  res.render('home', { newestCourses, mostViewsCourses });
+  const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null; 
+  const newestCourses = chunkArray(await courseModel.findNewestCourses(12, student_id), 4); 
+  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(12, student_id), 4); 
+  const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek(4, student_id); 
+  const parents = await categoryModel.findParents();
+  const rating = await ratingModel.findTop3RecentFiveStarCourses();
+  const topCate = await categoryModel.findTopCategoriesOfWeek(3);
+  // Thêm mảng stars để Handlebars each
+  rating.forEach(r => {
+    r.stars = Array.from({ length: r.value });
+  });
+
+  // Lấy children cho mỗi parent
+  for (const parent of parents) {
+    parent.children = await categoryModel.findChildren(parent.cat_id);
+  }
+
+  res.render('home', {
+    newestCourses,
+    mostViewsCourses,
+    parents,
+    rating,
+    impressiveCourses,
+    topCate,
+  });
 });
 
-app.get('/home', (req, res) => res.redirect('/'));
+app.use(async (req, res, next) => {
+  const parents = await categoryModel.findParents();
+
+  // Lấy children cho mỗi parent
+  for (const parent of parents) {
+    parent.children = await categoryModel.findChildren(parent.cat_id);
+  }
+  res.locals.parents = parents;
+  next();
+});
+
 
 // Gắn các router
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
-app.use('/product', productRouter);
-app.use('/instructor', instructorRouter);
+app.use('/instructor', checkAuthenticated , checkInstructor,instructorRouter);
 app.use('/course', courseRouter);
 app.use('/admin/courses', checkAuthenticated, checkAdmin, adminCourseRouter);
 app.use('/admin/users', checkAuthenticated, checkAdmin, adminUserRouter);
@@ -184,5 +227,5 @@ app.use('/admin', checkAuthenticated, checkAdmin, adminRouter);
 
 // Khởi động server
 app.listen(3000, () => {
-  console.log('✅ Server is running on http://localhost:3000');
+  console.log('Server is running on http://localhost:3000');
 });

@@ -1,79 +1,138 @@
+{{!-- same logic as signin so dont mind ts--}}
 {{#fill_section 'js'}}
 <script>
-      function handleSubmit(event) {
-      event.preventDefault(); 
-      
-      const username = document.querySelector('#txtUsername').value;
-      if (username.length === 0) {
-        alert('Please enter a username');
+  async function signupWithGoogle() {
+    try {
+      if (!window.supabase) {
+        alert('Supabase client not found. Make sure it is loaded in your layout.');
         return;
       }
-      if (username.length < 3) {
-        alert('Username must be at least 3 characters long');
-        return;
+      const { data, error } = await window.supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/account/oauth-done'
+        }
+      });
+      if (error) {
+        console.error(error);
+        alert('Google sign-in failed. Please try again.');
       }
+    } catch (e) {
+      console.error(e);
+      alert('Unexpected error during Google sign-in.');
+    }
+  }
+  function handleSubmit(event) {
+    event.preventDefault();
 
-      fetch(`/account/is-available?username=${username}`)
-      .then(function(res){
-        return res.json();
-      })
-      .then(function(data){
-        if (data === false){
+    const username = document.getElementById('txtUsername').value.trim();
+    const password = document.getElementById('txtPassword').value;
+    const confirm  = document.getElementById('txtConfirm').value;
+
+    if (username.length === 0) {
+      alert('Please enter a username');
+      return;
+    }
+    if (username.length < 3) {
+      alert('Username must be at least 3 characters long');
+      return;
+    }
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters long');
+      return;
+    }
+    if (password !== confirm) {
+      alert('Passwords do not match');
+      return;
+    }
+    fetch(`/account/is-available?username=${encodeURIComponent(username)}`)
+      .then(res => res.json())
+      .then(isAvailable => {
+        if (!isAvailable) {
           alert('Username is not available. Please choose another one');
           return;
         }
-        event.target.submit(); 
+        event.target.submit();
       })
-      {{!-- .then(function (err){
-        console.log(err);
+      .catch(err => {
+        console.error(err);
         alert('An error occurred. Please try again');
-      }) --}}
-    }
-    document.querySelector('#frmRegister').addEventListener('submit', handleSubmit);
-  </script>
+      });
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    const frm = document.getElementById('frmRegister');
+    if (frm) frm.addEventListener('submit', handleSubmit);
+  });
+</script>
 {{/fill_section}}
 
-<div class="card">
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-7 col-md-9">
+
+      <div class="card shadow-sm">
         <h5 class="card-header">Account registration</h5>
+
         <div class="card-body">
-            {{#if error}}
-            <div class="alert alert-danger" role="alert">
-                {{error}}
-            </div>
-            {{/if}}
-            <form method = "post" action = "/account/signup" id="frmRegister">
-            <div class="mb-3">
-                <label for="txtUsername" class="form-label">Username</label>
-                <input type="text" class="form-control" id="txtUsername" name = "username" required>
-            </div>
-            <div class="mb-3">
-                <label for="txtPassword" class="form-label">Password</label>
-                <input type="password" class="form-control" id="txtPassword"  name = "password" required>
-            </div>
-            <div class="mb-3">
-                <label for="txtConfirm" class="form-label">Confirm</label>
-                <input type="password" class="form-control" id="txtConfirm"  name = "confirm" required>
-            </div>
-          </div>
-          <div class="card-body">
-            <h5>Information</h5>
-            <div class="mb-3">
-                <label for="txtName" class="form-label">Name</label>
-                <input type="text" class="form-control" id="txtName"  name = "name" required>
-            </div>
-            <div class="mb-3">
-                <label for="TxtEmail" class="form-label">Email address</label>
-                <input type="email" class="form-control" id="txtEmail" aria-describedby="emailHelp" name = "email" required>
-                <div id="emailHelp" class="form-text">We'll never share your email with anyone else.(nah we will)</div>
-            </div>
-            <div class="mb-3">
-                <label for="txtdob" class="form-label">Date of Birth</label>
-                <input type="date" class="form-control" id="txtdob"  name = "dob" required>
-            </div>
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-patch-check"></i> Register
+          <div class="mb-3">
+            <button type="button" class="btn btn-outline-dark w-100 d-flex align-items-center justify-content-center gap-2"
+                    onclick="signupWithGoogle()">
+              <i class="bi bi-google"></i>
+              Continue with Google
             </button>
+          </div>
+
+          <div class="d-flex align-items-center my-3">
+            <div class="flex-grow-1" style="height:1px; background:#e9ecef;"></div>
+            <div class="px-3 text-muted small">or create with email</div>
+            <div class="flex-grow-1" style="height:1px; background:#e9ecef;"></div>
+          </div>
+          <form method="post" action="/account/signup" id="frmRegister" novalidate>
+            <div class="mb-3">
+              <label for="txtUsername" class="form-label">Username</label>
+              <input type="text" class="form-control" id="txtUsername" name="username" required>
+              <div class="form-text">At least 3 characters, must be unique.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="txtPassword" class="form-label">Password</label>
+              <input type="password" class="form-control" id="txtPassword" name="password" required minlength="6">
+              <div class="form-text">At least 6 characters.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="txtConfirm" class="form-label">Confirm password</label>
+              <input type="password" class="form-control" id="txtConfirm" name="confirm" required minlength="6">
+            </div>
+
+            <hr class="my-4">
+
+            <h5 class="mb-3">Information</h5>
+
+            <div class="mb-3">
+              <label for="txtName" class="form-label">Full name</label>
+              <input type="text" class="form-control" id="txtName" name="name" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="txtEmail" class="form-label">Email address</label>
+              <input type="email" class="form-control" id="txtEmail" name="email" required>
+              <div class="form-text">We’ll never share your email with anyone else. (nah we will)</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="txtdob" class="form-label">Date of Birth</label>
+              <input type="date" class="form-control" id="txtdob" name="dob" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-patch-check"></i> Register
+            </button>
+          </form>
         </div>
-        </form>
-        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
 

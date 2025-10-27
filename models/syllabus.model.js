@@ -34,20 +34,29 @@ async function saveSyllabus(course_id, chaptersData, is_complete) {
         const oldChapters = await trx('chapters').where({ course_id }).select('chapter_id');
         if (oldChapters.length > 0) {
             const oldChapterIds = oldChapters.map(c => c.chapter_id);
-            await trx('lessons').whereIn('chapter_id', oldChapterIds).del();
+            const oldLessons = await trx('lessons').whereIn('chapter_id', oldChapterIds).select('lesson_id');
+            const oldLessonIds = oldLessons.map(l => l.lesson_id);
+            if (oldLessonIds.length > 0) {
+                await trx('enrollments')
+                    .whereIn('last_watched_lesson', oldLessonIds)
+                    .update({ last_watched_lesson: null });
+            }
+            if (oldLessonIds.length > 0) {
+                 await trx('lessons').whereIn('chapter_id', oldChapterIds).del();
+            }
             await trx('chapters').where({ course_id }).del();
         }
         if (chaptersData && chaptersData.length > 0) {
             for (let i = 0; i < chaptersData.length; i++) {
                 const chap = chaptersData[i];
-                if (!chap.title || chap.title.trim() === '') continue; 
+                if (!chap.title || chap.title.trim() === '') continue;
                 const [newChapter] = await trx('chapters').insert({
                     course_id: course_id,
                     title: chap.title,
                     order_index: i
                 }).returning('chapter_id');
 
-                const newChapterId = newChapter.chapter_id || newChapter; 
+                const newChapterId = newChapter.chapter_id || newChapter;
 
                 if (chap.lessons && chap.lessons.length > 0) {
                     const lessonsToInsert = chap.lessons
@@ -60,7 +69,7 @@ async function saveSyllabus(course_id, chaptersData, is_complete) {
                         is_preview: !!les.is_preview,
                         order_index: j
                     }));
-                    
+
                     if (lessonsToInsert.length > 0) {
                         await trx('lessons').insert(lessonsToInsert);
                     }

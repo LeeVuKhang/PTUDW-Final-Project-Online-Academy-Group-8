@@ -1,0 +1,29 @@
+<div class="container my-4">
+  <h3 class="mb-3">Set a new password</h3>
+  {{#if err}}<div class="alert alert-danger py-2">{{err}}</div>{{/if}}
+
+  <form method="post" action="/account/forgot/reset" class="row g-3" onsubmit="return checkPwdMatchReset()">
+    <div class="col-12">
+      <label class="form-label">New password</label>
+      <input id="newPwdR" class="form-control" type="password" name="newPassword" minlength="6" required>
+      <div class="form-text">At least 6 characters.</div>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Confirm new password</label>
+      <input id="confirmPwdR" class="form-control" type="password" minlength="6" required>
+    </div>
+    <div class="col-12">
+      <button class="btn btn-primary">Save password</button>
+      <a class="btn btn-link" href="/account/signin">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<script>
+function checkPwdMatchReset() {
+  const a = document.getElementById('newPwdR').value;
+  const b = document.getElementById('confirmPwdR').value;
+  if (a !== b) { alert('New passwords do not match.'); return false; }
+  return true;
+}
+</script>

@@ -44,5 +44,40 @@
     margin: auto;       /* căn giữa */
 }
 
+.carousel-img {
+  height: 500px;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Giữ nền tròn nhạt cho nút */
+#mostViewsCoursesCarousel .custom-control,
+#newestCoursesCarousel .custom-control {
+  background-color: rgba(182, 177, 177, 0.7);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  transition: all 0.3s;
+}
+
+#mostViewsCoursesCarousel .custom-control:hover,
+#newestCoursesCarousel .custom-control:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.15);
+}
+
+/* Dịch 2 nút ra ngoài vùng hiển thị */
+#mostViewsCoursesCarousel .carousel-control-prev,
+#newestCoursesCarousel .carousel-control-prev {
+  left: -30px; /* Dịch sang trái, tăng giá trị nếu muốn ra xa hơn */
+}
+
+#mostViewsCoursesCarousel .carousel-control-next,
+#newestCoursesCarousel .carousel-control-next {
+  right: -30px; /* Dịch sang phải */
+}
 
 

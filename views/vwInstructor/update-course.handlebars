@@ -78,7 +78,7 @@ font-size: 1.2rem;
 
         <hr class="my-5">
 
-        {{!--  Total Hours và Total Lectures --}}
+        {{!--  Total Hours --}}
         <div class="row g-4 mb-4">
             {{!-- Total Hours --}}
             <div class="col-md-6">
@@ -88,14 +88,14 @@ font-size: 1.2rem;
                     class="form-control form-control-lg" placeholder="10.5" required>
                 <div class="form-text">Course duration in hours</div>
             </div>
-            {{!-- Total Lectures --}}
+            {{!-- Total Lectures
             <div class="col-md-6">
                 <label for="totalLectures" class="form-label fs-6 fw-semibold"> Total Lectures <span
                         class="text-danger">*</span> </label>
                 <input type="number" id="totalLectures" name="total_lectures" value="{{course.total_lectures}}" min="0"
                     class="form-control form-control-lg" placeholder="Enter number of lectures" required>
             </div>
-        </div>
+        </div> --}}
 
         <div id="lecturerInputsContainer" class="mb-4">
         </div>
@@ -379,9 +379,7 @@ font-size: 1.2rem;
             e.preventDefault();
 
             const isConfirmed = confirm(
-                "BẠN CÓ CHẮC CHẮN MUỐN XÓA KHÓA HỌC NÀY KHÔNG?\n\n" +
-                "Toàn bộ dữ liệu liên quan (chương, bài học, đánh giá, đăng ký,...) sẽ bị XÓA VĨNH VIỄN.\n\n" +
-                "HÀNH ĐỘNG NÀY KHÔNG THỂ HOÀN TÁC!"
+                "BẠN CÓ CHẮC CHẮN MUỐN XÓA KHÓA HỌC NÀY KHÔNG?"
             );
 
             if (isConfirmed) {

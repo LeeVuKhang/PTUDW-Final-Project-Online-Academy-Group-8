@@ -1,84 +1,106 @@
 import express from 'express';
-import courseModels from '../models/product.model.js'
+import courseModel from '../models/course.model.js';
 import categoryModel from '../models/category.model.js';
 import syllabusModel from '../models/syllabus.model.js';
+import { checkInstructor, checkAuthenticated } from '../models/auth.model.js';
 
 const router = express.Router();
 
+router.use(checkAuthenticated, checkInstructor);
+
 router.get('/', (req, res) => {
-    res.send('Instructor home page - to be implemented');
+    res.redirect('/instructor/courses');
 });
 
 router.get('/courses', async (req, res) => {
-    const LIMIT = 5;
-    let page = +req.query.page || 1;
-    if (page < 1) page = 1;
+    try {
+        const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+        const LIMIT = 5;
+        let page = +req.query.page || 1;
+        if (page < 1) page = 1;
 
-    const categoryId = req.query.category || 'all';
-    const searchTerm = req.query.search || '';
+        const categoryId = req.query.category || 'all';
+        const searchTerm = req.query.search || '';
+        const offset = (page - 1) * LIMIT;
 
-    const offset = (page - 1) * LIMIT;
-    const totalResult = await courseModels.countAll(categoryId, searchTerm);
-    const totalCourses = totalResult.total;
-    const totalPages = Math.ceil(totalCourses / LIMIT);
+        const totalResult = await courseModel.countAllByInstructorId(instructor_id, categoryId, searchTerm);
+        const totalCourses = totalResult.total || 0;
+        const totalPages = Math.ceil(totalCourses / LIMIT);
 
-    const pageNumbers = [];
-    for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push({
-            value: i,
-            isCurrent: i === page
+        if (page > totalPages && totalPages > 0) {
+            page = totalPages;
+        } else if (totalPages === 0) {
+             page = 1;
+        }
+
+        const pageNumbers = [];
+        for (let i = 1; i <= totalPages; i++) {
+            pageNumbers.push({
+                value: i,
+                isCurrent: i === page
+            });
+        }
+
+        const list = await courseModel.findAllByInstructorId(instructor_id, LIMIT, offset, categoryId, searchTerm);
+        const categories = await categoryModel.findParentsWithChildren();
+
+        res.render('vwInstructor/list-course', {
+            courses: list,
+            categories: categories,
+            pagination: {
+                page: page,
+                totalPages: totalPages,
+                pageNumbers: pageNumbers,
+                hasPrevPage: page > 1,
+                hasNextPage: page < totalPages,
+                prevPage: page - 1,
+                nextPage: page + 1
+            },
+            totalCourses: totalCourses,
+            currentCategoryId: categoryId,
+            currentSearchTerm: searchTerm,
+            queryParams: req.query,
+            instructor_id,
         });
+    } catch (error) {
+        console.error("Error fetching instructor courses:", error);
+        res.status(500).send("Error loading courses");
     }
-
-    const list = await courseModels.findAll(LIMIT, offset, categoryId, searchTerm);
-    const categories = await categoryModel.findAll();
-
-    res.render('vwInstructor/list-course', {
-        courses: list,
-        categories: categories,
-        
-        pagination: {
-            page: page,
-            totalPages: totalPages,
-            pageNumbers: pageNumbers,
-            hasPrevPage: page > 1,
-            hasNextPage: page < totalPages,
-            prevPage: page - 1,
-            nextPage: page + 1
-        },
-        totalCourses: totalCourses,
-        
-        currentCategoryId: categoryId,
-        currentSearchTerm: searchTerm,
-        
-        queryParams: req.query 
-    });
 });
 
+
 router.get('/create-course', async (req, res) => {
-    const categories = await categoryModel.findAll();
-    res.render('vwInstructor/create-course', {
-        categories: categories
-    })
-})
+    try {
+        const categories = await categoryModel.findParentsWithChildren();
+        res.render('vwInstructor/create-course', {
+            categories: categories
+        });
+    } catch (error) {
+         console.error("Error loading create course page:", error);
+         res.status(500).send("Error loading page");
+    }
+});
 
 router.post('/create-course', async (req, res) => {
+    const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+
     const course = {
         title: req.body.title,
         tinydes: req.body.tinydes,
         fulldes: req.body.fulldes,
-        total_hours: req.body.total_hours,
+        total_hours: req.body.total_hours || 0,
+        total_lectures: req.body.total_lectures || 0,
         price: req.body.price,
         discount_price: req.body.discount_price,
         catid: req.body.catid,
         level: req.body.level,
         image_url: req.body.image_url,
-        is_complete: false 
+        is_complete: false,
+        instructor_id: instructor_id
     };
 
     try {
-        const result = await courseModels.add(course);
-        
+        const result = await courseModel.add(course);
         const newCourseId = (result && result.length > 0) ? (result[0].course_id || result[0]) : null;
 
         if (newCourseId) {
@@ -89,7 +111,11 @@ router.post('/create-course', async (req, res) => {
         }
     } catch (error) {
         console.error("Error creating course:", error);
-        res.status(500).send("Error creating course");
+        const categories = await categoryModel.findParentsWithChildren();
+        res.render('vwInstructor/create-course', {
+            categories: categories,
+            error: "An error occurred while creating the course. Please check your input."
+        });
     }
 });
 
@@ -97,16 +123,21 @@ router.post('/create-course', async (req, res) => {
 router.get('/courses/edit-syllabus/:course_id', async (req, res) => {
     try {
         const course_id = req.params.course_id;
-        const courseWithSyllabus = await syllabusModel.findByCourseId(course_id); 
-        
+        const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+
+        const courseWithSyllabus = await syllabusModel.findByCourseId(course_id);
+
         if (!courseWithSyllabus) {
             return res.status(404).send('Không tìm thấy khóa học');
+        }
+        if (courseWithSyllabus.instructor_id !== instructor_id && req.session.authUser.role != 0) {
+             return res.status(403).send('Bạn không có quyền chỉnh sửa khóa học này.');
         }
 
         res.render('vwInstructor/edit-syllabus', {
             course: courseWithSyllabus,
-            chapters: courseWithSyllabus.chapters, 
-            layout: 'main' 
+            chapters: courseWithSyllabus.chapters || [],
+            layout: 'main'
         });
     } catch (error) {
         console.error("Error loading syllabus page:", error);
@@ -116,46 +147,49 @@ router.get('/courses/edit-syllabus/:course_id', async (req, res) => {
 
 router.post('/courses/edit-syllabus/:course_id', async (req, res) => {
     const course_id = req.params.course_id;
-    const chapters = req.body.chapters || []; 
-    let is_complete = false;
-    let hasAtLeastOneChapter = false;
-    let allLessonsAreValid = true; 
+    const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+    const chapters = req.body.chapters || [];
 
-    if (chapters && chapters.length > 0) {
-        for (const chap of chapters) {
-            if (chap.title && chap.title.trim() !== '') {
-                hasAtLeastOneChapter = true; 
-                
-                if (chap.lessons && chap.lessons.length > 0) {
-                    let hasAtLeastOneLesson = false; 
-                    for (const les of chap.lessons) {
-                        if (les.title && les.title.trim() !== '') {
-                            hasAtLeastOneLesson = true;
-                            if (!les.video_url || les.video_url.trim() === '') {
-                                allLessonsAreValid = false;
-                                break; 
+     try {
+        const course = await courseModel.findByID(course_id);
+        if (!course || course.instructor_id !== instructor_id && req.session.authUser.role != 0) {
+            return res.status(403).send('Bạn không có quyền lưu syllabus cho khóa học này.');
+        }
+
+        let is_complete = false;
+        let hasAtLeastOneChapter = false;
+        let allLessonsAreValid = true;
+
+        if (chapters.length > 0) {
+            for (const chap of chapters) {
+                if (chap.title && chap.title.trim() !== '') {
+                    hasAtLeastOneChapter = true;
+
+                    if (chap.lessons && chap.lessons.length > 0) {
+                        let hasAtLeastOneLesson = false;
+                        for (const les of chap.lessons) {
+                            if (les.title && les.title.trim() !== '') {
+                                hasAtLeastOneLesson = true;
                             }
                         }
-                    }
-                    if (!hasAtLeastOneLesson) {
+                        if (!hasAtLeastOneLesson) {
+                           allLessonsAreValid = false;
+                        }
+                    } else {
                         allLessonsAreValid = false;
                     }
-                } else {
-                    allLessonsAreValid = false;
                 }
+                if (!allLessonsAreValid) break;
             }
-            if (!allLessonsAreValid) break; 
+        } else {
+            allLessonsAreValid = false;
         }
-    } else {
-        allLessonsAreValid = false;
-    }
 
-    is_complete = hasAtLeastOneChapter && allLessonsAreValid;
+        is_complete = hasAtLeastOneChapter && allLessonsAreValid;
 
-    try {
         await syllabusModel.saveSyllabus(course_id, chapters, is_complete);
         console.log(`Syllabus updated for course ${course_id}, is_complete: ${is_complete}`);
-        res.redirect('/instructor/courses'); 
+        res.redirect('/instructor/courses');
     } catch (error) {
         console.error('Error saving syllabus:', error);
         res.status(500).send('Error saving syllabus. Please try again.');
@@ -163,52 +197,86 @@ router.post('/courses/edit-syllabus/:course_id', async (req, res) => {
 });
 
 router.get('/update/:course_id', async function(req, res) {
-    const categories = await categoryModel.findAll();
-    const course_id = req.params.course_id
-    const course = await courseModels.findByID(course_id)
-    if (!course) {
-        return res.status(404).send('Không tìm thấy khóa học');
+    try {
+        const categories = await categoryModel.findParentsWithChildren();
+        const course_id = req.params.course_id;
+        const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+
+        const course = await courseModel.findByID(course_id);
+
+        if (!course) {
+            return res.status(404).send('Không tìm thấy khóa học.');
+        }
+        if (course.instructor_id !== instructor_id && req.session.authUser.role != 0) {
+            return res.status(403).send('Bạn không có quyền chỉnh sửa khóa học này.');
+        }
+
+        res.render('vwInstructor/update-course', {
+            course: course,
+            categories: categories
+        });
+    } catch(error) {
+        console.error("Error loading update course page:", error);
+        res.status(500).send("Error loading page");
     }
-    res.render('vwInstructor/update-course', {
-        course: course,
-        categories: categories
-    })
-})
+});
 
 router.post('/update/:course_id', async (req, res) => {
-    const course_id = req.params.course_id
-    const course = {
-        title: req.body.title,
-        tinydes: req.body.tinydes,
-        fulldes: req.body.fulldes,
-        total_hours: req.body.total_hours,
-        price: req.body.price,
-        discount_price: req.body.discount_price,
-        catid: req.body.catid,
-        level: req.body.level,
-        image_url: req.body.image_url
-    };
-    if(course) {
-        await courseModels.update(course_id, course);
-        console.log(`updated id=${course_id}`)
+    const course_id = req.params.course_id;
+    const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+
+    try {
+        const existingCourse = await courseModel.findByID(course_id);
+        if (!existingCourse || existingCourse.instructor_id !== instructor_id && req.session.authUser.role != 0) {
+            return res.status(403).send("Không có quyền cập nhật khóa học này.");
+        }
+
+        const courseUpdateData = {
+            title: req.body.title,
+            tinydes: req.body.tinydes,
+            fulldes: req.body.fulldes,
+            total_hours: req.body.total_hours || 0,
+            price: req.body.price,
+            discount_price: req.body.discount_price,
+            catid: req.body.catid,
+            level: req.body.level,
+            image_url: req.body.image_url,
+            last_update: new Date()
+        };
+
+        await courseModel.update(course_id, courseUpdateData);
+        console.log(`Updated course id=${course_id}`);
         res.redirect(`/instructor/courses/edit-syllabus/${course_id}`);
+
+    } catch (error) {
+         console.error("Error updating course:", error);
+         const categories = await categoryModel.findParentsWithChildren();
+         const course = await courseModel.findByID(course_id);
+         res.render('vwInstructor/update-course', {
+             course: course,
+             categories: categories,
+             error: "An error occurred while updating."
+         });
     }
-    else {
-        res.send("Error")
-    }
-})
+});
+
 
 router.post('/delete-course', async (req, res) => {
     const { course_id } = req.body;
+    const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
 
     if (!course_id) {
         return res.status(400).json({ message: 'Thiếu ID khóa học.' });
     }
 
     try {
-        await courseModels.deleteCascade(course_id); 
-        
-        console.log(`Course ${course_id} and all related data deleted.`);
+        const course = await courseModel.findByID(course_id);
+        if (!course || course.instructor_id !== instructor_id) {
+            return res.status(403).json({ message: 'Không có quyền xóa khóa học này.' });
+        }
+
+        await courseModel.deleteCascade(course_id);
+        console.log(`Course ${course_id} and all related data deleted by instructor ${instructor_id}.`);
         res.status(200).json({ message: 'Complete Delete Course!' });
 
     } catch (error) {
@@ -216,26 +284,5 @@ router.post('/delete-course', async (req, res) => {
         res.status(500).json({ message: 'Lỗi server khi xóa khóa học.' });
     }
 });
-
-// router.post('/add', async function(req, res) {
-//     const category = {
-//         catname: req.body.catname
-//     };
-//     await categoryModels.add(category);
-//     res.redirect('/admin/categories')
-// })
-
-router.get('/courses/:course_id', async function (req, res) {
-    const course_id = req.params.course_id
-    const course = await courseModels.findByID(course_id)
-    if (!course) {
-        return res.status(404).send('Không tìm thấy khóa học');
-    }
-    res.render('vwProducts/course_detail', {
-        course: course,
-        title: course.title
-    })
-})
-
 
 export default router;
