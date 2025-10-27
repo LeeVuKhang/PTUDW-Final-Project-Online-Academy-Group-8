@@ -158,6 +158,11 @@
                                 </div>
                                 <a href="/course/instructorProfile?id={{this.instructor_id}}" class="text-muted small mb-1 text-decoration-none card-title-hover">Giảng viên: {{this.instructor_name}}</a>
                                 <p class="text-muted small mb-2">Lĩnh vực: {{this.cat_name}}</p>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="fw-bold text-dark me-1">{{formatRating this.avg_rating}}</span>
+                                    <span class="text-warning me-2" style="font-size: 0.9rem;">{{{renderStars this.avg_rating}}}</span>
+                                    <span class="text-muted small">({{this.rating_count}})</span>
+                                </div>
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div>
                                         <span class="fw-bold fs-6 text-primary">{{formatNumber this.discount_price}}</span>
@@ -245,6 +250,11 @@
                                 </div>
                                 <a href="/course/instructorProfile?id={{this.instructor_id}}" class="text-muted small mb-1 text-decoration-none card-title-hover">Giảng viên: {{this.instructor_name}}</a>
                                 <p class="text-muted small mb-2">Lĩnh vực: {{this.cat_name}}</p>
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="fw-bold text-dark me-1">{{formatRating this.avg_rating}}</span>
+                                    <span class="text-warning me-2" style="font-size: 0.9rem;">{{{renderStars this.avg_rating}}}</span>
+                                    <span class="text-muted small">({{this.rating_count}})</span>
+                                </div>
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div>
                                         <span class="fw-bold fs-6 text-primary">{{formatNumber this.discount_price}}</span>

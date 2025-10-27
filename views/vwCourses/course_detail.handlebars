@@ -101,12 +101,12 @@ font-weight: bold;
 
                 {{!-- Nút hành động --}}
                 {{#if ../../isEnrolled}}
-                  <a href="/courses/learn/{{../../course.course_id}}/{{this.lesson_id}}" 
+                  <a href="/course/learn/{{../../course.course_id}}/{{this.lesson_id}}" 
                      class="btn btn-sm btn-outline-primary">
                     Học ngay
                   </a>
                 {{else if this.is_preview}}
-                  <a href="/courses/learn/{{../../course.course_id}}/{{this.lesson_id}}" 
+                  <a href="/course/learn/{{../../course.course_id}}/{{this.lesson_id}}" 
                      class="btn btn-sm btn-outline-success">
                     Xem thử
                   </a>
@@ -134,7 +134,7 @@ font-weight: bold;
   <h2 class="h3 fw-bold mb-4">Đánh giá của học viên</h2>
 
   {{#if isEnrolled}}
-  <form action="/courses/rate/{{course.course_id}}" method="post" class="mb-5">
+  <form action="/course/rate/{{course.course_id}}" method="post" class="mb-5">
     <div class="mb-3">
       <label class="form-label fw-semibold">Chọn số sao</label>
       <select name="value" class="form-select" required>
