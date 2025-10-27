@@ -396,7 +396,7 @@ router.post("/my-courses/remove/:id", checkAuthenticated, async (req, res) => {
     .where({ course_id, student_id })
     .delete();
 
-  res.redirect("/course/my-courses");
+  return res.redirect(req.headers.referer);
 });
 
 router.get("/instructorProfile", async (req, res) => {
