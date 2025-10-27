@@ -9,30 +9,80 @@
   background-color: #007bff !important;
   color: white !important;
 }
+.rating i {
+  color: #f5c518;
+  cursor: pointer;
+}
 {{/fill_section}}
 
 <div class="container-fluid mt-4">
   <div class="row">
+    <!-- VIDEO PLAYER -->
     <div class="col-md-9">
       <div class="card shadow-sm mb-4">
         <div class="card-body">
           <h4>{{course.title}}</h4>
-          <h5 class="text-muted">{{currentLesson.title}}</h5>
+          <h6 class="text-muted">{{currentLesson.title}}</h6>
 
+          <!-- Video -->
           <div class="card-video mt-3">
             <div class="ratio ratio-16x9">
-              <iframe 
-                src="https://www.youtube.com/embed/{{extractYouTubeId currentLesson.video_url}}" 
-                title="{{currentLesson.title}}" 
-                allowfullscreen
-                ></iframe>
+              <iframe
+                id="player"
+                src="https://www.youtube.com/embed/{{extractYouTubeId currentLesson.video_url}}"
+                title="{{currentLesson.title}}"
+                allowfullscreen>
+              </iframe>
             </div>
           </div>
+
+          <!-- Rating Form -->
+          {{#if isStudent}}
+          <div class="mt-4 border-top pt-3">
+            <h5>Đánh giá của học viên</h5>
+            <form id="ratingForm" class="mt-3">
+              <label class="form-label">Chọn số sao</label>
+              <div class="border rounded p-2 mb-2 d-flex align-items-center justify-content-between" id="star-container">
+                <div>
+                  {{#each (range 1 5)}}
+                    <i 
+                      class="bi {{#if (lte this ../userRating)}}bi-star-fill{{else}}bi-star{{/if}}"
+                      data-value="{{this}}">
+                    </i>
+                  {{/each}}
+                </div>
+                <span id="rating-text" class="text-muted ms-2">
+                  {{#if userRating}}
+                    {{lookup (array "Tệ" "Không hài lòng" "Bình thường" "Tốt" "Xuất sắc") (minus userRating 1)}}
+                  {{/if}}
+                </span>
+              </div>
+
+              <label class="form-label mt-2">Nhận xét của bạn</label>
+              <textarea class="form-control mb-2" id="comment" placeholder="Hãy chia sẻ cảm nhận của bạn..." rows="3">{{userComment}}</textarea>
+
+              <button type="submit" class="btn btn-primary">Gửi đánh giá</button>
+              <small id="rating-msg" class="text-success ms-2" style="display:none;">Cảm ơn bạn đã đánh giá!</small>
+            </form>
+          </div>
+          {{/if}}
+
+          <!-- Rating List -->
+          <div class="mt-4">
+            {{#each ratings}}
+              <div class="border-bottom pb-2 mb-2">
+                <strong>{{this.name}}</strong> – {{{renderStars this.value}}}  
+                <div>{{this.comment}}</div>
+                <small class="text-muted">{{moment this.create_time "fromNow"}}</small>
+              </div>
+            {{/each}}
+          </div>
+
         </div>
       </div>
     </div>
 
-    <!-- Lesson List -->
+    <!-- LESSON LIST -->
     <div class="col-md-3">
       <div class="accordion" id="lessonAccordion">
         {{#each chapters}}
@@ -64,12 +114,74 @@
 </div>
 
 {{#section 'js'}}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.js"></script>
 <script src="https://cdn.plyr.io/3.7.2/plyr.js"></script>
 <link rel="stylesheet" href="https://cdn.plyr.io/3.7.2/plyr.css" />
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const player = new Plyr('#player');
+document.addEventListener('DOMContentLoaded', () => {
+  const player = new Plyr('#player');
+  const courseId = {{course.course_id}};
+  const lessonId = {{currentLesson.lesson_id}};
+
+  // 🕒 Cập nhật last_watched_lesson 
+  const updateProgress = async () => {
+    try {
+      await fetch('/course/update-last-watch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          course_id: courseId,
+          lesson_id: lessonId,
+          progress: 1  // đánh dấu đã xem bài này
+        })
+      });
+      console.log('✅ Đã lưu tiến độ học:', lessonId);
+    } catch (err) {
+      console.error('❌ Lỗi lưu tiến độ:', err);
+    }
+  };
+
+  // Gọi khi video load + khi người học thoát
+  player.on('ready', updateProgress);
+  window.addEventListener('beforeunload', updateProgress);
+
+  // ⭐ Gửi rating
+  const stars = document.querySelectorAll('#star-container i');
+  let currentRating = Number({{userRating}});
+  const ratingText = document.getElementById('rating-text');
+  const ratingLabels = ["Tệ", "Không hài lòng", "Bình thường", "Tốt", "Xuất sắc"];
+
+  const updateStars = (value) => {
+    stars.forEach(s => {
+      if (Number(s.dataset.value) <= value) {
+        s.classList.add('bi-star-fill');
+        s.classList.remove('bi-star');
+      } else {
+        s.classList.add('bi-star');
+        s.classList.remove('bi-star-fill');
+      }
+    });
+    ratingText.textContent = value > 0 ? `- ${ratingLabels[value - 1]}` : "";
+  };
+
+  stars.forEach(star => {
+    star.addEventListener('click', () => {
+      currentRating = Number(star.dataset.value);
+      updateStars(currentRating);
+    });
   });
+
+  document.getElementById('ratingForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const comment = document.getElementById('comment').value;
+    await fetch(`/course/rate/${courseId}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ value: currentRating, comment })
+    });
+    document.getElementById('rating-msg').style.display = 'inline';
+  });
+});
 </script>
 {{/section}}
