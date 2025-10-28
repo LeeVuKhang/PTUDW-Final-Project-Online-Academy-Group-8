@@ -16,16 +16,66 @@
         </div>
     </div>
 
+    <!-- Quản lý danh mục con -->
+    <div class="card mt-4">
+        <h5 class="card-header">
+            <i class="bi bi-list-ul"></i> Danh mục con
+            <button type="button" class="btn btn-sm btn-outline-primary float-end" onclick="showAddChildForm()">
+                <i class="bi bi-plus-circle"></i> Thêm danh mục con
+            </button>
+        </h5>
+        <div class="card-body">
+            <!-- Form thêm danh mục con (ẩn ban đầu) -->
+            <div id="addChildForm" style="display: none;" class="mb-3">
+                <div class="row">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control" id="newChildName" placeholder="Tên danh mục con...">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-success btn-sm" onclick="addChild()">
+                            <i class="bi bi-check"></i> Thêm
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="hideAddChildForm()">
+                            <i class="bi bi-x"></i> Hủy
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh sách danh mục con -->
+            <div id="childrenList">
+                {{#if children}}
+                    {{#each children}}
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom" id="child-{{cat_id}}">
+                        <div>
+                            <i class="bi bi-arrow-return-right text-muted"></i>
+                            <span class="child-name">{{cat_name}}</span>
+                            {{#if des}}<small class="text-muted d-block ms-3">{{des}}</small>{{/if}}
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="editChild({{cat_id}}, '{{cat_name}}', '{{des}}')">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteChild({{cat_id}}, '{{cat_name}}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {{/each}}
+                {{else}}
+                    <p class="text-muted text-center py-3">
+                        <i class="bi bi-inbox"></i> Chưa có danh mục con nào
+                    </p>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+
     <div class="card-footer text-muted mt-2">
         <a name="" id="" class="btn btn-outline-success" href="/admin/categories" role="button">
             <i class="bi bi-arrow-left"></i>
             Quay lại
         </a>
-
-        <button type="submit" formaction="/admin/categories/delete" class="btn btn-danger">
-            <i class="bi bi-trash3-fill"></i>
-            Xóa
-        </button>
 
         <button type="submit" formaction="/admin/categories/patch" class="btn btn-success">
             <i class="bi bi-check2"></i>
@@ -35,3 +85,115 @@
         
     </div>
 </form>
+
+<script>
+// Hiển thị form thêm danh mục con
+function showAddChildForm() {
+    document.getElementById('addChildForm').style.display = 'block';
+    document.getElementById('newChildName').focus();
+}
+
+// Ẩn form thêm danh mục con
+function hideAddChildForm() {
+    document.getElementById('addChildForm').style.display = 'none';
+    document.getElementById('newChildName').value = '';
+}
+
+// Thêm danh mục con
+function addChild() {
+    const childName = document.getElementById('newChildName').value.trim();
+    if (!childName) {
+        alert('Vui lòng nhập tên danh mục con!');
+        return;
+    }
+
+    const parentId = document.getElementById('txtCatID').value;
+    
+    // Gửi request thêm danh mục con
+    fetch('/admin/categories/add-child', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            cat_name: childName,
+            parent_id: parentId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload trang để cập nhật danh sách
+            location.reload();
+        } else {
+            alert('Có lỗi xảy ra khi thêm danh mục con!' + (data.error ? '\n' + data.error : ''));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi thêm danh mục con!');
+    });
+}
+
+// Chỉnh sửa danh mục con
+function editChild(childId, currentName, currentDes) {
+    const newName = prompt('Nhập tên mới cho danh mục:', currentName);
+    if (newName === null || newName.trim() === '') return;
+    
+    // Gửi request cập nhật danh mục con
+    fetch('/admin/categories/update-child', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            cat_id: childId,
+            cat_name: newName.trim()
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Reload trang để cập nhật danh sách
+            location.reload();
+        } else {
+            alert('Có lỗi xảy ra khi cập nhật danh mục con!');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi cập nhật danh mục con!');
+    });
+}
+
+// Xóa danh mục con
+function deleteChild(childId, childName) {
+    if (!confirm(`Bạn có chắc chắn muốn xóa danh mục con "${childName}" không?`)) {
+        return;
+    }
+    
+    // Gửi request xóa danh mục con
+    fetch('/admin/categories/delete-child', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            cat_id: childId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Xóa element khỏi DOM
+            document.getElementById(`child-${childId}`).remove();
+        } else {
+            alert('Có lỗi xảy ra khi xóa danh mục con!');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi xóa danh mục con!');
+    });
+}
+</script>
