@@ -15,7 +15,7 @@ router.get('/signup', (req, res) => {
 }); 
 router.post('/signup', async (req, res) => {
   try {
-    const { username, password, confirm, name, email, dob } = req.body;
+    const { username, password, confirm, name, email, dob, image_url } = req.body;
     if (!username || !password || !confirm || !name || !email) {
       return res.render('vwAccount/signup', { err: 'Please fill all required fields.' });
     }
@@ -39,6 +39,7 @@ router.post('/signup', async (req, res) => {
       email: email.trim(),
       dob: dob,
       role: 1,
+      image_url: image_url || null,
     };
     const otp = String(Math.floor(100000 + Math.random() * 900000));
     req.session.signupOtp = {
@@ -105,6 +106,7 @@ router.post('/signup/verify', async (req, res) => {
       email: pending.email,
       dob: pending.dob,
       role: pending.role,
+      image_url: pending.image_url,
     });
     req.session.pendingSignup = null;
     req.session.signupOtp = null;
@@ -157,6 +159,7 @@ router.post('/profile', checkAuthenticated, async (req, res) => {
   const user = {
     name: req.body.name,
     dob: req.body.dob,
+    image_url: req.body.image_url || null,
   };
   await userModel.patch(id, user);
   req.session.authUser = { ...req.session.authUser, ...user };
@@ -261,6 +264,7 @@ router.post('/complete', async (req, res) => {
       email: pending.email,
       dob: req.body.dob,
       role: 1, 
+      image_url: req.body.image_url || null,
     };
 
     const newId = await userModel.add(user);

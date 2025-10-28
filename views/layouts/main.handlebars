@@ -117,7 +117,13 @@
               <span class="me-2 d-none d-lg-inline">
                 {{#if authUser.name}}{{authUser.name}}{{else}}{{authUser.username}}{{/if}}
               </span>
-              <i class="bi bi-person-circle fs-5"></i>
+              {{#if authUser.image_url}}
+                <img src="{{authUser.image_url}}" alt="{{authUser.name}}" class="rounded-circle" 
+                     style="width: 30px; height: 30px; object-fit: cover;" 
+                     onerror="this.src='https://via.placeholder.com/30?text=NA'; this.onerror=null;">
+              {{else}}
+                <i class="bi bi-person-circle fs-5"></i>
+              {{/if}}
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                <li>
