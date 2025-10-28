@@ -194,10 +194,33 @@ export function countSearch(keyword) {
     .count('* as amount')
     .first();
 }
-export default {
-  findByID(id) {
+export function findByID(id) {
     return db('courses').where('course_id', id).first();
-  },
+}
+export async function findRelatedCourses(categoryId, currentCourseId, limit = 4, studentId = null) {
+        let relatedQuery = db("courses as c")
+            .leftJoin("categories as cat", "c.catid", "cat.cat_id")
+            .leftJoin("users as u", "c.instructor_id", "u.user_id")
+            .leftJoin("ratings as r", "c.course_id", "r.course_id")
+            .where("c.catid", categoryId)
+            .andWhereNot("c.course_id", currentCourseId)
+            .select(
+                "c.course_id", "c.title", "c.image_url", "c.price", "c.discount_price", "c.views",
+                "cat.cat_name",
+                "u.user_id as instructor_id", "u.name as instructor_name",
+                db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
+                db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
+            )
+            .groupBy("c.course_id", "cat.cat_name", "u.user_id", "u.name")
+            .orderByRaw("RANDOM()")
+            .limit(limit);
+
+        relatedQuery = addWatchlistSubquery(relatedQuery, studentId);
+        relatedQuery = addEnrollmentSubquery(relatedQuery, studentId);
+
+        return await relatedQuery;
+    }
+export default {
   findByCat(id) {
     return db('courses').where('catid', id);
   },

@@ -1,3 +1,19 @@
+{{#fill_section 'stylesheet'}}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+{{/fill_section}}
+{{#fill_section 'css'}}
+body {
+background-color: #f8f9fa;
+}
+
+.ql-editor {
+font-size: 1.2rem;
+}
+
+.ql-editor.ql-blank::before {
+font-size: 1.2rem;
+}
+{{/fill_section}}
 <div class="container my-4">
       <h3 class="mb-0">Account details</h3>
   <div class="d-flex align-items-baseline gap-3 mb-5">
@@ -39,7 +55,7 @@
   <div class="tab-content border border-top-0 p-3">
     <div id="pane-info" class="tab-pane fade {{#if (eq tab 'info')}}show active{{/if}}">
       {{#if saved}}<div class="alert alert-success py-2">Profile updated.</div>{{/if}}
-      <form method="post" action="/account/profile" class="row g-3">
+      <form method="post" action="/account/profile" class="row g-3" id="frmProfileInfo">
         <div class="col-12">
           <label class="form-label">Full name</label>
           <input class="form-control" name="name" value="{{user.name}}" required>
@@ -81,12 +97,15 @@
           </div>
         </div>
 
-        <div class="col-12">
-         <label for="self_introduction_profile" class="form-label">Self Introduction</label>
-         <textarea id="self_introduction_profile" name="self_introduction" rows="4" class="form-control"
-                   placeholder="Tell us a bit about yourself... (optional)">{{user.self_introduction}}</textarea>
-         <div class="form-text">A brief bio about yourself.</div>
-       </div>
+       <div class="col-12">
+            <label class="form-label fs-6 fw-semibold"> Self Introduction <span class="text-danger">*</span>
+            </label>
+            <div id="editor" style="height: 250px;">
+                {{{user.self_introduction}}}
+            </div>
+            <input type="hidden" id="self_introduction_hidden" name="self_introduction">
+            <div class="form-text">A brief bio about yourself.</div>
+        </div>
 
         <div class="col-12">
           <button class="btn btn-primary">Save changes</button>
@@ -204,3 +223,40 @@ function checkPwdMatchA() {
      }
    });
 </script>
+{{#fill_section 'js'}}
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('editor')) {
+      const toolbarOptions = [
+        ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'header': [1, 2, 3, false] }],
+        ['clean']
+      ];
+
+      const quill = new Quill('#editor', {
+        modules: {
+          toolbar: toolbarOptions
+        },
+        theme: 'snow'
+      });
+
+      const form = document.getElementById('frmProfileInfo');
+      const hiddenInput = document.getElementById('self_introduction_hidden');
+
+      if (form && hiddenInput) {
+        form.addEventListener('submit', function() {
+          const htmlContent = quill.root.innerHTML;
+          
+          if (htmlContent === '<p><br></p>') {
+            hiddenInput.value = '';
+          } else {
+            hiddenInput.value = htmlContent;
+          }
+        });
+      }
+    }
+  });
+</script>
+{{/fill_section}}

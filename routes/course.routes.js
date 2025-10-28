@@ -145,71 +145,87 @@ router.get("/instructorProfile", async (req, res) => {
 });
 /*Chi tiết khóa học*/
 router.get("/details/:id", async (req, res) => {
-  const course_id = req.params.id;
-  const course = await db("courses")
-    .join("categories", "courses.catid", "categories.cat_id")
-    .select("courses.*", "categories.cat_name as category_name")
-    .where("course_id", course_id)
-    .first();
+ try {
+    const course_id = req.params.id;
+    const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null;
 
-  if (!course) return res.render("vwCourses/not-found", { layout: "main" });
+    const course = await courseModel.findByID(course_id);
 
-  // --- Lấy danh sách bài học ---
-  const chapters = await db("chapters")
-    .where({ course_id })
-    .orderBy("order_index");
+    if (!course) return res.render("vwCourses/not-found", { layout: "main" });
 
-  for (const chapter of chapters) {
-    chapter.lessons = await db("lessons")
-      .where({ chapter_id: chapter.chapter_id })
-      .orderBy("order_index");
+    const details = await db("courses as c")
+        .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
+        .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
+        .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
+        .select(
+            "cat.cat_name as category_name",
+            "u.name as instructor_name", "u.user_id as instructor_id", 
+            db.raw("COALESCE(AVG(r.value), 0) as rating"),
+            db.raw("COUNT(DISTINCT r.rating_id) as total_reviews")
+         )
+        .where("c.course_id", course_id)
+        .groupBy("cat.cat_name", "u.name", "u.user_id")
+        .first();
+
+    Object.assign(course, details); 
+
+    const instructorPromise = instructorModel.findProfileById(course.instructor_id);
+    const instructorStatsPromise = instructorModel.getInstructorStats(course.instructor_id);
+    const chaptersPromise = db("chapters").where({ course_id }).orderBy("order_index");
+
+    const ratingsPromise = db("ratings")
+        .join("users", "ratings.student_id", "users.user_id")
+        .where("course_id", course_id)
+        .select("users.name", "ratings.value", "ratings.comment", "ratings.create_time")
+        .orderBy("ratings.create_time", "desc");
+
+    const relatedCoursesPromise = courseModel.findRelatedCourses(course.catid, course_id, 4, student_id);
+
+    // --- Kiểm tra enrollment ---
+    let isEnrolled = false;
+    if (student_id) {
+        const enrollment = await db("enrollments")
+            .where({ student_id: student_id, course_id })
+            .first();
+        isEnrolled = !!enrollment;
+    }
+
+    const [instructorProfile, instructorStats, chapters, ratings, relatedCourses] = await Promise.all([
+        instructorPromise,
+        instructorStatsPromise,
+        chaptersPromise,
+        ratingsPromise,
+        relatedCoursesPromise
+    ]);
+
+    for (const chapter of chapters) {
+        chapter.lessons = await db("lessons")
+            .where({ chapter_id: chapter.chapter_id })
+            .orderBy("order_index");
+    }
+
+    const instructor = {
+        ...instructorProfile, 
+        avg_rating: instructorStats.avg_rating, 
+        total_reviews: instructorStats.total_reviews,
+        total_students: instructorStats.total_students,
+        total_courses: instructorStats.total_courses,
+    };
+
+
+    res.render("vwCourses/course_detail", {
+        layout: "main",
+        course,
+        isEnrolled,
+        ratings,
+        chapters,
+        instructor,
+        relatedCourses
+    });
+  } catch (error) {
+     console.error("Error fetching course details:", error);
+     res.status(500).send("Error loading course details.");
   }
-
-  // --- Kiểm tra học viên đã ghi danh chưa ---
-  let isEnrolled = false;
-  if (req.session.isAuthenticated) {
-    const enrollment = await db("enrollments")
-      .where({ student_id: req.session.authUser.user_id, course_id })
-      .first();
-    isEnrolled = !!enrollment;
-  }
-
-  // --- Lấy danh sách đánh giá ---
-  const ratings = await db("ratings")
-    .join("users", "ratings.student_id", "users.user_id")
-    .where("course_id", course_id)
-    .select("users.name", "ratings.value", "ratings.comment");
-
-  // --- Lấy thông tin giảng viên ---
-  const instructor = await db("users")
-    .where("user_id", course.instructor_id)
-    .first();
-
-  // --- Lấy 5 khóa học cùng lĩnh vực được mua nhiều nhất ---
-  const relatedCourses = await db("courses")
-    .leftJoin("enrollments", "courses.course_id", "enrollments.course_id")
-    .where("courses.catid", course.catid)
-    .andWhereNot("courses.course_id", course.course_id)
-    .groupBy("courses.course_id")
-    .orderByRaw("COUNT(enrollments.erm_id) DESC")
-    .limit(5)
-    .select(
-      "courses.course_id",
-      "courses.title",
-      "courses.image_url",
-      "courses.discount_price",
-      db.raw("COUNT(enrollments.erm_id) as total_enrollments")
-    );
-
-  res.render("vwCourses/course_detail", {
-    layout: "main",
-    course,
-    isEnrolled,
-    ratings,
-    chapters,
-    instructor,
-    relatedCourses,
-  });
 });
 
 

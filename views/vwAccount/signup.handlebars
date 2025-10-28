@@ -1,92 +1,18 @@
-{{!-- same logic as signin so dont mind ts--}}
-{{#fill_section 'js'}}
-<script>
-  async function signupWithGoogle() {
-    try {
-      if (!window.supabase) {
-        alert('Supabase client not found. Make sure it is loaded in your layout.');
-        return;
-      }
-      const { data, error } = await window.supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/account/oauth-done'
-        }
-      });
-      if (error) {
-        console.error(error);
-        alert('Google sign-in failed. Please try again.');
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Unexpected error during Google sign-in.');
-    }
-  }
-  function handleSubmit(event) {
-    event.preventDefault();
+{{#fill_section 'stylesheet'}}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+{{/fill_section}}
+{{#fill_section 'css'}}
+body {
+background-color: #f8f9fa;
+}
 
-    const username = document.getElementById('txtUsername').value.trim();
-    const password = document.getElementById('txtPassword').value;
-    const confirm  = document.getElementById('txtConfirm').value;
+.ql-editor {
+font-size: 1.2rem;
+}
 
-    if (username.length === 0) {
-      alert('Please enter a username');
-      return;
-    }
-    if (username.length < 3) {
-      alert('Username must be at least 3 characters long');
-      return;
-    }
-    if (password.length < 6) {
-      alert('Password must be at least 6 characters long');
-      return;
-    }
-    if (password !== confirm) {
-      alert('Passwords do not match');
-      return;
-    }
-    fetch(`/account/is-available?username=${encodeURIComponent(username)}`)
-      .then(res => res.json())
-      .then(isAvailable => {
-        if (!isAvailable) {
-          alert('Username is not available. Please choose another one');
-          return;
-        }
-        event.target.submit();
-      })
-      .catch(err => {
-        console.error(err);
-        alert('An error occurred. Please try again');
-      });
-  }
-  document.addEventListener('DOMContentLoaded', function() {
-    const frm = document.getElementById('frmRegister');
-    if (frm) frm.addEventListener('submit', handleSubmit);
-  });
-  function handleImageError(img) {
-      img.src = 'https://via.placeholder.com/150?text=Preview'; 
-      const imageError = document.getElementById('imageError');
-      if (imageError) imageError.style.display = 'block';
-    }
- 
-    const imageUrlInput = document.getElementById('imageUrlInput');
-    const imagePreview = document.getElementById('imagePreview');
- 
-    if (imageUrlInput && imagePreview) {
-      imageUrlInput.addEventListener('input', function() {
-        const url = this.value;
-        const imageError = document.getElementById('imageError');
-        if (url) {
-          imagePreview.src = url;
-          if (imageError) imageError.style.display = 'none'; 
-        } else {
-          imagePreview.src = 'https://via.placeholder.com/150?text=Preview'; 
-          if (imageError) imageError.style.display = 'none';
-        }
-      });
-      window.handleImageError = handleImageError;
-    }
-</script>
+.ql-editor.ql-blank::before {
+font-size: 1.2rem;
+}
 {{/fill_section}}
 
 <div class="container my-4">
@@ -164,11 +90,12 @@
             </div>
 
             <div class="mb-3">
-             <label for="self_introduction" class="form-label">Self Introduction</label>
-             <textarea id="self_introduction" name="self_introduction" rows="4" class="form-control"
-                       placeholder="Tell us a bit about yourself... (optional)"></textarea>
-             <div class="form-text">A brief bio about yourself. This will be public on your profile.</div>
-           </div>
+              <label class="form-label">Self Introduction</label>
+              <div id="editor_intro" style="height: 200px;"></div>
+              <input type="hidden" id="self_introduction_hidden" name="self_introduction">
+              <div class="form-text">A brief bio about yourself. This will be public on your profile (optional).</div>
+            </div>
+
             <button type="submit" class="btn btn-primary">
               <i class="bi bi-patch-check"></i> Register
             </button>
@@ -179,4 +106,127 @@
     </div>
   </div>
 </div>
+{{#fill_section 'js'}}
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+<script>
+  async function handleSubmit(event) {
+    event.preventDefault();
 
+    if (window.quillInstance) {
+      const hiddenInput = document.getElementById('self_introduction_hidden');
+      const htmlContent = window.quillInstance.root.innerHTML;
+      
+      // Nếu editor rỗng, gán chuỗi rỗng
+      if (htmlContent === '<p><br></p>') {
+        hiddenInput.value = '';
+      } else {
+        hiddenInput.value = htmlContent;
+      }
+    }
+
+    const username = document.getElementById('txtUsername').value.trim();
+    const password = document.getElementById('txtPassword').value;
+    const confirm = document.getElementById('txtConfirm').value;
+
+    if (username.length === 0) {
+      alert('Please enter a username');
+      return;
+    }
+    if (username.length < 3) {
+      alert('Username must be at least 3 characters long');
+      return;
+    }
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters long');
+      return;
+    }
+    if (password !== confirm) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/account/is-available?username=${encodeURIComponent(username)}`);
+      const isAvailable = await res.json();
+      
+      if (!isAvailable) {
+        alert('Username is not available. Please choose another one');
+        return;
+      }
+      
+      event.target.submit();
+
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred. Please try again');
+    }
+  }
+
+  function handleImageError(img) {
+    img.src = 'https://via.placeholder.com/150?text=Preview';
+    const imageError = document.getElementById('imageError');
+    if (imageError) imageError.style.display = 'block';
+  }
+  window.handleImageError = handleImageError;
+  async function signupWithGoogle() {
+    try {
+      if (!window.supabase) {
+        alert('Supabase client not found. Make sure it is loaded in your layout.');
+        return;
+      }
+      const { data, error } = await window.supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/account/oauth-done'
+        }
+      });
+      if (error) {
+        console.error(error);
+        alert('Google sign-in failed. Please try again.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Unexpected error during Google sign-in.');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    const frm = document.getElementById('frmRegister');
+    if (frm) {
+      frm.addEventListener('submit', handleSubmit);
+    }
+    const imageUrlInput = document.getElementById('imageUrlInput');
+    const imagePreview = document.getElementById('imagePreview');
+    if (imageUrlInput && imagePreview) {
+      imageUrlInput.addEventListener('input', function() {
+        const url = this.value;
+        const imageError = document.getElementById('imageError');
+        if (url) {
+          imagePreview.src = url;
+          if (imageError) imageError.style.display = 'none';
+        } else {
+          imagePreview.src = 'https://via.placeholder.com/150?text=Preview';
+          if (imageError) imageError.style.display = 'none';
+        }
+      });
+    }
+    const editorDiv = document.getElementById('editor_intro');
+    if (editorDiv) {
+      const toolbarOptions = [
+        ['bold', 'italic', 'underline'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['clean']
+      ];
+
+      window.quillInstance = new Quill('#editor_intro', {
+        modules: {
+          toolbar: toolbarOptions
+        },
+        theme: 'snow',
+        placeholder: 'Tell us a bit about yourself...'
+      });
+    }
+  });
+</script>
+{{/fill_section}}
