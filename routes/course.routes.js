@@ -519,6 +519,11 @@ router.post("/add-to-cart/:id", checkAuthenticated, async (req, res) => {
 
 
 /*Xem giỏ hàng*/
+router.get("/add-to-cart/:id", checkAuthenticated, async (req, res) => {
+  const course_id = req.params.id;
+  res.redirect(`/course/details/${course_id}`);
+});
+
 router.get("/cart", checkAuthenticated, async (req, res) => {
   const student_id = req.session.authUser.user_id;
 
