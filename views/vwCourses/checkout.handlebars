@@ -27,12 +27,12 @@
 
         <div class="d-flex justify-content-between align-items-center mb-4">
           <span class="fs-5 fw-semibold">Giá gốc:</span>
-          <span class="text-decoration-line-through text-muted">{{formatNumber course.price}}₫</span>
+          <span class="text-decoration-line-through text-muted">{{formatNumber course.price}}</span>
         </div>
 
         <div class="d-flex justify-content-between align-items-center mb-4">
           <span class="fs-5 fw-semibold text-success">Giảm còn:</span>
-          <span class="fs-4 fw-bold text-success">{{formatNumber course.discount_price}}₫</span>
+          <span class="fs-4 fw-bold text-success">{{formatNumber course.discount_price}}</span>
         </div>
 
         <form action="/course/checkout/{{course.course_id}}" method="post">

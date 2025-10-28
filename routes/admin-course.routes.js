@@ -1,5 +1,5 @@
 import express from 'express';
-import courseModel from '../models/product.model.js';
+import courseModel from '../models/course.model.js';
 import categoryModel from '../models/category.model.js';
 
 const router = express.Router();
@@ -43,6 +43,29 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// 4.2 Quản lý khóa học - Trang chỉnh sửa
+router.get('/:id/edit', async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        const course = await courseModel.findByIdForAdmin(courseId);
+        const categories = await categoryModel.findAll();
+        
+        if (!course) {
+            return res.status(404).send('Không tìm thấy khóa học');
+        }
+        
+        res.render('vwAdminCourse/edit', {
+            layout: 'admin',
+            course: course,
+            categories: categories,
+            title: `Chỉnh sửa - ${course.title}`
+        });
+    } catch (error) {
+        console.error('Error loading course edit page:', error);
+        res.status(500).send('Lỗi hệ thống');
+    }
+});
+
 // 4.2 Quản lý khóa học - Gỡ bỏ khóa học
 router.post('/:id/remove', async (req, res) => {
     try {
@@ -66,46 +89,6 @@ router.post('/:id/remove', async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: 'Lỗi hệ thống khi gỡ bỏ khóa học' 
-        });
-    }
-});
-
-// 4.2 Quản lý khóa học - Tạm dừng khóa học
-router.post('/:id/disable', async (req, res) => {
-    try {
-        const courseId = req.params.id;
-        
-        await courseModel.updateStatus(courseId, false);
-        
-        res.json({ 
-            success: true, 
-            message: 'Đã tạm dừng khóa học' 
-        });
-    } catch (error) {
-        console.error('Error disabling course:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Lỗi hệ thống' 
-        });
-    }
-});
-
-// 4.2 Quản lý khóa học - Kích hoạt khóa học
-router.post('/:id/enable', async (req, res) => {
-    try {
-        const courseId = req.params.id;
-        
-        await courseModel.updateStatus(courseId, true);
-        
-        res.json({ 
-            success: true, 
-            message: 'Đã kích hoạt khóa học' 
-        });
-    } catch (error) {
-        console.error('Error enabling course:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Lỗi hệ thống' 
         });
     }
 });

@@ -150,6 +150,8 @@ router.post('/signup/verify', async (req, res) => {
       email: pending.email,
       dob: pending.dob,
       role: pending.role,
+      self_introduction: pending.self_introduction,
+      image_url: pending.image_url,
     });
     req.session.pendingSignup = null;
     req.session.signupOtp = null;
@@ -202,6 +204,8 @@ router.post('/profile', checkAuthenticated, async (req, res) => {
   const user = {
     name: req.body.name,
     dob: req.body.dob,
+    self_introduction: req.body.self_introduction || null,
+    image_url: req.body.image_url || null,
   };
   await userModel.patch(id, user);
   req.session.authUser = { ...req.session.authUser, ...user };
@@ -306,6 +310,8 @@ router.post('/complete', async (req, res) => {
       email: pending.email,
       dob: req.body.dob,
       role: 1, 
+      self_introduction: req.body.self_introduction || null,
+      image_url: req.body.image_url || null,
     };
 
     const newId = await userModel.add(user);
@@ -829,7 +835,7 @@ router.post('/watchlist/remove', checkAuthenticated, async (req, res) => {
 
     await watchlistModel.remove(student_id, course_id);
     
-    res.redirect('/account/watchlist'); 
+    res.redirect(req.headers.referer || '/');
   } catch (error) {
     console.error('Error removing from watchlist:', error);
     res.status(500).send('Error updating your watchlist.');

@@ -9,7 +9,7 @@ import moment from 'moment';
 import Handlebars from 'handlebars';
 
 import categoryModel from './models/category.model.js';
-import * as courseModel from './models/course.model.js';
+import courseModel from './models/course.model.js';
 import { checkAdmin, checkAuthenticated, checkInstructor} from './models/auth.model.js';
 import ratingModel from './models/rating.model.js';
 
@@ -17,7 +17,6 @@ import ratingModel from './models/rating.model.js';
 import courseRouter from './routes/course.routes.js';
 import accountRouter from './routes/account.routes.js';
 import categoryRouter from './routes/category.routes.js';
-import productRouter from './routes/product.routes.js';
 import instructorRouter from './routes/instructor.routes.js';
 import adminCourseRouter from './routes/admin-course.routes.js';
 import adminUserRouter from './routes/admin-user.routes.js';
@@ -141,7 +140,22 @@ app.engine('handlebars', engine({
       const params = new URLSearchParams(queryParams);
       params.set('page', page);
       return '?' + params.toString();
-    }
+    },
+    range(start, end) {
+      let arr = [];
+      for (let i = start; i <= end; i++) arr.push(i);
+      return arr;
+    },
+
+    lte(a, b) {
+      return a <= b;
+    },
+    array(...args) {
+      return args.slice(0, -1);
+    },
+    minus(a, b) {
+      return a - b;
+    },
   },
   allowProtoPropertiesByDefault: true,
   allowProtoMethodsByDefault: true
@@ -178,11 +192,12 @@ app.get('/', async (req, res) => {
     console.log('User is authenticated');
     console.log(req.session.authUser)
   }
-  const newestCourses = chunkArray(await courseModel.findNewestCourses(), 4)
-  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(), 4)
+  const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null; 
+  const newestCourses = chunkArray(await courseModel.findNewestCourses(12, student_id), 4); 
+  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(12, student_id), 4); 
+  const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek(4, student_id); 
   const parents = await categoryModel.findParents();
   const rating = await ratingModel.findTop3RecentFiveStarCourses();
-  const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek();
   const topCate = await categoryModel.findTopCategoriesOfWeek(3);
   // Thêm mảng stars để Handlebars each
   rating.forEach(r => {
@@ -219,8 +234,7 @@ app.use(async (req, res, next) => {
 // Gắn các router
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
-app.use('/product', productRouter);
-app.use('/instructor', checkInstructor,instructorRouter);
+app.use('/instructor', checkAuthenticated , checkInstructor,instructorRouter);
 app.use('/course', courseRouter);
 app.use('/admin/courses', checkAuthenticated, checkAdmin, adminCourseRouter);
 app.use('/admin/users', checkAuthenticated, checkAdmin, adminUserRouter);

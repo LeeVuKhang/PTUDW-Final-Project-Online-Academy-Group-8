@@ -33,7 +33,7 @@
                     <p class="mb-1 text-muted course-description">{{this.tinydes}}</p>
                     <small class="text-muted">
                       <span><i class="bi bi-person"></i> {{this.instructor_name}}</span>
-                      <span class="ms-3"><i class="bi bi-star-fill text-warning"></i> {{this.avg_rating}} ({{this.rating_count}} đánh giá)</span>
+                      <span class="ms-3"><i class="bi bi-star-fill text-warning"></i> {{formatRating this.avg_rating}} ({{this.rating_count}} đánh giá)</span>
                       <span class="ms-3"><i class="bi bi-people-fill"></i> {{this.student_count}} học viên</span>
                     </small>
                   </div>
@@ -47,16 +47,13 @@
 
                   <div class="col-auto">
                     <div class="d-flex gap-2 flex-wrap justify-content-end">
-                      <a href="/products/details?id={{this.course_id}}" class="btn btn-sm btn-outline-primary">
+                      <a href="/course/details/{{this.course_id}}" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-eye"></i> Chi tiết
                       </a>
 
                       <form class="action-form" method="POST" action="/account/watchlist/remove">
                         <input type="hidden" name="course_id" value="{{this.course_id}}">
                         
-                        {{!-- 
-                          ĐÃ THÊM 'onclick' VÀO NÚT BÊN DƯỚI 
-                        --}}
                         <button type="submit" class="btn btn-sm btn-outline-danger" 
                                 onclick="return confirm('Bạn có chắc chắn muốn xóa khóa học này khỏi danh sách yêu thích?');">
                           <i class="bi bi-trash"></i> Xóa

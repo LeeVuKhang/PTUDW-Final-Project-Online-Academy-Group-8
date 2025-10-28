@@ -16,7 +16,7 @@ background-color: #f8f9fa;
             <div class="d-flex justify-content-between align-items-center">
                 <h3 class="mb-0">Khóa học của giảng viên</h3>
 
-                <a href="/instructor/create-course" class="btn btn-primary">
+                <a href="/instructor/create-course?instructor_id={{instructor_id}}" class="btn btn-primary">
                     <i class="bi bi-plus-lg me-1"></i> Thêm khóa học mới
                 </a>
             </div>
@@ -90,7 +90,7 @@ background-color: #f8f9fa;
                                 <span class="badge bg-primary me-2">{{this.category_name}}</span>
                                 <i>{{this.tinydes}}| </i>
                                 {{#if this.is_complete}}
-                                <i class="bi bi-people-fill"></i> {{this.views}} học viên |
+                                <i class="bi bi-people-fill"></i> {{this.student_count}} học viên |
                                 {{#if (isGreater this.rating_count 0)}}
                                 <i class="bi bi-star-fill text-warning"></i>
                                 <strong>{{formatRating this.avg_rating}}</strong>
@@ -108,16 +108,15 @@ background-color: #f8f9fa;
                         </div>
                         <div class="col-auto">
                             <div class="d-flex gap-2 flex-wrap justify-content-end">
-                                <a href="/instructor/reviews/{{this.id}}" class="btn btn-sm btn-outline-warning">
-                                    <i class="bi bi-star"></i> Reviews
+                                <a href="/instructor/courses/edit-syllabus/{{this.course_id}}" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-list-ul me-1"></i> Cập nhật Syllabus
                                 </a>
-
                                 <a href="/instructor/update/{{this.course_id}}"
                                     class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-pencil"></i> Chỉnh sửa
                                 </a>
 
-                                <a href="/instructor/courses/{{this.course_id}}" class="btn btn-sm btn-outline-primary">
+                                <a href="/course/details/{{this.course_id}}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye"></i> Chi tiết
                                 </a>
                             </div>

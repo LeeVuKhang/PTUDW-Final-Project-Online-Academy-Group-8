@@ -16,7 +16,7 @@ export function checkAdmin(req, res, next){
     }
 }
 export function checkInstructor(req, res, next){
-    if (req.session.isAuthenticated && req.session.authUser.role === 2){
+    if (req.session.isAuthenticated && req.session.authUser.role === 2 || req.session.authUser.role === 0){
         next();
     } else {
         res.render('vwAccount/403') 
