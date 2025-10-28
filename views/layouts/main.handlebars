@@ -162,7 +162,7 @@
           <form id="frmSignout" action="/account/signout" method="post" class="d-none"></form>
           {{else}}
           <li class="nav-item d-flex align-items-center">
-            <a class="btn btn-outline-primary me-2 px-3 py-1 text-nowrap" href="/account/signin">Đăng nhập</a>
+            <a class="btn btn-outline-primary me-2 px-3 py-1 text-nowrap" href="/account/signin?retUrl={{currentUrl}}">Đăng nhập</a>
             <a class="btn btn-primary px-3 py-1 text-nowrap" href="/account/signup">Đăng ký</a>
           </li>
           {{/if}}

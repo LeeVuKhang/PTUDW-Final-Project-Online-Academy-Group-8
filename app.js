@@ -167,6 +167,7 @@ app.use((req, res, next) => {
     res.locals.isAuthenticated = true;
     res.locals.authUser = req.session.authUser;
   }
+  res.locals.currentUrl = req.originalUrl;
   next();
 });
 

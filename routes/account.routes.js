@@ -92,7 +92,9 @@ router.post('/signup', async (req, res) => {
 });
 
 router.get('/signin', (req, res) => {
-    res.render('vwAccount/signin');
+    res.render('vwAccount/signin', {
+        retUrl: req.query.retUrl || '/' 
+    });
 });
 router.post('/signin', async (req, res) => {
   try {
@@ -110,7 +112,7 @@ router.post('/signin', async (req, res) => {
 
     req.session.isAuthenticated = true;
     req.session.authUser = user;
-    const retUrl = req.session.retUrl || '/';
+    const retUrl = req.session.retUrl || req.body.retUrl || '/';
     delete req.session.retUrl;
     return res.redirect(retUrl);
   } catch (e) {
