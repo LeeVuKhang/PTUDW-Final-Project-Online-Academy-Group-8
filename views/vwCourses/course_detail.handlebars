@@ -20,8 +20,6 @@
 .course-header-dark .bestseller-badge { background-color: #cce7f4; color: #0b5a80; }
 {{/fill_section}}
 
-{{#fill_section 'js'}}
-{{/fill_section}}
 
 <div class="course-header-dark py-5 shadow-inner">
   <div class="container">
@@ -393,3 +391,55 @@
 
   </div>
 </div>
+{{#fill_section 'js'}}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const allForms = document.querySelectorAll('.form-add-to-cart');
+    
+    allForms.forEach(form => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault(); 
+        
+        const button = form.querySelector('button[type="submit"]');
+        const originalText = button.innerHTML;
+
+        button.disabled = true;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+        try {
+          const response = await fetch(form.action, {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json'
+            }
+          });
+
+          if (response.redirected) {
+            window.location.href = response.url;
+            return;
+          }
+
+          const data = await response.json();
+
+          alert(data.message); 
+
+          if (data.status === 'added') {
+            button.innerHTML = '<i class="bi bi-check-lg"></i> Đã thêm';
+          } else if (data.status === 'exists') {
+            button.innerHTML = '<i class="bi bi-cart-check"></i> Đã có';
+            button.disabled = false;
+          } else {
+            button.disabled = false;
+            button.innerHTML = originalText;
+          }
+
+        } catch (err) {
+          alert('Đã xảy ra lỗi kết nối.');
+          button.disabled = false;
+          button.innerHTML = originalText;
+        }
+      });
+    });
+  });
+</script>
+{{/fill_section}}
