@@ -1,20 +1,28 @@
-{{#fill_section 'stylesheet'}}
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
+{{#fill_section 'js'}}
+<script>
+  async function signupWithGoogle() {
+    try {
+      if (!window.supabase) {
+        alert('Supabase client not found. Make sure it is loaded in your layout.');
+        return;
+      }
+      const { data, error } = await window.supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + '/account/oauth-done' }
+      });
+      if (error) { console.error(error); alert('Google sign-in failed. Please try again.'); }
+    } catch (e) { console.error(e); alert('Unexpected error during Google sign-in.'); }
+  }
+  document.getElementById('frmRegister')?.addEventListener('submit', function(e) {
+    const u = document.getElementById('txtUsername').value.trim();
+    const p = document.getElementById('txtPassword').value;
+    const c = document.getElementById('txtConfirm').value;
+    if (u.length < 3) { e.preventDefault(); alert('Username must be at least 3 characters.'); return; }
+    if (p.length < 6) { e.preventDefault(); alert('Password must be at least 6 characters.'); return; }
+    if (p !== c)     { e.preventDefault(); alert('Passwords do not match.'); return; }
+  });
+</script>
 {{/fill_section}}
-{{#fill_section 'css'}}
-body {
-background-color: #f8f9fa;
-}
-
-.ql-editor {
-font-size: 1.2rem;
-}
-
-.ql-editor.ql-blank::before {
-font-size: 1.2rem;
-}
-{{/fill_section}}
-
 <div class="container my-4">
   <div class="row justify-content-center">
     <div class="col-lg-7 col-md-9">
@@ -23,6 +31,7 @@ font-size: 1.2rem;
         <h5 class="card-header">Account registration</h5>
 
         <div class="card-body">
+
           <div class="mb-3">
             <button type="button" class="btn btn-outline-dark w-100 d-flex align-items-center justify-content-center gap-2"
                     onclick="signupWithGoogle()">
@@ -36,42 +45,66 @@ font-size: 1.2rem;
             <div class="px-3 text-muted small">or create with email</div>
             <div class="flex-grow-1" style="height:1px; background:#e9ecef;"></div>
           </div>
+
           <form method="post" action="/account/signup" id="frmRegister" novalidate>
             <div class="mb-3">
               <label for="txtUsername" class="form-label">Username</label>
-              <input type="text" class="form-control" id="txtUsername" name="username" required>
-              <div class="form-text">At least 3 characters, must be unique.</div>
+              <input type="text" class="form-control {{#if fieldErrors.username}}is-invalid{{/if}}"
+                     id="txtUsername" name="username" required value="{{last.username}}">
+              <div class="form-text">At least 3 characters.</div>
+              {{#if fieldErrors.username}}
+                <div class="invalid-feedback d-block">{{fieldErrors.username}}</div>
+              {{/if}}
             </div>
-
             <div class="mb-3">
               <label for="txtPassword" class="form-label">Password</label>
-              <input type="password" class="form-control" id="txtPassword" name="password" required minlength="6">
+              <input type="password" class="form-control {{#if fieldErrors.password}}is-invalid{{/if}}"
+                     id="txtPassword" name="password" required minlength="6">
               <div class="form-text">At least 6 characters.</div>
+              {{#if fieldErrors.password}}
+                <div class="invalid-feedback d-block">{{fieldErrors.password}}</div>
+              {{/if}}
             </div>
 
             <div class="mb-3">
               <label for="txtConfirm" class="form-label">Confirm password</label>
-              <input type="password" class="form-control" id="txtConfirm" name="confirm" required minlength="6">
+              <input type="password" class="form-control {{#if fieldErrors.confirm}}is-invalid{{/if}}"
+                     id="txtConfirm" name="confirm" required minlength="6">
+              {{#if fieldErrors.confirm}}
+                <div class="invalid-feedback d-block">{{fieldErrors.confirm}}</div>
+              {{/if}}
             </div>
 
             <hr class="my-4">
-
             <h5 class="mb-3">Information</h5>
+
 
             <div class="mb-3">
               <label for="txtName" class="form-label">Full name</label>
-              <input type="text" class="form-control" id="txtName" name="name" required>
+              <input type="text" class="form-control {{#if fieldErrors.name}}is-invalid{{/if}}"
+                     id="txtName" name="name" required value="{{last.name}}">
+              {{#if fieldErrors.name}}
+                <div class="invalid-feedback d-block">{{fieldErrors.name}}</div>
+              {{/if}}
             </div>
 
             <div class="mb-3">
               <label for="txtEmail" class="form-label">Email address</label>
-              <input type="email" class="form-control" id="txtEmail" name="email" required>
-              <div class="form-text">We’ll never share your email with anyone else. (nah we will)</div>
+              <input type="email" class="form-control {{#if fieldErrors.email}}is-invalid{{/if}}"
+                     id="txtEmail" name="email" required value="{{last.email}}">
+              {{#if fieldErrors.email}}
+                <div class="invalid-feedback d-block">{{fieldErrors.email}}</div>
+              {{/if}}
             </div>
+
 
             <div class="mb-3">
               <label for="txtdob" class="form-label">Date of Birth</label>
-              <input type="date" class="form-control" id="txtdob" name="dob" required>
+              <input type="date" class="form-control {{#if fieldErrors.dob}}is-invalid{{/if}}"
+                     id="txtdob" name="dob" required value="{{last.dob}}">
+              {{#if fieldErrors.dob}}
+                <div class="invalid-feedback d-block">{{fieldErrors.dob}}</div>
+              {{/if}}
             </div>
             <div class="mb-3">
               <label for="imageUrlInput" class="form-label">Profile Image URL</label>

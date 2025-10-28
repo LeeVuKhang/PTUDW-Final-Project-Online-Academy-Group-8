@@ -13,69 +13,112 @@ const router = express.Router();
 router.get('/signup', (req, res) => {
     res.render('vwAccount/signup');
 }); 
+
 router.post('/signup', async (req, res) => {
   try {
-    const { username, password, confirm, name, email, dob, image_url, self_introduction } = req.body;
-    if (!username || !password || !confirm || !name || !email) {
-      return res.render('vwAccount/signup', { err: 'Please fill all required fields.' });
-    }
-    if (password !== confirm) {
-      return res.render('vwAccount/signup', { err: 'Passwords do not match.' });
-    }
-    const existedUser = await userModel.findByUsername(username.trim());
-    if (existedUser) {
-      return res.render('vwAccount/signup', { err: 'Username is already taken.' });
-    }
-    const existedEmail = await userModel.findByEmail(email.trim());
-    if (existedEmail) {
-      return res.render('vwAccount/signup', { err: 'Email is already registered.' });
-    }
-    const hash = bcrypt.hashSync(password, 10);
+    const raw = req.body || {};
+    const payload = {
+      username: String(raw.username || '').trim(),
+      password: String(raw.password || ''),
+      confirm:  String(raw.confirm  || ''),
+      name:     String(raw.name  || '').trim(),
+      email:    String(raw.email || '').trim().toLowerCase(),
+      dob:      String(raw.dob || ''),
+    };
+    const rerender = (fieldErrors) =>
+      res.status(400).render('vwAccount/signup', {
+        fieldErrors,
+        last: {
+          username: payload.username,
+          name: payload.name,
+          email: payload.email,
+          dob: payload.dob,
+        }
+      });
 
+    const errs = {};
+    if (payload.password.length < 6) {
+      errs.password = 'Password must be at least 6 characters.';
+    }
+    if (payload.password !== payload.confirm) {
+      errs.confirm = 'Passwords do not match.';
+    }
+    if (Object.keys(errs).length > 0) {
+      return rerender(errs);
+    }
+    const existedUser  = await userModel.findByUsername(payload.username);
+    if (existedUser) {
+      errs.username = 'Username is already taken.';
+    }
+    const existedEmail = await userModel.findByEmail(payload.email);
+    if (existedEmail) {
+      errs.email = 'Email is already taken.';
+    }
+
+    if (Object.keys(errs).length > 0) {
+      return rerender(errs);
+    }
+    const hash = bcrypt.hashSync(payload.password, 10);
     req.session.pendingSignup = {
-      username: username.trim(),
+      username: payload.username,
       password: hash,
-      name: name.trim(),
-      email: email.trim(),
-      dob: dob,
+      name: payload.name,
+      email: payload.email,
+      dob: payload.dob,
       role: 1,
-      self_introduction: self_introduction || null,
-      image_url: image_url || null,
+      self_introduction: null,
+      image_url: null,
     };
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-    req.session.signupOtp = {
-      code: otp,
-      expiresAt: Date.now() + 10 * 60 * 1000,
-    };
+    req.session.signupOtp = { code: otp, expiresAt: Date.now() + 10 * 60 * 1000 };
+
     const { sendOtpEmail } = await import('../utils/mailer.js');
-    await sendOtpEmail(email.trim(), otp, 'Complete your registration');
-    return res.render('vwAccount/signup-verify', { email: email.trim() });
+    await sendOtpEmail(payload.email, otp, 'Complete your registration');
+
+    return res.render('vwAccount/signup-verify', { email: payload.email });
+
   } catch (e) {
+    if (e?.code === '23505') {
+      const fieldErrors = {};
+      if (/users_username_key/i.test(e.constraint || '')) fieldErrors.username = 'Username is already taken.';
+      if (/users_email_key/i.test(e.constraint || ''))    fieldErrors.email    = 'Email is already taken.';
+      if (Object.keys(fieldErrors).length > 0) {
+        return res.status(400).render('vwAccount/signup', { fieldErrors });
+      }
+    }
     console.error('[signup] error:', e);
     return res.status(500).render('vwAccount/403');
   }
 });
+
 router.get('/signin', (req, res) => {
     res.render('vwAccount/signin');
 });
 router.post('/signin', async (req, res) => {
+  try {
     const { username, password } = req.body;
-    const user = await userModel.findByUsername(username);
+    const u = String(username || '').trim();
+    const p = String(password || '');
+    const user = await userModel.findByUsername(u);
     const invalid = () =>
       res.status(401).render('vwAccount/signin', {
         err: 'Invalid username or password.',
-        lastUsername: username || '',
+        lastUsername: u
       });
     if (!user) return invalid();
-    const matchPassword = bcrypt.compareSync(password, user.password)
-    if (!matchPassword) return invalid();
+    if (!bcrypt.compareSync(p, user.password)) return invalid();
+
     req.session.isAuthenticated = true;
     req.session.authUser = user;
-
     const retUrl = req.session.retUrl || '/';
     delete req.session.retUrl;
     return res.redirect(retUrl);
+  } catch (e) {
+    console.error('[signin] error:', e);
+    return res.status(500).render('vwAccount/signin', { err: 'Server error. Please try again.' });
+  }
 });
+
 router.get('/signup/verify', (req, res) => {
   const pending = req.session.pendingSignup;
   if (!pending) return res.redirect('/account/signup');
