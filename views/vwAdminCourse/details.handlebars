@@ -13,17 +13,10 @@
     <!-- Course Info Card -->
     <div class="col-lg-8">
       <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header">
           <h4 class="mb-0">
             <i class="bi bi-book"></i> {{course.title}}
           </h4>
-          <div>
-            {{#if course.is_active}}
-              <span class="badge bg-success">Hoạt động</span>
-            {{else}}
-              <span class="badge bg-warning">Tạm dừng</span>
-            {{/if}}
-          </div>
         </div>
         
         <div class="card-body">
@@ -73,7 +66,7 @@
           <div class="mb-4">
             <h5>Mô tả chi tiết</h5>
             <div class="border rounded p-3 bg-light">
-              <div style="white-space: pre-wrap;">{{course.fulldes}}</div>
+              <div>{{{course.fulldes}}}</div>
             </div>
           </div>
 
@@ -134,18 +127,6 @@
         </div>
         <div class="card-body">
           <div class="d-grid gap-2">
-            {{#if course.is_active}}
-              <button type="button" class="btn btn-warning" 
-                      onclick="toggleCourse({{course.course_id}}, true)">
-                <i class="bi bi-pause"></i> Tạm dừng khóa học
-              </button>
-            {{else}}
-              <button type="button" class="btn btn-success" 
-                      onclick="toggleCourse({{course.course_id}}, false)">
-                <i class="bi bi-play"></i> Kích hoạt khóa học
-              </button>
-            {{/if}}
-            
             <button type="button" class="btn btn-danger" 
                     onclick="confirmRemoveCourse({{course.course_id}}, '{{course.title}}')">
               <i class="bi bi-trash"></i> Gỡ bỏ khóa học
@@ -153,7 +134,7 @@
             
             <hr>
             
-            <a href="/instructor/update/{{course.course_id}}" class="btn btn-outline-primary">
+            <a href="/admin/courses/{{course.course_id}}/edit" class="btn btn-outline-primary">
               <i class="bi bi-pencil"></i> Chỉnh sửa
             </a>
             
@@ -168,23 +149,20 @@
         </div>
       </div>
 
-      <!-- Timeline Card -->
+      <!-- Last Update Card -->
       <div class="card">
         <div class="card-header">
-          <h6 class="mb-0">Lịch sử</h6>
+          <h6 class="mb-0">
+            <i class="bi bi-clock-history"></i> Cập nhật lần cuối
+          </h6>
         </div>
         <div class="card-body">
-          <div class="timeline">
-            <div class="timeline-item">
-              <small class="text-muted">Tạo lúc:</small>
-              <p>{{formatDate course.created_at}}</p>
+          <div class="d-flex align-items-center">
+            <div>
+              <strong>{{formatDate course.last_update "DD/MM/YYYY HH:mm"}}</strong>
+              <br>
+              <small class="text-muted">{{moment course.last_update "fromNow"}}</small>
             </div>
-            {{#if course.updated_at}}
-            <div class="timeline-item">
-              <small class="text-muted">Cập nhật lần cuối:</small>
-              <p>{{formatDate course.updated_at}}</p>
-            </div>
-            {{/if}}
           </div>
         </div>
       </div>
@@ -234,28 +212,4 @@ function confirmRemoveCourse(courseId, courseName) {
   modal.show();
 }
 
-function toggleCourse(courseId, isActive) {
-  const action = isActive ? 'disable' : 'enable';
-  const actionText = isActive ? 'tạm dừng' : 'kích hoạt';
-  
-  if (confirm(`Bạn có chắc muốn ${actionText} khóa học này?`)) {
-    fetch(`/admin/courses/${courseId}/${action}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        location.reload();
-      } else {
-        alert('Có lỗi xảy ra: ' + data.message);
-      }
-    })
-    .catch(error => {
-      alert('Có lỗi xảy ra: ' + error.message);
-    });
-  }
-}
 </script>
