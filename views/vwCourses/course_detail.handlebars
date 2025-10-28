@@ -10,33 +10,51 @@
 .stat-box { } /* Optional: Add specific styling if needed */
 .stat-number { font-size: 1.2rem; font-weight: bold; color: #343a40; }
 .stat-label { font-size: 0.8rem; color: #6c757d; }
+.course-header-dark { background-color: #212529; color: #adb5bd; }
+.course-header-dark h1 { color: #fff; }
+.course-header-dark .breadcrumb a { color: #6ea8fe; text-decoration: none; }
+.course-header-dark .breadcrumb a:hover { color: #a1c9ff; }
+.course-header-dark .rating-section { color: #ffc107; }
+.course-header-dark .instructor-link { color: #6ea8fe; text-decoration: none; }
+.course-header-dark .instructor-link:hover { color: #a1c9ff; }
+.course-header-dark .bestseller-badge { background-color: #cce7f4; color: #0b5a80; }
 {{/fill_section}}
 
 {{#fill_section 'js'}}
 {{/fill_section}}
 
-<div class="bg-dark text-white py-5 shadow-inner">
+<div class="course-header-dark py-5 shadow-inner">
   <div class="container">
-    <div class="text-sm fw-semibold mb-2">
-      <a href="/course/byCat?id={{course.catid}}" class="text-info text-decoration-none">{{course.category_name}}</a>
-    </div>
-    <h1 class="display-4 fw-bold mb-3">{{course.title}}</h1>
-    <p class="fs-5 text-white-50 mb-4">{{course.tinydes}}</p>
+    <nav aria-label="breadcrumb" class="mb-2">
+      <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="/course">Courses</a></li>
+        <li class="breadcrumb-item"><a href="/course/byCat?id={{course.catid}}">{{course.category_name}}</a></li>
+      </ol>
+    </nav>
 
-    <div class="d-flex flex-wrap align-items-center small gap-3 text-white-50">
-      <div class="d-flex align-items-center gap-1">
-        <span class="fw-bold text-warning">{{formatRating course.rating}}</span>
-        <span class="text-warning">{{{renderStars course.rating}}}</span>
-        <span>({{course.total_reviews}} đánh giá)</span>
+    <h1 class="display-5 fw-bold mb-3">{{course.title}}</h1>
+    <p class="fs-5 mb-3">{{course.tinydes}}</p>
+
+    <div class="d-flex flex-wrap align-items-center small gap-3 mb-2">
+      {{#if course.isBestseller}}
+      <span class="badge bestseller-badge fw-bold me-2">Bestseller</span>
+      {{/if}}
+      <div class="d-flex align-items-center rating-section gap-1">
+        <span class="fw-bold">{{formatRating course.rating}}</span>
+        <span class="me-1">{{{renderStars course.rating}}}</span>
+        <span>({{course.total_reviews}} ratings)</span>
       </div>
-       {{#if course.student_count}}
-      <span>{{course.student_count}} học viên</span>
-       {{/if}}
+      <span>{{course.student_count}} students</span>
     </div>
 
-    <div class="d-flex flex-wrap align-items-center small gap-3 text-white-50 mt-2">
-      {{#if course.level}}<span class="badge rounded-pill bg-secondary">{{course.level}}</span>{{/if}}
-      {{#if course.total_hours}}<span>Tổng cộng {{course.total_hours}} giờ</span>{{/if}}
+    <div class="small mb-3">
+      Created by <a href="/course/instructorProfile?id={{course.instructor_id}}" class="instructor-link fw-semibold">{{course.instructor_name}}</a>
+    </div>
+
+    <div class="d-flex flex-wrap align-items-center small gap-3 mt-2">
+      {{#if course.last_update}}
+        <span class="d-inline-flex align-items-center"><i class="bi bi-clock-history me-1"></i> Last updated {{moment course.last_update "DD/MM/YYYY"}}</span>
+      {{/if}}
     </div>
   </div>
 </div>

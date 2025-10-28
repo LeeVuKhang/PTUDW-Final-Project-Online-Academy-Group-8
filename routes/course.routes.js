@@ -148,40 +148,42 @@ router.get("/details/:id", async (req, res) => {
  try {
     const course_id = req.params.id;
     const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null;
-
-    const course = await courseModel.findByID(course_id);
-
-    if (!course) return res.render("vwCourses/not-found", { layout: "main" });
-
-    const details = await db("courses as c")
+    const course = await db("courses as c")
         .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
         .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
         .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
+        .leftJoin( 
+            db('enrollments')
+                .select('course_id')
+                .count('* as student_count')
+                .groupBy('course_id')
+                .as('enroll_stats'),
+            'c.course_id', 'enroll_stats.course_id'
+        )
         .select(
+            "c.*", 
             "cat.cat_name as category_name",
-            "u.name as instructor_name", "u.user_id as instructor_id", 
+            "u.name as instructor_name", "u.user_id as instructor_id",
             db.raw("COALESCE(AVG(r.value), 0) as rating"),
-            db.raw("COUNT(DISTINCT r.rating_id) as total_reviews")
+            db.raw("COUNT(DISTINCT r.rating_id) as total_reviews"),
+            db.raw("COALESCE(enroll_stats.student_count, 0) as student_count") 
          )
         .where("c.course_id", course_id)
-        .groupBy("cat.cat_name", "u.name", "u.user_id")
+        .groupBy("c.course_id", "cat.cat_name", "u.name", "u.user_id", "enroll_stats.student_count")
         .first();
 
-    Object.assign(course, details); 
+    if (!course) return res.render("vwCourses/not-found", { layout: "main" });
 
     const instructorPromise = instructorModel.findProfileById(course.instructor_id);
     const instructorStatsPromise = instructorModel.getInstructorStats(course.instructor_id);
     const chaptersPromise = db("chapters").where({ course_id }).orderBy("order_index");
-
     const ratingsPromise = db("ratings")
         .join("users", "ratings.student_id", "users.user_id")
         .where("course_id", course_id)
         .select("users.name", "ratings.value", "ratings.comment", "ratings.create_time")
         .orderBy("ratings.create_time", "desc");
-
     const relatedCoursesPromise = courseModel.findRelatedCourses(course.catid, course_id, 4, student_id);
 
-    // --- Kiểm tra enrollment ---
     let isEnrolled = false;
     if (student_id) {
         const enrollment = await db("enrollments")
@@ -191,11 +193,7 @@ router.get("/details/:id", async (req, res) => {
     }
 
     const [instructorProfile, instructorStats, chapters, ratings, relatedCourses] = await Promise.all([
-        instructorPromise,
-        instructorStatsPromise,
-        chaptersPromise,
-        ratingsPromise,
-        relatedCoursesPromise
+        instructorPromise, instructorStatsPromise, chaptersPromise, ratingsPromise, relatedCoursesPromise
     ]);
 
     for (const chapter of chapters) {
@@ -204,23 +202,10 @@ router.get("/details/:id", async (req, res) => {
             .orderBy("order_index");
     }
 
-    const instructor = {
-        ...instructorProfile, 
-        avg_rating: instructorStats.avg_rating, 
-        total_reviews: instructorStats.total_reviews,
-        total_students: instructorStats.total_students,
-        total_courses: instructorStats.total_courses,
-    };
-
+    const instructor = { ...instructorProfile, ...instructorStats };
 
     res.render("vwCourses/course_detail", {
-        layout: "main",
-        course,
-        isEnrolled,
-        ratings,
-        chapters,
-        instructor,
-        relatedCourses
+        layout: "main", course, isEnrolled, ratings, chapters, instructor, relatedCourses
     });
   } catch (error) {
      console.error("Error fetching course details:", error);
