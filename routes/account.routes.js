@@ -110,8 +110,8 @@ router.post('/signin', async (req, res) => {
 
     req.session.isAuthenticated = true;
     req.session.authUser = user;
-    const retUrl = req.session.retUrl || '/';
-    delete req.session.retUrl;
+    const retUrl = req.session.reUrl || '/';
+    delete req.session.reUrl;
     return res.redirect(retUrl);
   } catch (e) {
     console.error('[signin] error:', e);
