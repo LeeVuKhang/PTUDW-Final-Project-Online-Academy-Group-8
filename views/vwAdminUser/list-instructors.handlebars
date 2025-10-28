@@ -8,28 +8,21 @@
       <div>
         <span class="badge bg-success">{{instructors.length}} giảng viên</span>
         <a href="/admin/users/add-instructor" class="btn btn-primary ms-2">
-          <i class="bi bi-plus-lg"></i> Thêm giảng viên
+          <i class="bi bi-person-plus"></i> Thêm giảng viên
         </a>
       </div>
     </div>
     
     <div class="card-body">
-      <!-- Search and Filter -->
+      <!-- Search -->
       <div class="row mb-3">
-        <div class="col-md-8">
+        <div class="col-md-12">
           <div class="input-group">
             <span class="input-group-text">
               <i class="bi bi-search"></i>
             </span>
             <input type="text" class="form-control" id="searchInstructor" placeholder="Tìm kiếm theo tên, email hoặc chuyên môn...">
           </div>
-        </div>
-        <div class="col-md-4">
-          <select class="form-select" id="filterStatus">
-            <option value="">Tất cả trạng thái</option>
-            <option value="active">Hoạt động</option>
-            <option value="inactive">Tạm khóa</option>
-          </select>
         </div>
       </div>
 
@@ -45,7 +38,6 @@
               <th scope="col">Chuyên môn</th>
               <th scope="col">Khóa học</th>
               <th scope="col">Đánh giá</th>
-              <th scope="col">Trạng thái</th>
               <th scope="col" class="text-center">Thao tác</th>
             </tr>
           </thead>
@@ -99,13 +91,6 @@
                   <small class="text-muted">Chưa có đánh giá</small>
                 {{/if}}
               </td>
-              <td>
-                {{#if is_active}}
-                  <span class="badge bg-success">Hoạt động</span>
-                {{else}}
-                  <span class="badge bg-warning">Tạm khóa</span>
-                {{/if}}
-              </td>
               <td class="text-center">
                 <div class="btn-group" role="group">
                   <a href="/admin/users/{{user_id}}" 
@@ -117,22 +102,6 @@
                      class="btn btn-sm btn-outline-info" title="Xem khóa học">
                     <i class="bi bi-book"></i>
                   </a>
-                  
-                  {{#if is_active}}
-                    <button type="button" 
-                            class="btn btn-sm btn-outline-warning" 
-                            onclick="toggleUserStatus({{id}}, false)" 
-                            title="Tạm khóa tài khoản">
-                      <i class="bi bi-lock"></i>
-                    </button>
-                  {{else}}
-                    <button type="button" 
-                            class="btn btn-sm btn-outline-success" 
-                            onclick="toggleUserStatus({{id}}, true)" 
-                            title="Kích hoạt tài khoản">
-                      <i class="bi bi-unlock"></i>
-                    </button>
-                  {{/if}}
                 </div>
               </td>
             </tr>
@@ -157,57 +126,24 @@
 document.addEventListener('DOMContentLoaded', function() {
   // Search functionality
   const searchInput = document.getElementById('searchInstructor');
-  const filterStatus = document.getElementById('filterStatus');
   const tableRows = document.querySelectorAll('tbody tr');
 
   function filterTable() {
     const searchTerm = searchInput.value.toLowerCase();
-    const selectedStatus = filterStatus.value;
 
     tableRows.forEach(row => {
-      const instructorInfo = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-      const email = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
-      const specialization = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
-      const statusBadge = row.querySelector('td:nth-child(8) .badge');
-      const isActive = statusBadge.classList.contains('bg-success');
+      const instructorInfo = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+      const email = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+      const specialization = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
       
-      const statusMatch = !selectedStatus || 
-                         (selectedStatus === 'active' && isActive) || 
-                         (selectedStatus === 'inactive' && !isActive);
       const searchMatch = instructorInfo.includes(searchTerm) || 
                          email.includes(searchTerm) || 
                          specialization.includes(searchTerm);
 
-      row.style.display = (statusMatch && searchMatch) ? '' : 'none';
+      row.style.display = searchMatch ? '' : 'none';
     });
   }
 
   searchInput.addEventListener('input', filterTable);
-  filterStatus.addEventListener('change', filterTable);
 });
-
-function toggleUserStatus(userId, activate) {
-  const action = activate ? 'activate' : 'deactivate';
-  const actionText = activate ? 'kích hoạt' : 'tạm khóa';
-  
-  if (confirm(`Bạn có chắc muốn ${actionText} tài khoản giảng viên này?`)) {
-    fetch(`/admin/users/${userId}/${action}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        location.reload();
-      } else {
-        alert('Có lỗi xảy ra: ' + data.message);
-      }
-    })
-    .catch(error => {
-      alert('Có lỗi xảy ra: ' + error.message);
-    });
-  }
-}
 </script>

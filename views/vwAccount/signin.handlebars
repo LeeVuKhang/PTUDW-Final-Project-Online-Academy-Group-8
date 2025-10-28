@@ -1,67 +1,77 @@
 {{#fill_section 'js'}}
 <script>
-      function handleSubmit(event) {
-      event.preventDefault(); 
-      
-      const username = document.querySelector('#loginUsername').value;
-
-      fetch(`/account/is-available?username=${username}`)
-      .then(function(res){
-        return res.json();
-      })
-      .then(function(data){
-        if (data === true){
-          alert('Username is not existed');
-          return;
-        }
-        event.target.submit(); 
-      })
-      {{!-- .then(function (err){
-        console.log(err);
-        alert('An error occurred. Please try again');
-      }) --}}
-    }
-    document.querySelector('#frmSignin').addEventListener('submit', handleSubmit);
-
-
-
-     document.getElementById('btnGoogle')?.addEventListener('click', async () => {
-    const redirectTo = `${window.location.origin}/account/oauth-done`;
-    const { data, error } = await window.supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo }
-    });
-    if (error) {
-      alert('Google sign-in failed');
-      console.error(error);
-    }
-  });
-  </script>
+  async function signinWithGoogle() {
+    try {
+      if (!window.supabase) {
+        alert('Supabase client not found.'); return;
+      }
+      const { error } = await window.supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin + '/account/oauth-done' }
+      });
+      if (error) { console.error(error); alert('Google sign-in failed.'); }
+    } catch (e) { console.error(e); alert('Unexpected error with Google sign-in.'); }
+  }
+</script>
 {{/fill_section}}
 
 
-<div class="container d-flex align-items-center justify-content-center" style="padding-top: 50px;">
-    <div class="card shadow p-4" style="max-width: 400px; width: 100%;">
-      <h3 class="mb-3 text-center">Sign In</h3>
-      <form method = "post" action = "/account/signin" id="frmSignin">
-        <div class="mb-3">
-          <label for="loginUsername" class="form-label">Username</label>
-          <input type="text" class="form-control" id="loginUsername" name = "username" required>
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+      <div class="card shadow-sm">
+        <h5 class="card-header">Sign in</h5>
+        <div class="card-body">
+
+          {{#if err}}
+            <div class="alert alert-danger py-2 mb-3">{{err}}</div>
+          {{/if}}
+
+
+          <form method="post" action="/account/signin" id="frmSignin" novalidate>
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <input class="form-control" name="username" required value="{{lastUsername}}">
+            </div>
+
+            <div class="mb-3">
+              <div class="d-flex justify-content-between">
+                <label class="form-label">Password</label>
+                
+              </div>
+              <input type="password" class="form-control" name="password" required>
+            </div>
+            <div class="mb-3 justify-content-end d-flex">
+                <a class="link-primary small" href="/account/forgot">Forgot password?</a>
+            </div>
+
+            <button class="btn btn-primary w-100">Sign in</button>
+
+
+                        <div class="d-flex align-items-center my-3">
+              <div class="flex-grow-1" style="height:1px; background:#e9ecef;"></div>
+              <div class="px-3 text-muted small">or</div>
+              <div class="flex-grow-1" style="height:1px; background:#e9ecef;"></div>
+            </div>
+              
+            <div class="mb-3">
+              <button type="button" class="btn btn-outline-dark w-100 d-flex align-items-center justify-content-center gap-2"
+                      onclick="signinWithGoogle()">
+                <i class="bi bi-google"></i>
+                Continue with Google
+              </button>
+            </div>
+
+          </form>
         </div>
-        <div class="mb-3">
-          <label for="loginPassword" class="form-label">Password</label>
-          <input type="password" class="form-control" id="loginPassword" name = "password" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100 mb-2">Login</button>
-      </form>
-      <div class="text-center my-2 text-muted">or</div>
-      <div class="d-grid gap-2 mb-2">
-  <button type="button" class="btn btn-outline-danger w-100" id="btnGoogle">
-    <i class="bi bi-google"></i> Sign in with Google
-  </button>
-</div>
-      <div class="text-center">
-        <small>Don't have an account? <a href="/account/signup">Register</a></small>
+      </div>
+
+
+      <div class="text-center mt-3">
+        <a class="link-secondary" href="/account/signup">Sign up</a>
       </div>
     </div>
   </div>
+</div>
+
+

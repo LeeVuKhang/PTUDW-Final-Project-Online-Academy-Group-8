@@ -18,7 +18,7 @@
   </style>
   <script>
     window.SUPABASE_URL = 'https://ezfycqjmcogueofgdxyc.supabase.co';
-    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6ZnljcWptY29ndWVvZmdkeHljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDkzNzAsImV4cCI6MjA3NTgyNTM3MH0.XyO5GRMb8Z3W1w-WzBoJd2A4mALc2CkLIARjxS9cyso';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV6ZnljcWptY29ndWVvZmdkeHljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNDkzNzAsImV4cCI6MjA3NTgyNTM3MH0.XyO5GRMb8Z3W1w-WzBoJd2A4mALc2CkLIARjxS9cyso';
     window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   </script>
 </head>
@@ -74,7 +74,7 @@
         </ul>
 
         <form class="d-flex me-4 w-50 position-relative" 
-              role="search" action="/search" method="get">
+              role="search" action="course/search" method="get">
           <i class="bi bi-search position-absolute text-secondary"
             style="left: 12px; top: 50%; transform: translateY(-50%);"></i>
           <input class="form-control ps-5 shadow-none" type="search" name="q" placeholder="Search for anything ..."
@@ -83,6 +83,13 @@
 
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0 d-flex flex-row align-items-center">
           {{#if isAuthenticated}}
+            {{#if (eq authUser.role 2)}}
+            <li class="nav-item me-3">
+              <a class="nav-link" href="/instructor/courses" title="My Teaching">
+                My Teaching
+              </a>
+            </li>
+            {{/if}}
           <li class="nav-item me-3">
             <a class="nav-link" href="/course/my-courses" title="My Learning">
               My learning
@@ -110,7 +117,13 @@
               <span class="me-2 d-none d-lg-inline">
                 {{#if authUser.name}}{{authUser.name}}{{else}}{{authUser.username}}{{/if}}
               </span>
-              <i class="bi bi-person-circle fs-5"></i>
+              {{#if authUser.image_url}}
+                <img src="{{authUser.image_url}}" alt="{{authUser.name}}" class="rounded-circle" 
+                     style="width: 30px; height: 30px; object-fit: cover;" 
+                     onerror="this.src='https://via.placeholder.com/30?text=NA'; this.onerror=null;">
+              {{else}}
+                <i class="bi bi-person-circle fs-5"></i>
+              {{/if}}
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                <li>

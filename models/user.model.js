@@ -65,10 +65,104 @@ export default{
         return db('users').where('user_id', id).first();
     },
     
-    findByIdDetailed(id){
-        return db('users')
+    async findByIdDetailed(id){
+        const user = await db('users')
             .where('users.user_id', id)
             .first();
+            
+        if (!user) return null;
+        
+        // Nếu là học viên (role = 1)
+        if (user.role === 1) {
+            // Đếm số khóa học đã đăng ký
+            const enrollmentStats = await db('enrollments')
+                .where('student_id', id)
+                .count('* as enrolled_courses_count')
+                .first();
+            
+            // Đếm số khóa học trong wishlist
+            const wishlistStats = await db('watchlists')
+                .where('student_id', id)
+                .count('* as watchlist_count')
+                .first();
+                
+            // Đếm số đánh giá đã đưa
+            const ratingStats = await db('ratings')
+                .where('student_id', id)
+                .count('* as ratings_count')
+                .first();
+                
+            // Lấy danh sách khóa học đã đăng ký
+            const enrolledCourses = await db('enrollments')
+                .join('courses', 'enrollments.course_id', 'courses.course_id')
+                .join('users', 'courses.instructor_id', 'users.user_id')
+                .where('enrollments.student_id', id)
+                .select(
+                    'courses.title',
+                    'courses.course_id',
+                    'enrollments.progress',
+                    'enrollments.erm_date',
+                    'enrollments.status',
+                    'users.name as instructor_name'
+                )
+                .orderBy('enrollments.erm_date', 'desc')
+                .limit(10);
+                
+            user.enrolled_courses_count = enrollmentStats.enrolled_courses_count || 0;
+            user.watchlist_count = wishlistStats.watchlist_count || 0;
+            user.ratings_count = ratingStats.ratings_count || 0;
+            user.enrolled_courses = enrolledCourses;
+        }
+        
+        // Nếu là giảng viên (role = 2)
+        if (user.role === 2) {
+            // Đếm số khóa học đã tạo
+            const courseStats = await db('courses')
+                .where('instructor_id', id)
+                .count('* as courses_count')
+                .first();
+                
+            // Đếm tổng số học viên
+            const studentStats = await db('enrollments')
+                .join('courses', 'enrollments.course_id', 'courses.course_id')
+                .where('courses.instructor_id', id)
+                .count('* as total_students')
+                .first();
+                
+            // Tính điểm trung bình
+            const ratingStats = await db('ratings')
+                .join('courses', 'ratings.course_id', 'courses.course_id')
+                .where('courses.instructor_id', id)
+                .avg('ratings.value as avg_rating')
+                .first();
+                
+            // Lấy danh sách khóa học đã tạo
+            const instructorCourses = await db('courses')
+                .join('categories', 'courses.catid', 'categories.cat_id')
+                .leftJoin(
+                    db('enrollments')
+                        .select('course_id')
+                        .count('* as student_count')
+                        .groupBy('course_id')
+                        .as('course_students'),
+                    'courses.course_id', 'course_students.course_id'
+                )
+                .where('courses.instructor_id', id)
+                .select(
+                    'courses.*',
+                    'categories.cat_name as category_name',
+                    db.raw('COALESCE(course_students.student_count, 0) as student_count')
+                )
+                .orderBy('courses.last_update', 'desc')
+                .limit(10);
+                
+            user.courses_count = courseStats.courses_count || 0;
+            user.total_students = studentStats.total_students || 0;
+            user.avg_rating = ratingStats.avg_rating || 0;
+            user.instructor_courses = instructorCourses;
+        }
+        
+        return user;
     },
     
     addInstructor(instructor){

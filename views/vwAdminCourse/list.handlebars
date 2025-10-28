@@ -25,7 +25,7 @@
           <select class="form-select" id="filterCategory">
             <option value="">Tất cả danh mục</option>
             {{#each categories}}
-            <option value="{{catid}}">{{catname}}</option>
+            <option value="{{cat_name}}">{{cat_name}}</option>
             {{/each}}
           </select>
         </div>
@@ -43,7 +43,6 @@
               <th scope="col">Giảng viên</th>
               <th scope="col">Giá</th>
               <th scope="col">Học viên</th>
-              <th scope="col">Trạng thái</th>
               <th scope="col" class="text-center">Thao tác</th>
             </tr>
           </thead>
@@ -79,25 +78,12 @@
               <td>
                 <span class="badge bg-secondary">{{student_count}}</span>
               </td>
-              <td>
-                {{#if is_active}}
-                  <span class="badge bg-success">Hoạt động</span>
-                {{else}}
-                  <span class="badge bg-warning">Tạm dừng</span>
-                {{/if}}
-              </td>
               <td class="text-center">
                 <div class="btn-group" role="group">
                   <a href="/admin/courses/{{course_id}}" 
                      class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
                     <i class="bi bi-eye"></i>
                   </a>
-                  <button type="button" 
-                          class="btn btn-sm btn-outline-warning" 
-                          onclick="toggleCourse({{course_id}}, {{is_active}})" 
-                          title="{{#if is_active}}Tạm dừng{{else}}Kích hoạt{{/if}}">
-                    <i class="bi bi-{{#if is_active}}pause{{else}}play{{/if}}"></i>
-                  </button>
                   <button type="button" 
                           class="btn btn-sm btn-outline-danger" 
                           onclick="confirmRemoveCourse({{course_id}}, '{{title}}')" 
@@ -163,10 +149,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedCategory = filterCategory.value;
 
     tableRows.forEach(row => {
-      const courseName = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-      const categoryBadge = row.querySelector('.badge');
-      const categoryMatch = !selectedCategory || categoryBadge.textContent === selectedCategory;
-      const searchMatch = courseName.includes(searchTerm);
+      // Tìm kiếm trong tên khóa học (cột thứ 2) và mô tả
+      const courseTitle = row.querySelector('td:nth-child(2) strong').textContent.toLowerCase();
+      const courseDesc = row.querySelector('td:nth-child(2) small').textContent.toLowerCase();
+      const instructorName = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+      
+      // Lấy category từ badge (cột thứ 3)
+      const categoryBadge = row.querySelector('td:nth-child(3) .badge');
+      const categoryName = categoryBadge ? categoryBadge.textContent.trim() : '';
+      
+      // Filter logic
+      const categoryMatch = !selectedCategory || categoryName === selectedCategory;
+      const searchMatch = courseTitle.includes(searchTerm) || 
+                         courseDesc.includes(searchTerm) || 
+                         instructorName.includes(searchTerm);
 
       row.style.display = (categoryMatch && searchMatch) ? '' : 'none';
     });
@@ -184,26 +180,5 @@ function confirmRemoveCourse(courseId, courseName) {
   modal.show();
 }
 
-function toggleCourse(courseId, isActive) {
-  const action = isActive ? 'disable' : 'enable';
-  if (confirm(`Bạn có chắc muốn ${isActive ? 'tạm dừng' : 'kích hoạt'} khóa học này?`)) {
-    fetch(`/admin/courses/${courseId}/${action}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        location.reload();
-      } else {
-        alert('Có lỗi xảy ra: ' + data.message);
-      }
-    })
-    .catch(error => {
-      alert('Có lỗi xảy ra: ' + error.message);
-    });
-  }
-}
+
 </script>

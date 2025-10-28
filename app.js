@@ -17,7 +17,6 @@ import ratingModel from './models/rating.model.js';
 import courseRouter from './routes/course.routes.js';
 import accountRouter from './routes/account.routes.js';
 import categoryRouter from './routes/category.routes.js';
-import productRouter from './routes/product.routes.js';
 import instructorRouter from './routes/instructor.routes.js';
 import adminCourseRouter from './routes/admin-course.routes.js';
 import adminUserRouter from './routes/admin-user.routes.js';
@@ -194,8 +193,8 @@ app.get('/', async (req, res) => {
     console.log(req.session.authUser)
   }
   const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null; 
-  const newestCourses = chunkArray(await courseModel.findNewestCourses(4, student_id), 4); 
-  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(4, student_id), 4); 
+  const newestCourses = chunkArray(await courseModel.findNewestCourses(12, student_id), 4); 
+  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(12, student_id), 4); 
   const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek(4, student_id); 
   const parents = await categoryModel.findParents();
   const rating = await ratingModel.findTop3RecentFiveStarCourses();
@@ -235,7 +234,6 @@ app.use(async (req, res, next) => {
 // Gắn các router
 app.use('/account', accountRouter);
 app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
-app.use('/product', productRouter);
 app.use('/instructor', checkAuthenticated , checkInstructor,instructorRouter);
 app.use('/course', courseRouter);
 app.use('/admin/courses', checkAuthenticated, checkAdmin, adminCourseRouter);

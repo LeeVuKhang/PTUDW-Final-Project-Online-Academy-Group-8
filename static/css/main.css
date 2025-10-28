@@ -12,7 +12,11 @@
   border-radius: 15px;
   overflow: hidden;
 }
+.username-large {
+    font-size: clamp(1.25rem, 2.5vw, 2rem);
+    font-weight: 600;
 
+}
 .course-card img {
   width: 93%;
   height: 180px;
