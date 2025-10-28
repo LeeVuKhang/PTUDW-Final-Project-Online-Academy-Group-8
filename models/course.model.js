@@ -194,10 +194,8 @@ export function countSearch(keyword) {
     .count('* as amount')
     .first();
 }
-export function findByID(id) {
-    return db('courses').where('course_id', id).first();
-}
-export async function findRelatedCourses(categoryId, currentCourseId, limit = 4, studentId = null) {
+export default {
+  async findRelatedCourses(categoryId, currentCourseId, limit = 4, studentId = null) {
         let relatedQuery = db("courses as c")
             .leftJoin("categories as cat", "c.catid", "cat.cat_id")
             .leftJoin("users as u", "c.instructor_id", "u.user_id")
@@ -219,8 +217,10 @@ export async function findRelatedCourses(categoryId, currentCourseId, limit = 4,
         relatedQuery = addEnrollmentSubquery(relatedQuery, studentId);
 
         return await relatedQuery;
-    }
-export default {
+    },
+  findByID(id) {
+    return db('courses').where('course_id', id).first();
+  },
   findByCat(id) {
     return db('courses').where('catid', id);
   },
