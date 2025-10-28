@@ -21,7 +21,7 @@
             <span class="input-group-text">
               <i class="bi bi-search"></i>
             </span>
-            <input type="text" class="form-control" id="searchInstructor" placeholder="Tìm kiếm theo tên, email hoặc chuyên môn...">
+            <input type="text" class="form-control" id="searchInstructor" placeholder="Tìm kiếm theo tên hoặc email...">
           </div>
         </div>
       </div>
@@ -35,7 +35,6 @@
               <th scope="col">Avatar</th>
               <th scope="col">Thông tin</th>
               <th scope="col">Email</th>
-              <th scope="col">Chuyên môn</th>
               <th scope="col">Khóa học</th>
               <th scope="col">Đánh giá</th>
               <th scope="col" class="text-center">Thao tác</th>
@@ -63,13 +62,6 @@
               </td>
               <td>
                 <a href="mailto:{{email}}" class="text-decoration-none">{{email}}</a>
-              </td>
-              <td>
-                {{#if specialization}}
-                  <span class="badge bg-info">{{specialization}}</span>
-                {{else}}
-                  <small class="text-muted">Chưa cập nhật</small>
-                {{/if}}
               </td>
               <td>
                 <div>
@@ -134,11 +126,9 @@ document.addEventListener('DOMContentLoaded', function() {
     tableRows.forEach(row => {
       const instructorInfo = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
       const email = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-      const specialization = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
       
       const searchMatch = instructorInfo.includes(searchTerm) || 
-                         email.includes(searchTerm) || 
-                         specialization.includes(searchTerm);
+                         email.includes(searchTerm);
 
       row.style.display = searchMatch ? '' : 'none';
     });
