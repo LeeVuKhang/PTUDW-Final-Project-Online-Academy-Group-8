@@ -36,24 +36,21 @@
     <p class="fs-5 mb-3">{{course.tinydes}}</p>
 
     <div class="d-flex flex-wrap align-items-center small gap-3 mb-2">
-      {{#if course.isBestseller}}
-      <span class="badge bestseller-badge fw-bold me-2">Bestseller</span>
-      {{/if}}
       <div class="d-flex align-items-center rating-section gap-1">
         <span class="fw-bold">{{formatRating course.rating}}</span>
         <span class="me-1">{{{renderStars course.rating}}}</span>
-        <span>({{course.total_reviews}} ratings)</span>
+        <span>({{course.total_reviews}} đánh giá)</span>
       </div>
-      <span>{{course.student_count}} students</span>
+      <span>{{course.student_count}} học viên</span>
     </div>
 
     <div class="small mb-3">
-      Created by <a href="/course/instructorProfile?id={{course.instructor_id}}" class="instructor-link fw-semibold">{{course.instructor_name}}</a>
+      Được tạo bởi <a href="/course/instructorProfile?id={{course.instructor_id}}" class="instructor-link fw-semibold">{{course.instructor_name}}</a>
     </div>
 
     <div class="d-flex flex-wrap align-items-center small gap-3 mt-2">
       {{#if course.last_update}}
-        <span class="d-inline-flex align-items-center"><i class="bi bi-clock-history me-1"></i> Last updated {{moment course.last_update "DD/MM/YYYY"}}</span>
+        <span class="d-inline-flex align-items-center"><i class="bi bi-clock-history me-1"></i> Cập nhật gần nhất {{moment course.last_update "DD/MM/YYYY"}}</span>
       {{/if}}
     </div>
   </div>
