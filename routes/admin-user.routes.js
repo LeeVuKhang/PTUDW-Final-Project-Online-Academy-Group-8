@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
-//Quản lý học viên - Xem danh sách
+// Xem danh sách học viên 
 router.get('/students', async (req, res) => {
     try {
         const students = await userModel.findAllStudents();
@@ -15,12 +15,12 @@ router.get('/students', async (req, res) => {
             title: 'Quản lý học viên'
         });
     } catch (error) {
-        console.error('Error loading students:', error);
+        console.error('Lỗi khi tải danh sách học viên:', error);
         res.status(500).send('Lỗi hệ thống');
     }
 });
 
-//Quản lý giảng viên - Xem danh sách
+// Xem danh sách giảng viên
 router.get('/instructors', async (req, res) => {
     try {
         const instructors = await userModel.findAllInstructors();
@@ -31,12 +31,12 @@ router.get('/instructors', async (req, res) => {
             title: 'Quản lý giảng viên'
         });
     } catch (error) {
-        console.error('Error loading instructors:', error);
+        console.error('Lỗi khi tải danh sách giảng viên:', error);
         res.status(500).send('Lỗi hệ thống');
     }
 });
 
-// 4.3 Quản lý giảng viên - Hiển thị form thêm giảng viên
+// Hiển thị trang thêm giảng viên mới
 router.get('/add-instructor', (req, res) => {
     res.render('vwAdminUser/add-instructor', {
         layout: 'admin',
@@ -44,15 +44,14 @@ router.get('/add-instructor', (req, res) => {
     });
 });
 
-// 4.3 Quản lý giảng viên - Tạo tài khoản giảng viên mới
+// Xử lý tạo tài khoản giảng viên
 router.post('/create-instructor', async (req, res) => {
     try {
         const {
-            username, email, password, confirmPassword, name, phone, dob, gender,
-            bio, specialization, experience_years, education, certificates
+            username, email, password, confirmPassword, name, dob, bio, image_url
         } = req.body;
 
-        // Validation
+        // Kiểm tra dữ liệu nhập vào 
         if (password !== confirmPassword) {
             return res.render('vwAdminUser/add-instructor', {
                 layout: 'admin',
@@ -71,7 +70,7 @@ router.post('/create-instructor', async (req, res) => {
             });
         }
 
-        // Check if username already exists
+        // Kiểm tra username đã có chưa
         const existingUser = await userModel.findByUsername(username);
         if (existingUser) {
             return res.render('vwAdminUser/add-instructor', {
@@ -82,7 +81,7 @@ router.post('/create-instructor', async (req, res) => {
             });
         }
 
-        // Check if email already exists
+        // Kiểm tra email đã có chưa
         const existingEmail = await userModel.findByEmail(email);
         if (existingEmail) {
             return res.render('vwAdminUser/add-instructor', {
@@ -96,40 +95,35 @@ router.post('/create-instructor', async (req, res) => {
         // Hash password
         const hashedPassword = bcrypt.hashSync(password, 10);
 
-        // Create instructor account
+        // Tạo object để lưu vào database
         const newInstructor = {
             username,
             email,
             password: hashedPassword,
             name,
-            phone: phone || null,
-            dob: dob || null,
-            gender: gender || null,
-            bio: bio || null,
-            specialization: specialization || null,
-            experience_years: experience_years || null,
-            education: education || null,
-            certificates: certificates || null,
             role: 2, // 2 = Instructor role
-            is_active: true,
-            created_at: new Date()
+            dob: dob || null,
+            self_introduction: bio || null,
+            image_url: image_url || null
         };
 
+        console.log('Đang tạo tài khoản giảng viên với dữ liệu:', newInstructor);
         await userModel.addInstructor(newInstructor);
 
         res.redirect('/admin/users/instructors?success=1');
     } catch (error) {
-        console.error('Error creating instructor:', error);
+        console.error('Lỗi khi tạo tài khoản giảng viên:', error);
+        console.error('Dữ liệu gửi lên:', req.body);
         res.render('vwAdminUser/add-instructor', {
             layout: 'admin',
-            error: 'Có lỗi xảy ra khi tạo tài khoản giảng viên',
+            error: 'Có lỗi xảy ra khi tạo tài khoản giảng viên: ' + error.message,
             oldData: req.body,
             title: 'Thêm giảng viên mới'
         });
     }
 });
 
-// 4.3 Xem chi tiết user (cả học viên và giảng viên)
+// Xem thông tin chi tiết của user
 router.get('/:id', async (req, res) => {
     try {
         const userId = req.params.id;
@@ -145,12 +139,12 @@ router.get('/:id', async (req, res) => {
             title: `Chi tiết - ${user.name}`
         });
     } catch (error) {
-        console.error('Error loading user details:', error);
+        console.error('Lỗi khi tải thông tin user:', error);
         res.status(500).send('Lỗi hệ thống');
     }
 });
 
-// 4.3 Kích hoạt tài khoản
+// Kích hoạt lại tài khoản user
 router.post('/:id/activate', async (req, res) => {
     try {
         const userId = req.params.id;
@@ -162,7 +156,7 @@ router.post('/:id/activate', async (req, res) => {
             message: 'Đã kích hoạt tài khoản' 
         });
     } catch (error) {
-        console.error('Error activating user:', error);
+        console.error('Lỗi khi kích hoạt tài khoản:', error);
         res.status(500).json({ 
             success: false, 
             message: 'Lỗi hệ thống' 
@@ -170,7 +164,7 @@ router.post('/:id/activate', async (req, res) => {
     }
 });
 
-// 4.3 Tạm khóa tài khoản
+// Tạm khóa tài khoản user
 router.post('/:id/deactivate', async (req, res) => {
     try {
         const userId = req.params.id;
@@ -182,7 +176,7 @@ router.post('/:id/deactivate', async (req, res) => {
             message: 'Đã tạm khóa tài khoản' 
         });
     } catch (error) {
-        console.error('Error deactivating user:', error);
+        console.error('Lỗi khi khóa tài khoản:', error);
         res.status(500).json({ 
             success: false, 
             message: 'Lỗi hệ thống' 
@@ -190,12 +184,12 @@ router.post('/:id/deactivate', async (req, res) => {
     }
 });
 
-// 4.3 Nâng cấp học viên thành giảng viên
+// Nâng cấp học viên lên làm giảng viên
 router.post('/:id/promote', async (req, res) => {
     try {
         const userId = req.params.id;
         
-        // Check if user exists and is a student
+        // Kiểm tra user có tồn tại không và có phải học viên không
         const user = await userModel.findById(userId);
         if (!user) {
             return res.status(404).json({
@@ -212,11 +206,11 @@ router.post('/:id/promote', async (req, res) => {
         }
 
         // Promote to instructor
-        await userModel.updateRole(userId, 2); // 2 = Instructor
+        await userModel.updateRole(userId, 2); // role 2 là giảng viên
 
         res.redirect('/admin/users/students?promoted=1');
     } catch (error) {
-        console.error('Error promoting user:', error);
+        console.error('Lỗi khi nâng cấp user:', error);
         res.status(500).json({ 
             success: false, 
             message: 'Lỗi hệ thống' 
@@ -224,17 +218,18 @@ router.post('/:id/promote', async (req, res) => {
     }
 });
 
-// Check email availability for instructor creation
+// API kiểm tra email có trùng không khi tạo giảng viên
 router.get('/check-email', async (req, res) => {
     try {
         const email = req.query.email;
         const existingUser = await userModel.findByEmail(email);
         
-        res.json(!existingUser); // Return true if available, false if taken
+        res.json(!existingUser); // trả về true nếu email chưa dùng, false nếu đã có
     } catch (error) {
-        console.error('Error checking email:', error);
+        console.error('Lỗi khi check email:', error);
         res.status(500).json(false);
     }
 });
+
 
 export default router;
