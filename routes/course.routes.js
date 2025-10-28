@@ -363,19 +363,63 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
 /* Cập nhật last_watched_lesson */
 router.post("/update-last-watch", checkAuthenticated, async (req, res) => {
   try {
-    const { course_id, lesson_id, progress } = req.body;
+    const { course_id, lesson_id } = req.body;
     const student_id = req.session.authUser.user_id;
+
+    if (!course_id || !lesson_id) {
+        return res.status(400).json({ success: false, error: "Thiếu course_id hoặc lesson_id." });
+    }
+    const totalLessonsResult = await db("lessons as l")
+      .join("chapters as ch", "l.chapter_id", "ch.chapter_id")
+      .where("ch.course_id", course_id)
+      .count("l.lesson_id as total");
+
+    const totalLessons = parseInt(totalLessonsResult[0].total, 10);
+
+    if (totalLessons === 0) {
+       await db("enrollments")
+         .where({ course_id, student_id })
+         .update({ last_watched_lesson: lesson_id, progress: 0 }); 
+       return res.json({ success: true, progress: 0 });
+    }
+
+    const orderedLessonResult = await db.raw(`
+        WITH OrderedLessons AS (
+            SELECT
+                l.lesson_id,
+                ROW_NUMBER() OVER (ORDER BY ch.order_index ASC, l.order_index ASC) as overall_index
+            FROM lessons l
+            JOIN chapters ch ON l.chapter_id = ch.chapter_id
+            WHERE ch.course_id = ?
+        )
+        SELECT overall_index
+        FROM OrderedLessons
+        WHERE lesson_id = ?
+    `, [course_id, lesson_id]);
+
+    const watchedLessonIndex = orderedLessonResult.rows[0]?.overall_index;
+
+    if (!watchedLessonIndex) {
+         console.error(`Không tìm thấy index cho lesson_id ${lesson_id} trong course_id ${course_id}`);
+         await db("enrollments")
+            .where({ course_id, student_id })
+            .update({ last_watched_lesson: lesson_id });
+         return res.json({ success: true, progress: null }); 
+    }
+    let progress = Math.min(100, Math.round((watchedLessonIndex / totalLessons) * 100));
 
     await db("enrollments")
       .where({ course_id, student_id })
       .update({
         last_watched_lesson: lesson_id,
-        progress,
+        progress: progress, 
       });
 
-    res.json({ success: true });
+    console.log(`Updated progress for student ${student_id}, course ${course_id}: ${progress}% after watching lesson ${lesson_id}`);
+    res.json({ success: true, progress: progress });
+
   } catch (err) {
-    console.error("Lỗi cập nhật last_watched_lesson:", err);
+    console.error("Lỗi cập nhật last_watched_lesson và progress:", err);
     res.status(500).json({ success: false, error: "Không thể cập nhật tiến độ học." });
   }
 });
