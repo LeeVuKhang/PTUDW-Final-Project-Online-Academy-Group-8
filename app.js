@@ -141,11 +141,21 @@ app.engine('handlebars', engine({
       params.set('page', page);
       return '?' + params.toString();
     },
+    range(start, end) {
+      let arr = [];
+      for (let i = start; i <= end; i++) arr.push(i);
+      return arr;
+    },
 
-    // Ss bằng
-    eq(a, b) {
-      return a === b;
-    }
+    lte(a, b) {
+      return a <= b;
+    },
+    array(...args) {
+      return args.slice(0, -1);
+    },
+    minus(a, b) {
+      return a - b;
+    },
   },
   allowProtoPropertiesByDefault: true,
   allowProtoMethodsByDefault: true
