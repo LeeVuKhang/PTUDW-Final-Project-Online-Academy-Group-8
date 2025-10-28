@@ -131,7 +131,7 @@ router.get("/instructorProfile", async (req, res) => {
             },
             courses: courses.map(course => ({
                 ...course,
-                discount_price: formatNumber(course.discount_price), 
+                discount_price: course.discount_price, 
             }))
         };
         
