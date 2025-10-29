@@ -138,32 +138,8 @@ background-color: #f8f9fa;
         <div class="card-footer bg-white p-3">
             <div class="d-flex justify-content-between align-items-center">
                 <span id="courseCount" class="text-muted">
-                    Hiển thị {{courses.length}} trên tổng số {{totalCourses}} khóa học
+                    Hiển thị {{courses.length}} khóa học
                 </span>
-
-                {{#if (isGreater pagination.totalPages 1)}}
-                <nav aria-label="Course pagination">
-                    <ul class="pagination justify-content-end mb-0">
-
-                        <li class="page-item {{#unless pagination.hasPrevPage}}disabled{{/unless}}">
-                            <a class="page-link" href="{{createPaginationLink pagination.prevPage ../queryParams}}"
-                                tabindex="-1" aria-disabled="true">Previous</a>
-                        </li>
-                        {{#each pagination.pageNumbers}}
-                        <li class="page-item {{#if this.isCurrent}}active{{/if}}">
-                            <a class="page-link"
-                                href="{{createPaginationLink this.value ../../queryParams}}">{{this.value}}</a>
-                        </li>
-                        {{/each}}
-
-                        <li class="page-item {{#unless pagination.hasNextPage}}disabled{{/unless}}">
-                            <a class="page-link"
-                                href="{{createPaginationLink pagination.nextPage ../queryParams}}">Next</a>
-                        </li>
-
-                    </ul>
-                </nav>
-                {{/if}}
             </div>
         </div>
     </div>
