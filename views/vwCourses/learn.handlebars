@@ -124,34 +124,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const courseId = {{course.course_id}};
   const lessonId = {{currentLesson.lesson_id}};
 
-  // 🕒 Cập nhật last_watched_lesson 
   const updateProgress = async () => {
     try {
-      await fetch('/course/update-last-watch', {
+      const response = await fetch('/course/update-last-watch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           course_id: courseId,
-          lesson_id: lessonId,
-          progress: 1  // đánh dấu đã xem bài này
+          lesson_id: lessonId
         })
       });
-      console.log('✅ Đã lưu tiến độ học:', lessonId);
+      if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Lỗi lưu tiến độ (phản hồi server):', errorData.error);
+      } else {
+          const data = await response.json();
+          if (data.success) {
+            console.log('✅ Đã lưu tiến độ học:', lessonId, 'Progress:', data.progress !== null ? data.progress + '%' : 'N/A');
+          } else {
+            console.error('Lỗi lưu tiến độ (server báo lỗi):', data.error);
+          }
+      }
     } catch (err) {
-      console.error('❌ Lỗi lưu tiến độ:', err);
+      console.error('❌ Lỗi fetch khi lưu tiến độ:', err);
     }
   };
 
-  // Gọi khi video load + khi người học thoát
   player.on('ready', updateProgress);
   window.addEventListener('beforeunload', updateProgress);
 
-  // ⭐ Gửi rating
   const stars = document.querySelectorAll('#star-container i');
   let currentRating = Number({{userRating}});
   const ratingText = document.getElementById('rating-text');
   const ratingLabels = ["Tệ", "Không hài lòng", "Bình thường", "Tốt", "Xuất sắc"];
-
   const updateStars = (value) => {
     stars.forEach(s => {
       if (Number(s.dataset.value) <= value) {
@@ -164,24 +169,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     ratingText.textContent = value > 0 ? `- ${ratingLabels[value - 1]}` : "";
   };
-
   stars.forEach(star => {
     star.addEventListener('click', () => {
       currentRating = Number(star.dataset.value);
       updateStars(currentRating);
     });
   });
-
-  document.getElementById('ratingForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const comment = document.getElementById('comment').value;
-    await fetch(`/course/rate/${courseId}`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ value: currentRating, comment })
+  const ratingForm = document.getElementById('ratingForm');
+  if (ratingForm) {
+      ratingForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const comment = document.getElementById('comment').value;
+        const ratingMsg = document.getElementById('rating-msg');
+        try {
+            const response = await fetch(`/course/rate/${courseId}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ value: currentRating, comment })
+            });
+            const data = await response.json();
+            if (data.success) {
+                ratingMsg.textContent = 'Cảm ơn bạn đã đánh giá!';
+                ratingMsg.style.display = 'inline';
+            } else {
+                ratingMsg.textContent = data.error || 'Lỗi gửi đánh giá.';
+                ratingMsg.className = 'text-danger ms-2'; 
+                ratingMsg.style.display = 'inline';
+            }
+        } catch (err) {
+            ratingMsg.textContent = 'Lỗi kết nối khi gửi đánh giá.';
+            ratingMsg.className = 'text-danger ms-2';
+            ratingMsg.style.display = 'inline';
+        }
     });
-    document.getElementById('rating-msg').style.display = 'inline';
-  });
+  }
+  updateStars(currentRating);
 });
 </script>
 {{/section}}
