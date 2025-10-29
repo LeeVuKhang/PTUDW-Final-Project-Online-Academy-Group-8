@@ -218,6 +218,39 @@ router.post('/:id/promote', async (req, res) => {
     }
 });
 
+// Xóa người dùng
+router.post('/:id/delete', async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        
+        // Kiểm tra user có tồn tại không
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).send('Không tìm thấy người dùng');
+        }
+
+        // Không cho phép xóa admin
+        if (user.role === 0) {
+            return res.status(403).send('Không thể xóa tài khoản admin');
+        }
+
+        // Xóa user
+        await userModel.delete(userId);
+        
+        // Redirect về trang phù hợp
+        if (user.role === 1) {
+            res.redirect('/admin/users/students?deleted=1');
+        } else if (user.role === 2) {
+            res.redirect('/admin/users/instructors?deleted=1');
+        } else {
+            res.redirect('/admin/users/students');
+        }
+    } catch (error) {
+        console.error('Lỗi khi xóa user:', error);
+        res.status(500).send('Lỗi hệ thống: ' + error.message);
+    }
+});
+
 // API kiểm tra email có trùng không khi tạo giảng viên
 router.get('/check-email', async (req, res) => {
     try {

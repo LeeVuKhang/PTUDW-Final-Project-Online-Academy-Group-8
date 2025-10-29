@@ -45,4 +45,41 @@ router.get('/', async (req, res) => {
     }
 });
 
+// Route để refresh dữ liệu dashboard
+router.get('/refresh', async (req, res) => {
+    try {
+        const [
+            totalCourses,
+            totalStudents,
+            totalInstructors,
+            totalCategories,
+            recentCourses,
+            recentUsers
+        ] = await Promise.all([
+            courseModel.count(),
+            userModel.countByRole(1), // Students (role = 1) 
+            userModel.countByRole(2), // Instructors (role = 2)
+            categoryModel.count(),
+            courseModel.findRecentCourses(5),
+            userModel.findRecentUsers(5)
+        ]);
+
+        // Trả về dữ liệu JSON để AJAX xử lý
+        res.json({
+            success: true,
+            stats: {
+                totalCourses: totalCourses.count || 0,
+                totalStudents: totalStudents.count || 0,
+                totalInstructors: totalInstructors.count || 0,
+                totalCategories: totalCategories.count || 0
+            },
+            recentCourses: recentCourses,
+            recentUsers: recentUsers
+        });
+    } catch (error) {
+        console.error('Error refreshing dashboard data:', error);
+        res.json({ success: false, error: error.message });
+    }
+});
+
 export default router;

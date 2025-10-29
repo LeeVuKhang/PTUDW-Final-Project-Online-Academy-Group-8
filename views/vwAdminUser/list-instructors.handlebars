@@ -88,10 +88,18 @@
                 {{/if}}
               </td>
               <td class="text-center">
-                <a href="/admin/users/{{user_id}}" 
-                   class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
-                  <i class="bi bi-eye"></i>
-                </a>
+                <div class="btn-group" role="group">
+                  <a href="/admin/users/{{user_id}}" 
+                     class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  
+                  <form method="POST" action="/admin/users/{{user_id}}/delete" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa giảng viên" onclick="return confirm('Bạn có chắc chắn muốn xóa giảng viên {{name}}?')">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
             {{/each}}
@@ -107,6 +115,8 @@
         </a>
       </div>
       {{/if}}
+      
+
     </div>
   </div>
 </div>
