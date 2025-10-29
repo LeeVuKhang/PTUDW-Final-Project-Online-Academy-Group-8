@@ -181,9 +181,22 @@ router.get("/details/:id", async (req, res) => {
     .select("users.name", "ratings.value", "ratings.comment");
 
   // --- Lấy thông tin giảng viên ---
-  const instructor = await db("users")
-    .where("user_id", course.instructor_id)
-    .first();
+let instructor = await instructorModel.findProfileById(course.instructor_id);
+if (instructor && instructor.role === 2) {
+  const stats = await instructorModel.getInstructorStats(course.instructor_id);
+  instructor = {
+    ...instructor,
+    image_url: instructor.image_url || '/static/avt1.png',
+    bio: instructor.bio || '',
+    avg_rating: stats.avg_rating || 0,
+    total_reviews: stats.total_reviews?.toLocaleString('en-US') || 0,
+    total_students: stats.total_students?.toLocaleString('en-US') || 0,
+    total_courses: stats.total_courses || 0,
+  };
+} else {
+  instructor = null;
+}
+
 
   // --- Lấy 5 khóa học cùng lĩnh vực được mua nhiều nhất ---
   const relatedCourses = await db("courses")
