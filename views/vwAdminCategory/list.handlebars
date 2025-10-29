@@ -5,7 +5,25 @@
         <a class="btn btn-primary float-end" href="/admin/categories/add" role="button"> <i class="bi bi-file-earmark-plus-fill"></i> Thêm danh mục</a>
     </div>
     <div class="card-body">
-        <table class="table table-striped __web-inspector-hide-shortcut__">
+        <!-- Thanh tìm kiếm -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <form method="GET" action="/admin/categories">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control" name="search" value="{{searchKeyword}}" placeholder="Tìm kiếm danh mục...">
+                        <button class="btn btn-outline-secondary" type="submit">Tìm</button>
+                        {{#if searchKeyword}}
+                        <a href="/admin/categories" class="btn btn-outline-danger">Xóa</a>
+                        {{/if}}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <table class="table table-striped __web-inspector-hide-shortcut__" id="categoryTable">
             <thead>
                 <tr>
                     <th scope="col">Danh mục</th>
@@ -76,6 +94,4 @@ function toggleChildren(categoryId) {
         }
     }
 }
-
-
 </script>

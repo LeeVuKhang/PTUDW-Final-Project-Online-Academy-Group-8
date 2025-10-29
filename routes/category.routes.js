@@ -3,12 +3,27 @@ import categoryModel from '../models/category.model.js';
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-    // Lấy danh mục cha kèm theo danh mục con
-    const categoriesWithChildren = await categoryModel.findParentsWithChildren();
+    const searchKeyword = req.query.search || '';
+    let categories;
+    
+    if (searchKeyword) {
+        // Tìm kiếm theo tên
+        const searchResults = await categoryModel.searchByName(searchKeyword);
+        // Nhóm theo parent-child để hiển thị
+        const parents = searchResults.filter(cat => cat.parent_id === null);
+        for (const parent of parents) {
+            parent.children = searchResults.filter(cat => cat.parent_id === parent.cat_id);
+        }
+        categories = parents;
+    } else {
+        // Lấy danh mục cha kèm theo danh mục con
+        categories = await categoryModel.findParentsWithChildren();
+    }
     
     res.render('vwAdminCategory/list', { 
         layout: 'admin',
-        categories: categoriesWithChildren,
+        categories: categories,
+        searchKeyword: searchKeyword,
         title: 'Quản lý danh mục'
     });
 });

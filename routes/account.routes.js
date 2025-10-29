@@ -93,7 +93,7 @@ router.post('/signup', async (req, res) => {
 
 router.get('/signin', (req, res) => {
     res.render('vwAccount/signin', {
-        retUrl: req.query.retUrl || '/' 
+        retUrl: req.query.retUrl || '' 
     });
 });
 router.post('/signin', async (req, res) => {
@@ -112,9 +112,37 @@ router.post('/signin', async (req, res) => {
 
     req.session.isAuthenticated = true;
     req.session.authUser = user;
-    const retUrl = req.session.retUrl || req.body.retUrl || '/';
+    
+    // Ưu tiên retUrl nếu có, không thì dùng role-based redirect
+    const sessionRetUrl = req.session.retUrl;
+    const bodyRetUrl = req.body.retUrl;
     delete req.session.retUrl;
-    return res.redirect(retUrl);
+    
+    // Nếu có retUrl cụ thể từ session hoặc form thì dùng
+    if (sessionRetUrl && sessionRetUrl !== '/') {
+      return res.redirect(sessionRetUrl);
+    }
+    if (bodyRetUrl && bodyRetUrl !== '/') {
+      return res.redirect(bodyRetUrl);
+    }
+    
+    // Không có retUrl cụ thể -> redirect theo role
+    let redirectUrl;
+    if (user.role === 0) {
+      // Admin - chuyển đến trang admin
+      redirectUrl = '/admin';
+    } else if (user.role === 1) {
+      // Student - chuyển đến trang chủ
+      redirectUrl = '/';
+    } else if (user.role === 2) {
+      // Instructor - chuyển đến trang instructor
+      redirectUrl = '/instructor';
+    } else {
+      // Default - trang chủ
+      redirectUrl = '/';
+    }
+    
+    return res.redirect(redirectUrl);
   } catch (e) {
     console.error('[signin] error:', e);
     return res.status(500).render('vwAccount/signin', { err: 'Server error. Please try again.' });
