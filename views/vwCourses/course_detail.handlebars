@@ -335,13 +335,33 @@
           <img src="{{course.image_url}}" alt="{{course.title}}" class="card-img-top card-img-top-custom">
           <div class="card-body p-4">
             <div class="d-flex align-items-baseline flex-wrap gap-2 mb-4">
-              <span class="h2 fw-bold text-dark mb-0">{{formatNumber course.discount_price}}</span>
-              {{#if (isGreater course.price course.discount_price)}}
-              <span class="fs-5 text-muted text-decoration-line-through">{{formatNumber course.price}}</span>
-              <span class="fs-6 fw-semibold text-danger">
-                {{calculateDiscount course.price course.discount_price}}% off
-              </span>
-              {{/if}}
+              <div class="flex-grow-1 me-3">
+                    <span class="h2 fw-bold text-dark mb-0">{{formatNumber course.discount_price}}</span>
+                    {{#if (isGreater course.price course.discount_price)}}
+                    <span class="fs-5 text-muted text-decoration-line-through ms-2">{{formatNumber course.price}}</span>
+                    <span class="fs-6 fw-semibold text-danger d-block mt-1">
+                      {{calculateDiscount course.price course.discount_price}}% off
+                    </span>
+                    {{/if}}
+                </div>
+                {{#if isAuthenticated}}
+                    {{#if isInWatchlist}}
+                    <form action="/account/watchlist/remove" method="POST" class="d-inline-block m-0">
+                        <input type="hidden" name="course_id" value="{{course.course_id}}"> {{!-- Use course.course_id --}}
+                        <button type="submit" class="btn btn-link text-danger p-0 btn-watchlist fs-4" title="Xóa khỏi Watchlist"><i class="bi bi-heart-fill"></i></button>
+                    </form>
+                    {{else}}
+                    <form action="/account/watchlist/add" method="POST" class="d-inline-block m-0">
+                        <input type="hidden" name="course_id" value="{{course.course_id}}"> {{!-- Use course.course_id --}}
+                        <button type="submit" class="btn btn-link text-secondary p-0 btn-watchlist fs-4" title="Thêm vào Watchlist"><i class="bi bi-heart"></i></button>
+                    </form>
+                    {{/if}}
+                {{else}}
+                    <form action="/account/watchlist/add" method="POST" class="d-inline-block m-0">
+                        <input type="hidden" name="course_id" value="{{course.course_id}}"> {{!-- Use course.course_id --}}
+                        <button type="submit" class="btn btn-link text-secondary p-0 btn-watchlist fs-4" title="Thêm vào Watchlist"><i class="bi bi-heart"></i></button>
+                    </form>
+                {{/if}}
             </div>
             <div class="d-grid gap-2">
               {{#if isEnrolled}}
