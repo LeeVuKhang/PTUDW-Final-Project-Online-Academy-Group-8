@@ -79,6 +79,12 @@
                           title="Nâng cấp thành giảng viên">
                     <i class="bi bi-arrow-up"></i>
                   </button>
+                  
+                  <form method="POST" action="/admin/users/{{user_id}}/delete" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa học viên" onclick="return confirm('Bạn có chắc chắn muốn xóa học viên {{name}}?')">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
                 </div>
               </td>
             </tr>
@@ -92,6 +98,8 @@
         <h5 class="text-muted mt-3">Chưa có học viên nào</h5>
       </div>
       {{/if}}
+      
+
     </div>
   </div>
 </div>

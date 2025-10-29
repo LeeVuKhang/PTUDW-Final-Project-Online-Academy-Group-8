@@ -189,7 +189,13 @@ export default{
     
     findRecentUsers(limit = 5){
         return db('users')
-            .orderBy('user_id', 'desc')
+            .where('role', '!=', 0) // Loại bỏ admin (role = 0)
+            .orderBy('user_id', 'desc') // Sắp xếp theo user_id (user mới có ID cao hơn)
             .limit(limit);
+    },
+
+    // Delete user function
+    delete(userId) {
+        return db('users').where('user_id', userId).del();
     }
 }

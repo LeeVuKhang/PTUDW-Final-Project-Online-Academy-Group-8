@@ -10,114 +10,83 @@
   <!-- Statistics Cards -->
   <div class="row mb-4">
     <div class="col-xl-3 col-md-6 mb-4">
-      <div class="card border-left-primary shadow h-100 py-2">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                Tổng khóa học
+      <a href="/admin/categories" class="text-decoration-none">
+        <div class="card border-left-warning shadow h-100 py-2 dashboard-card">
+          <div class="card-body">
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                  DANH MỤC
+                </div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{stats.totalCategories}}</div>
               </div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">{{stats.totalCourses}}</div>
-            </div>
-            <div class="col-auto">
-              <i class="fas fa-book fa-2x text-gray-300"></i>
+              <div class="col-auto">
+                <i class="fas fa-tags fa-2x text-gray-300"></i>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-      <div class="card border-left-success shadow h-100 py-2">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                Tổng học viên
+      <a href="/admin/users/students" class="text-decoration-none">
+        <div class="card border-left-success shadow h-100 py-2 dashboard-card">
+          <div class="card-body">
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                  HỌC VIÊN
+                </div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{stats.totalStudents}}</div>
               </div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">{{stats.totalStudents}}</div>
-            </div>
-            <div class="col-auto">
-              <i class="fas fa-users fa-2x text-gray-300"></i>
+              <div class="col-auto">
+                <i class="fas fa-users fa-2x text-gray-300"></i>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-      <div class="card border-left-info shadow h-100 py-2">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                Tổng giảng viên
+      <a href="/admin/users/instructors" class="text-decoration-none">
+        <div class="card border-left-info shadow h-100 py-2 dashboard-card">
+          <div class="card-body">
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                  GIẢNG VIÊN
+                </div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{stats.totalInstructors}}</div>
               </div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">{{stats.totalInstructors}}</div>
-            </div>
-            <div class="col-auto">
-              <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+              <div class="col-auto">
+                <i class="fas fa-chalkboard-teacher fa-2x text-gray-300"></i>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <div class="col-xl-3 col-md-6 mb-4">
-      <div class="card border-left-warning shadow h-100 py-2">
-        <div class="card-body">
-          <div class="row no-gutters align-items-center">
-            <div class="col mr-2">
-              <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                Danh mục
+      <a href="/admin/courses" class="text-decoration-none">
+        <div class="card border-left-primary shadow h-100 py-2 dashboard-card">
+          <div class="card-body">
+            <div class="row no-gutters align-items-center">
+              <div class="col mr-2">
+                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                  KHÓA HỌC
+                </div>
+                <div class="h5 mb-0 font-weight-bold text-gray-800">{{stats.totalCourses}}</div>
               </div>
-              <div class="h5 mb-0 font-weight-bold text-gray-800">{{stats.totalCategories}}</div>
-            </div>
-            <div class="col-auto">
-              <i class="fas fa-tags fa-2x text-gray-300"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Quick Actions -->
-  <div class="row mb-4">
-    <div class="col-lg-12">
-      <div class="card shadow mb-4">
-        <div class="card-header py-3">
-          <h6 class="m-0 font-weight-bold text-primary">Thao tác nhanh</h6>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-3 mb-3">
-              <a href="/admin/categories" class="btn btn-primary btn-lg w-100">
-                <i class="bi bi-tags"></i><br>
-                Quản lý danh mục
-              </a>
-            </div>
-            <div class="col-md-3 mb-3">
-              <a href="/admin/courses" class="btn btn-success btn-lg w-100">
-                <i class="bi bi-book"></i><br>
-                Quản lý khóa học
-              </a>
-            </div>
-            <div class="col-md-3 mb-3">
-              <a href="/admin/users/students" class="btn btn-info btn-lg w-100">
-                <i class="bi bi-people"></i><br>
-                Quản lý học viên
-              </a>
-            </div>
-            <div class="col-md-3 mb-3">
-              <a href="/admin/users/instructors" class="btn btn-warning btn-lg w-100">
-                <i class="bi bi-mortarboard"></i><br>
-                Quản lý giảng viên
-              </a>
+              <div class="col-auto">
+                <i class="fas fa-book fa-2x text-gray-300"></i>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </a>
     </div>
   </div>
 
@@ -125,14 +94,19 @@
   <div class="row">
     <!-- Recent Courses -->
     <div class="col-lg-6">
-      <div class="card shadow mb-4">
+      <div class="card shadow mb-4 h-100">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
           <h6 class="m-0 font-weight-bold text-primary">Khóa học mới nhất</h6>
-          <a href="/admin/courses" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+          <div>
+            <button id="refreshCourses" class="btn btn-sm btn-outline-secondary me-2" title="Làm mới dữ liệu">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+            <a href="/admin/courses" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+          </div>
         </div>
         <div class="card-body">
           {{#if recentCourses}}
-          <div class="list-group list-group-flush">
+          <div id="recentCoursesList" class="list-group list-group-flush">
             {{#each recentCourses}}
             <div class="list-group-item d-flex justify-content-between align-items-center">
               <div class="d-flex align-items-center">
@@ -146,7 +120,7 @@
               <div class="text-end">
                 <span class="badge bg-success">{{formatNumber discount_price}}</span>
                 <br>
-                <small class="text-muted">{{formatDate created_at}}</small>
+                <small class="text-muted">{{formatDate last_update}}</small>
               </div>
             </div>
             {{/each}}
@@ -160,21 +134,32 @@
 
     <!-- Recent Users -->
     <div class="col-lg-6">
-      <div class="card shadow mb-4">
+      <div class="card shadow mb-4 h-100">
         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
           <h6 class="m-0 font-weight-bold text-primary">Người dùng mới</h6>
-          <a href="/admin/users/students" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+          <div>
+            <button id="refreshUsers" class="btn btn-sm btn-outline-secondary me-2" title="Làm mới dữ liệu">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+            <a href="/admin/users/students" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+          </div>
         </div>
         <div class="card-body">
           {{#if recentUsers}}
-          <div class="list-group list-group-flush">
+          <div id="recentUsersList" class="list-group list-group-flush">
             {{#each recentUsers}}
             <div class="list-group-item d-flex justify-content-between align-items-center">
               <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-{{#if (eq role 2)}}success{{else}}primary{{/if}} d-flex align-items-center justify-content-center me-3" 
-                     style="width: 40px; height: 40px;">
-                  <span class="text-white fw-bold">{{substr name 0 1}}</span>
-                </div>
+                {{#if image_url}}
+                  <img src="{{image_url}}" alt="{{name}}" 
+                       class="rounded-circle me-3" 
+                       style="width: 40px; height: 40px; object-fit: cover;">
+                {{else}}
+                  <div class="rounded-circle bg-{{#if (eq role 2)}}success{{else}}primary{{/if}} d-flex align-items-center justify-content-center me-3" 
+                       style="width: 40px; height: 40px;">
+                    <span class="text-white fw-bold">{{substr name 0 1}}</span>
+                  </div>
+                {{/if}}
                 <div>
                   <h6 class="mb-0">{{name}}</h6>
                   <small class="text-muted">{{email}}</small>
@@ -184,8 +169,6 @@
                 <span class="badge bg-{{#if (eq role 2)}}success{{else}}primary{{/if}}">
                   {{#if (eq role 2)}}Giảng viên{{else}}Học viên{{/if}}
                 </span>
-                <br>
-                <small class="text-muted">{{formatDate created_at}}</small>
               </div>
             </div>
             {{/each}}
@@ -219,4 +202,102 @@
   padding: 0.5rem;
   font-size: 0.875rem;
 }
+
+/* Dashboard Card Hover Effects */
+.dashboard-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.dashboard-card:active {
+  transform: translateY(-2px);
+}
+
+/* Refresh button animation */
+.fa-sync-alt.fa-spin {
+  animation: fa-spin 1s infinite linear;
+}
+
+/* Ensure equal height for dashboard cards */
+.row .col-lg-6 .card.h-100 {
+  min-height: 400px;
+}
+
+.row .col-lg-6 .card.h-100 .card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const refreshUsersBtn = document.getElementById('refreshUsers');
+    const refreshCoursesBtn = document.getElementById('refreshCourses');
+    
+    // Refresh Users
+    if (refreshUsersBtn) {
+        refreshUsersBtn.addEventListener('click', async function() {
+            await handleRefresh(this, 'Người dùng');
+        });
+    }
+    
+    // Refresh Courses
+    if (refreshCoursesBtn) {
+        refreshCoursesBtn.addEventListener('click', async function() {
+            await handleRefresh(this, 'Khóa học');
+        });
+    }
+    
+    async function handleRefresh(button, dataType) {
+        const icon = button.querySelector('i');
+        icon.classList.add('fa-spin');
+        button.disabled = true;
+
+        try {
+            const response = await fetch('/admin/refresh');
+            const data = await response.json();
+
+            if (data.success) {
+                showNotification(`Dữ liệu ${dataType} đã được cập nhật!`, 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showNotification(`Lỗi khi cập nhật dữ liệu ${dataType}: ` + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error refreshing data:', error);
+            showNotification(`Lỗi kết nối khi cập nhật dữ liệu ${dataType}`, 'error');
+        } finally {
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                button.disabled = false;
+            }, 2000);
+        }
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 3000);
+    }
+});
+</script>
