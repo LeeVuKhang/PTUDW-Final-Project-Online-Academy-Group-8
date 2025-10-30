@@ -17,7 +17,9 @@ export function addWatchlistSubquery(query, studentId) {
   }
   return query;
 }
-
+export function excludeDisabled(query, alias = 'c') {
+  return query.where(`${alias}.is_disabled`, false);
+}
 export function addEnrollmentSubquery(query, studentId) {
   if (studentId) {
     query.select(
@@ -64,6 +66,7 @@ export default {
       .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
       .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
       .leftJoin("ratings as r", "c.course_id", "r.course_id")
+      
       .select(
         'c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views',
         'cat.cat_name',
@@ -74,6 +77,7 @@ export default {
       .orderBy('c.views', 'desc')
       .groupBy('c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views', 'cat.cat_name', 'u.name', 'u.user_id') // THÊM GROUP BY
       .limit(limit);
+      excludeDisabled(query, 'c');
 
     query = addWatchlistSubquery(query, studentId);
     query = addEnrollmentSubquery(query, studentId);
@@ -100,6 +104,7 @@ export default {
       .orderBy('c.views', 'desc')
       .groupBy('c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views', 'cat.cat_name', 'u.name', 'u.user_id', 'c.last_update') // THÊM GROUP BY
       .limit(limit);
+      excludeDisabled(query, 'c');
 
     query = addWatchlistSubquery(query, studentId);
     query = addEnrollmentSubquery(query, studentId);
@@ -131,7 +136,7 @@ export default {
     if (categoryIds.length > 0) {
       query.whereIn("c.catid", categoryIds);
     }
-
+    excludeDisabled(query, 'c');
     switch (sort) {
       case 'price_asc':
         query.orderBy('c.discount_price', 'asc');
@@ -162,7 +167,7 @@ export default {
     if (categoryId && categoryId !== 0 && categoryId !== 'all') {
       countQuery.where("catid", categoryId);
     }
-
+    countQuery.where('is_disabled', false);
     return countQuery.count("* as amount").first();
   },
 
@@ -216,6 +221,7 @@ export default {
             .groupBy("c.course_id", "cat.cat_name", "u.user_id", "u.name")
             .orderByRaw("RANDOM()")
             .limit(limit);
+            excludeDisabled(relatedQuery, 'c');
 
         relatedQuery = addWatchlistSubquery(relatedQuery, studentId);
         relatedQuery = addEnrollmentSubquery(relatedQuery, studentId);
@@ -223,17 +229,18 @@ export default {
         return await relatedQuery;
     },
   findByID(id) {
-    return db('courses').where('course_id', id).first();
+    return db('courses').where('course_id', id).andWhere('is_disabled', false).first();
   },
   findByCat(id) {
-    return db('courses').where('catid', id);
+    return db('courses').where('catid', id).andWhere('is_disabled', false);
   },
   findPageByCat(catID, limit, offset) {
-    return db('courses').where('catid', catID).limit(limit).offset(offset);
+    return db('courses').where('catid', catID).andWhere('is_disabled', false).limit(limit).offset(offset);
   },
   countByCat(catID) {
     return db('courses')
       .where('catid', catID)
+      .andWhere('is_disabled', false)
       .count('catid as amount')
       .first();
   },

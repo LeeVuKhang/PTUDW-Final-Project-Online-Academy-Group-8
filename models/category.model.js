@@ -53,7 +53,7 @@ export default {
     },
 
     // Top categories of week
-    async findTopCategoriesOfWeek(limit = 3) {
+    async findTopCategoriesOfWeek(limit = 5) {
     return db('enrollments as e')
         .join('courses as c', 'e.course_id', 'c.course_id')
         .join('categories as cat', 'c.catid', 'cat.cat_id') // chú ý alias đúng với DB của em

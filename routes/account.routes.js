@@ -6,6 +6,51 @@ import { checkAuthenticated } from '../models/auth.model.js';
 import { sendOtpEmail } from '../utils/mailer.js';
 
 import watchlistModel from '../models/watchlist.model.js'
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+const __dirname = import.meta.dirname;
+const avatarDir = path.join(__dirname, '..', 'static', 'avatar');
+
+if (!fs.existsSync(avatarDir)) {
+    fs.mkdirSync(avatarDir, { recursive: true });
+}
+const avatarStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, avatarDir);
+    },
+    filename: (req, file, cb) => {
+        const userId = req.session.authUser.user_id;
+        const ext = path.extname(file.originalname);
+        const newFilename = `${userId}${ext}`;
+
+        try {
+            const filesInDir = fs.readdirSync(avatarDir);
+            
+            const oldFile = filesInDir.find(f => f.startsWith(`${userId}.`));
+
+            if (oldFile) {
+                fs.unlinkSync(path.join(avatarDir, oldFile));
+                console.log(`[Avatar Upload] Đã xóa file cũ: ${oldFile}`);
+            }
+        } catch (err) {
+            console.error("[Avatar Upload] Lỗi khi xóa file cũ:", err);
+        }
+        cb(null, newFilename);
+    }
+});
+const upload = multer({ 
+    storage: avatarStorage,
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|gif|webp/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb("Error: Chỉ chấp nhận file ảnh (jpeg, jpg, png, gif, webp)!");
+    }
+});
 const router = express.Router();
 
 
@@ -225,7 +270,32 @@ router.get('/profile', checkAuthenticated, (req, res) => {
   });
 });
 
+router.post('/upload-avatar', checkAuthenticated, upload.single('avatar'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'Không có file nào được tải lên hoặc file không phải là ảnh.' });
+        }
 
+        const newImageUrl = `/static/avatar/${req.file.filename}`;
+        const userId = req.session.authUser.user_id;
+
+        await userModel.patch(userId, { image_url: newImageUrl });
+
+        req.session.authUser.image_url = newImageUrl;
+        
+        req.session.save(err => {
+            if (err) {
+                 console.error("Lỗi lưu session sau khi upload avatar:", err);
+                 return res.status(500).json({ success: false, message: 'Lỗi khi lưu session.' });
+            }
+            res.json({ success: true, newImageUrl: newImageUrl });
+        });
+
+    } catch (error) {
+        console.error("Lỗi upload avatar:", error);
+        res.status(500).json({ success: false, message: 'Lỗi server khi tải ảnh lên.' });
+    }
+});
 
 
 

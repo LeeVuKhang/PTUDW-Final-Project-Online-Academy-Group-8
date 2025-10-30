@@ -89,6 +89,12 @@ app.engine('handlebars', engine({
       }
       return str;
     },
+    range(start, end) {
+    const s = Number(start), e = Number(end);
+    const out = [];
+    for (let i = s; i <= e; i++) out.push(i);
+    return out;
+  },
 
     // Hiển thị sao (rating)
     renderStars(rating) {
@@ -187,7 +193,7 @@ app.get('/', async (req, res) => {
   const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek(4, student_id); 
   const parents = await categoryModel.findParents();
   const rating = await ratingModel.findTop3RecentFiveStarCourses();
-  const topCate = await categoryModel.findTopCategoriesOfWeek(3);
+  const topCate = await categoryModel.findTopCategoriesOfWeek(5);
   // Thêm mảng stars để Handlebars each
   rating.forEach(r => {
     r.stars = Array.from({ length: r.value });
