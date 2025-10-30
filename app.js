@@ -89,6 +89,12 @@ app.engine('handlebars', engine({
       }
       return str;
     },
+    range(start, end) {
+    const s = Number(start), e = Number(end);
+    const out = [];
+    for (let i = s; i <= e; i++) out.push(i);
+    return out;
+  },
 
     // Hiển thị sao (rating)
     renderStars(rating) {
