@@ -152,21 +152,16 @@ router.get("/details/:id", async (req, res) => {
         .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
         .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
         .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
-        .leftJoin( 
-            db('enrollments')
-                .select('course_id')
-                .count('* as student_count')
-                .groupBy('course_id')
-                .as('enroll_stats'),
+        .leftJoin(
+            db('enrollments').select('course_id').count('* as student_count').groupBy('course_id').as('enroll_stats'),
             'c.course_id', 'enroll_stats.course_id'
         )
         .select(
-            "c.*", 
-            "cat.cat_name as category_name",
+            "c.*", "cat.cat_name as category_name",
             "u.name as instructor_name", "u.user_id as instructor_id",
             db.raw("COALESCE(AVG(r.value), 0) as rating"),
             db.raw("COUNT(DISTINCT r.rating_id) as total_reviews"),
-            db.raw("COALESCE(enroll_stats.student_count, 0) as student_count") 
+            db.raw("COALESCE(enroll_stats.student_count, 0) as student_count")
          )
         .where("c.course_id", course_id)
         .groupBy("c.course_id", "cat.cat_name", "u.name", "u.user_id", "enroll_stats.student_count")
@@ -185,11 +180,14 @@ router.get("/details/:id", async (req, res) => {
     const relatedCoursesPromise = courseModel.findRelatedCourses(course.catid, course_id, 4, student_id);
 
     let isEnrolled = false;
+    let isInWatchlistMain = false;
     if (student_id) {
-        const enrollment = await db("enrollments")
-            .where({ student_id: student_id, course_id })
-            .first();
+        const [enrollment, watchlistEntry] = await Promise.all([
+             db("enrollments").where({ student_id: student_id, course_id }).first(),
+             db("watchlists").where({ student_id: student_id, course_id }).first() 
+        ]);
         isEnrolled = !!enrollment;
+        isInWatchlistMain = !!watchlistEntry; 
     }
 
     const [instructorProfile, instructorStats, chapters, ratings, relatedCourses] = await Promise.all([
@@ -205,7 +203,10 @@ router.get("/details/:id", async (req, res) => {
     const instructor = { ...instructorProfile, ...instructorStats };
 
     res.render("vwCourses/course_detail", {
-        layout: "main", course, isEnrolled, ratings, chapters, instructor, relatedCourses
+        layout: "main", course,
+        isEnrolled,
+        isInWatchlist: isInWatchlistMain,
+        ratings, chapters, instructor, relatedCourses
     });
   } catch (error) {
      console.error("Error fetching course details:", error);
@@ -519,6 +520,11 @@ router.post("/add-to-cart/:id", checkAuthenticated, async (req, res) => {
 
 
 /*Xem giỏ hàng*/
+router.get("/add-to-cart/:id", checkAuthenticated, async (req, res) => {
+  const course_id = req.params.id;
+  res.redirect(`/course/details/${course_id}`);
+});
+
 router.get("/cart", checkAuthenticated, async (req, res) => {
   const student_id = req.session.authUser.user_id;
 

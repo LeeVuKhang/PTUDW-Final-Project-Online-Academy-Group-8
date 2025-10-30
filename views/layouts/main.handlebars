@@ -74,35 +74,35 @@
           </li>
         </ul>
 
-        <form class="d-flex me-4 w-50 position-relative" 
+        <form class="d-flex w-50 position-relative" 
               role="search" action="/course/search" method="get">
           <i class="bi bi-search position-absolute text-secondary"
             style="left: 12px; top: 50%; transform: translateY(-50%);"></i>
-          <input class="form-control ps-5 shadow-none" type="search" name="q" placeholder="Tìm cái gì đó đi ní"
+          <input class="form-control ps-5 shadow-none" type="search" name="q" placeholder="Tìm kiếm khoá học..."
             aria-label="Search" />
         </form>
 
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0 d-flex flex-row align-items-center">
           {{#if isAuthenticated}}
             {{#if (eq authUser.role 2)}}
-            <li class="nav-item me-3">
-              <a class="nav-link" href="/instructor/courses" title="My Teaching">
+            <li class="nav-item me-4">
+              <a class="nav-link" href="/instructor/courses" title="">
                 Giảng dạy
               </a>
             </li>
             {{/if}}
           <li class="nav-item me-3">
-            <a class="nav-link" href="/course/my-courses" title="My Learning">
-              Khóa học của tôi
+            <a class="nav-link" href="/course/my-courses" title="">
+              Học tập
             </a>
           </li>
-          <li class="nav-item me-3">
-            <a class="nav-link" href="/account/watchlist" title="My Watchlist">
+          <li class="nav-item me-2">
+            <a class="nav-link" href="/account/watchlist" title="">
               <i class="bi bi-heart fs-5"></i>
             </a>
           </li>
-          <li class="nav-item me-3">
-            <a class="nav-link position-relative" href="/course/cart" title="My Cart">
+          <li class="nav-item me-2">
+            <a class="nav-link position-relative" href="/course/cart" title="">
               <i class="bi bi-cart3 fs-5"></i>
               {{#if cartCount}}
               <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
@@ -162,7 +162,7 @@
           <form id="frmSignout" action="/account/signout" method="post" class="d-none"></form>
           {{else}}
           <li class="nav-item d-flex align-items-center">
-            <a class="btn btn-outline-primary me-2 px-3 py-1 text-nowrap" href="/account/signin">Đăng nhập</a>
+            <a class="btn btn-outline-primary me-2 px-3 py-1 text-nowrap" href="/account/signin?retUrl={{currentUrl}}">Đăng nhập</a>
             <a class="btn btn-primary px-3 py-1 text-nowrap" href="/account/signup">Đăng ký</a>
           </li>
           {{/if}}

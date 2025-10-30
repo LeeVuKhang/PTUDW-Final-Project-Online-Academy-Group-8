@@ -21,6 +21,12 @@ export default {
         .whereNull('parent_id')
         .orderBy('cat_id', 'asc'); // sắp theo ID tăng dần
     },
+    searchByName(keyword) {
+        return db('categories')
+            .where('cat_name', 'ILIKE', `%${keyword}%`)
+            .orderBy('parent_id', 'asc')
+            .orderBy('cat_id', 'asc');
+    },
     findChildren(parentId) {
         return db('categories').where('parent_id', parentId);
     },
