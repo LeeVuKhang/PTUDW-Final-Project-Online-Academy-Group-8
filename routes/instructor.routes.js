@@ -38,6 +38,58 @@ const uploadVideo = multer({
     }
 }).single('videoFile');
 
+const courseImageDir = path.join(__dirname, '..', 'static', 'course_img');
+fs.mkdirSync(courseImageDir, { recursive: true });
+
+const courseImageStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, courseImageDir);
+    },
+    filename: (req, file, cb) => {
+        const courseId = req.params.course_id;
+        const ext = path.extname(file.originalname);
+        const newFilename = `${courseId}${ext}`; // Tên file là ID khóa học + extension
+
+        try {
+            const filesInDir = fs.readdirSync(courseImageDir);
+            const oldFile = filesInDir.find(f => f.startsWith(`${courseId}.`));
+            if (oldFile) {
+                fs.unlinkSync(path.join(courseImageDir, oldFile));
+                console.log(`[Course Image Upload] Đã xóa ảnh cũ: ${oldFile}`);
+            }
+        } catch (err) {
+            console.error("[Course Image Upload] Lỗi khi xóa ảnh cũ:", err);
+        }
+        cb(null, newFilename);
+    }
+});
+
+const uploadCourseImage = multer({
+    storage: courseImageStorage,
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|gif|webp/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error("Error: Chỉ chấp nhận file ảnh!"));
+    }
+}).single('courseImage');
+
+const uploadIntroVideo = multer({ 
+    storage: videoStorage, 
+    fileFilter: (req, file, cb) => {
+        const filetypes = /mp4|mov|avi|mkv|webm/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype || extname) {
+            return cb(null, true);
+        }
+        cb(new Error("Error: Chỉ chấp nhận file video!"));
+    }
+}).single('introVideo');
+
 router.use(checkAuthenticated, checkInstructor);
 
 router.get('/', (req, res) => {
@@ -149,6 +201,77 @@ router.post('/create-course', async (req, res) => {
             error: "An error occurred while creating the course. Please check your input."
         });
     }
+});
+router.post('/upload-course-image/:course_id', (req, res) => {
+    uploadCourseImage(req, res, async (err) => {
+        if (err) {
+            return res.status(400).json({ success: false, message: err.message });
+        }
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'Không có file ảnh.' });
+        }
+
+        try {
+            const course = await courseModel.findByID(req.params.course_id);
+            if (!course || (course.instructor_id !== req.session.authUser.user_id && req.session.authUser.role !== 0)) {
+                fs.unlinkSync(req.file.path);
+                return res.status(403).json({ success: false, message: 'Không có quyền.' });
+            }
+        } catch (e) {
+             fs.unlinkSync(req.file.path);
+             return res.status(500).json({ success: false, message: 'Lỗi server.' });
+        }
+
+        const imageUrl = `/static/course_img/${req.file.filename}`;
+        res.json({
+            success: true,
+            message: 'Tải ảnh bìa lên thành công!',
+            imageUrl: imageUrl
+        });
+    });
+});
+
+router.post('/upload-intro-video/:course_id', (req, res) => {
+    uploadIntroVideo(req, res, async (err) => {
+        if (err) {
+            return res.status(400).json({ success: false, message: err.message });
+        }
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'Không có file video.' });
+        }
+
+        const oldVideoUrl = req.body.oldIntroUrl;
+        if (oldVideoUrl && oldVideoUrl.startsWith('/static/course_video/')) {
+            try {
+                const relativePath = oldVideoUrl.substring('/static'.length);
+                const oldFilePath = path.join(__dirname, '..', 'static', relativePath);
+                if (fs.existsSync(oldFilePath)) {
+                    fs.unlinkSync(oldFilePath);
+                    console.log(`[Intro Video Upload] Đã xóa video cũ: ${oldFilePath}`);
+                }
+            } catch (unlinkErr) {
+                console.error(`[Intro Video Upload] Lỗi khi xóa video cũ:`, unlinkErr);
+            }
+        }
+
+        try {
+            const course = await courseModel.findByID(req.params.course_id);
+            if (!course || (course.instructor_id !== req.session.authUser.user_id && req.session.authUser.role !== 0)) {
+                fs.unlinkSync(req.file.path);
+                return res.status(403).json({ success: false, message: 'Không có quyền.' });
+            }
+        } catch (e) {
+             fs.unlinkSync(req.file.path);
+             return res.status(500).json({ success: false, message: 'Lỗi server.' });
+        }
+
+        const videoUrl = `/static/course_video/${req.params.course_id}/${req.file.filename}`;
+        res.json({
+            success: true,
+            message: 'Tải video giới thiệu lên thành công!',
+            videoUrl: videoUrl
+        });
+    });
 });
 
 router.post('/upload-video/:course_id', (req, res) => {
@@ -324,6 +447,7 @@ router.post('/update/:course_id', async (req, res) => {
             catid: req.body.catid,
             level: req.body.level,
             image_url: req.body.image_url,
+            intro_url: req.body.intro_url, 
             last_update: new Date()
         };
 
