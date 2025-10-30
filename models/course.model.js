@@ -161,15 +161,25 @@ export default {
     return query.limit(limit).offset(offset);
   },
 
-   async  countCoursesByFilter(categoryId) {
-    let countQuery = db("courses");
+   async countCoursesByFilter(categoryId) {
+  // Lấy toàn bộ ID danh mục con (bao gồm chính nó)
+  let categoryIds = [];
+  if (categoryId && categoryId !== 0 && categoryId !== 'all') {
+    categoryIds = await categoryModel.findAllDescendants(categoryId);
+    categoryIds.push(categoryId);
+  }
 
-    if (categoryId && categoryId !== 0 && categoryId !== 'all') {
-      countQuery.where("catid", categoryId);
-    }
-    countQuery.where('is_disabled', false);
-    return countQuery.count("* as amount").first();
-  },
+  const countQuery = db("courses as c").count("* as amount");
+
+  if (categoryIds.length > 0) {
+    countQuery.whereIn("c.catid", categoryIds);
+  }
+
+  // Loại bỏ khóa học bị vô hiệu hóa
+  countQuery.where("c.is_disabled", false);
+
+  return countQuery.first();
+},
 
     search(keyword, limit, offset) {
   return db('courses as c')
@@ -205,29 +215,36 @@ export default {
     .first();
 },
   async findRelatedCourses(categoryId, currentCourseId, limit = 4, studentId = null) {
-        let relatedQuery = db("courses as c")
-            .leftJoin("categories as cat", "c.catid", "cat.cat_id")
-            .leftJoin("users as u", "c.instructor_id", "u.user_id")
-            .leftJoin("ratings as r", "c.course_id", "r.course_id")
-            .where("c.catid", categoryId)
-            .andWhereNot("c.course_id", currentCourseId)
-            .select(
-                "c.course_id", "c.title", "c.image_url", "c.price", "c.discount_price", "c.views",
-                "cat.cat_name",
-                "u.user_id as instructor_id", "u.name as instructor_name",
-                db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
-                db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
-            )
-            .groupBy("c.course_id", "cat.cat_name", "u.user_id", "u.name")
-            .orderByRaw("RANDOM()")
-            .limit(limit);
-            excludeDisabled(relatedQuery, 'c');
+  let relatedQuery = db("courses as c")
+    .leftJoin("categories as cat", "c.catid", "cat.cat_id")
+    .leftJoin("users as u", "c.instructor_id", "u.user_id")
+    .leftJoin("ratings as r", "c.course_id", "r.course_id")
+    .where("c.catid", categoryId)
+    .andWhereNot("c.course_id", currentCourseId)
+    .andWhere("c.is_disabled", false) // 🔹 Thêm trực tiếp điều kiện ở đây
+    .select(
+      "c.course_id",
+      "c.title",
+      "c.image_url",
+      "c.price",
+      "c.discount_price",
+      "c.views",
+      "cat.cat_name",
+      "u.user_id as instructor_id",
+      "u.name as instructor_name",
+      db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
+      db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
+    )
+    .groupBy("c.course_id", "cat.cat_name", "u.user_id", "u.name")
+    .orderByRaw("RANDOM()")
+    .limit(limit);
 
-        relatedQuery = addWatchlistSubquery(relatedQuery, studentId);
-        relatedQuery = addEnrollmentSubquery(relatedQuery, studentId);
+  // Thêm các subquery cho watchlist và enrollment nếu có
+  relatedQuery = addWatchlistSubquery(relatedQuery, studentId);
+  relatedQuery = addEnrollmentSubquery(relatedQuery, studentId);
 
-        return await relatedQuery;
-    },
+  return await relatedQuery;
+  },
   findByID(id) {
     return db('courses').where('course_id', id).andWhere('is_disabled', false).first();
   },
