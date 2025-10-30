@@ -1,28 +1,22 @@
-{{#fill_section 'js'}}
-<script>
-  async function signupWithGoogle() {
-    try {
-      if (!window.supabase) {
-        alert('Supabase client not found. Make sure it is loaded in your layout.');
-        return;
-      }
-      const { data, error } = await window.supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin + '/account/oauth-done' }
-      });
-      if (error) { console.error(error); alert('Google sign-in failed. Please try again.'); }
-    } catch (e) { console.error(e); alert('Unexpected error during Google sign-in.'); }
-  }
-  document.getElementById('frmRegister')?.addEventListener('submit', function(e) {
-    const u = document.getElementById('txtUsername').value.trim();
-    const p = document.getElementById('txtPassword').value;
-    const c = document.getElementById('txtConfirm').value;
-    if (u.length < 3) { e.preventDefault(); alert('Username must be at least 3 characters.'); return; }
-    if (p.length < 6) { e.preventDefault(); alert('Password must be at least 6 characters.'); return; }
-    if (p !== c)     { e.preventDefault(); alert('Passwords do not match.'); return; }
-  });
-</script>
+{{#fill_section 'stylesheet'}}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
 {{/fill_section}}
+{{#fill_section 'css'}}
+body {
+background-color: #f8f9fa;
+}
+
+.ql-editor {
+font-size: 1.2rem;
+}
+
+.ql-editor.ql-blank::before {
+font-size: 1.2rem;
+}
+{{/fill_section}}
+
+{{! --- DELETED FIRST JS SECTION --- }}
+
 <div class="container my-4">
   <div class="row justify-content-center">
     <div class="col-lg-7 col-md-9">
@@ -70,7 +64,7 @@
               <label for="txtConfirm" class="form-label">Confirm password</label>
               <input type="password" class="form-control {{#if fieldErrors.confirm}}is-invalid{{/if}}"
                      id="txtConfirm" name="confirm" required minlength="6">
-              {{#if fieldErrors.confirm}}
+               {{#if fieldErrors.confirm}}
                 <div class="invalid-feedback d-block">{{fieldErrors.confirm}}</div>
               {{/if}}
             </div>
@@ -80,12 +74,12 @@
 
 
             <div class="mb-3">
-              <label for="txtName" class="form-label">Full name</label>
+               <label for="txtName" class="form-label">Full name</label>
               <input type="text" class="form-control {{#if fieldErrors.name}}is-invalid{{/if}}"
                      id="txtName" name="name" required value="{{last.name}}">
               {{#if fieldErrors.name}}
                 <div class="invalid-feedback d-block">{{fieldErrors.name}}</div>
-              {{/if}}
+               {{/if}}
             </div>
 
             <div class="mb-3">
@@ -101,13 +95,13 @@
             <div class="mb-3">
               <label for="txtdob" class="form-label">Date of Birth</label>
               <input type="date" class="form-control {{#if fieldErrors.dob}}is-invalid{{/if}}"
-                     id="txtdob" name="dob" required value="{{last.dob}}">
+                       id="txtdob" name="dob" required value="{{last.dob}}">
               {{#if fieldErrors.dob}}
                 <div class="invalid-feedback d-block">{{fieldErrors.dob}}</div>
               {{/if}}
             </div>
             <div class="mb-3">
-              <label for="imageUrlInput" class="form-label">Profile Image URL</label>
+               <label for="imageUrlInput" class="form-label">Profile Image URL</label>
               <input type="url" id="imageUrlInput" name="image_url" class="form-control"
                      placeholder="https://example.com/profile-image.jpg">
               <div class="form-text">Optional. Enter a valid image URL. The preview will update below.</div>
@@ -126,7 +120,7 @@
               <label class="form-label">Self Introduction</label>
               <div id="editor_intro" style="height: 200px;"></div>
               <input type="hidden" id="self_introduction_hidden" name="self_introduction">
-              <div class="form-text">A brief bio about yourself. This will be public on your profile (optional).</div>
+               <div class="form-text">A brief bio about yourself. This will be public on your profile (optional).</div>
             </div>
 
             <button type="submit" class="btn btn-primary">
@@ -139,17 +133,16 @@
     </div>
   </div>
 </div>
+
+{{!-- This is the only JS block now --}}
 {{#fill_section 'js'}}
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script>
   async function handleSubmit(event) {
     event.preventDefault();
-
     if (window.quillInstance) {
       const hiddenInput = document.getElementById('self_introduction_hidden');
       const htmlContent = window.quillInstance.root.innerHTML;
-      
-      // Nếu editor rỗng, gán chuỗi rỗng
       if (htmlContent === '<p><br></p>') {
         hiddenInput.value = '';
       } else {
@@ -160,7 +153,6 @@
     const username = document.getElementById('txtUsername').value.trim();
     const password = document.getElementById('txtPassword').value;
     const confirm = document.getElementById('txtConfirm').value;
-
     if (username.length === 0) {
       alert('Please enter a username');
       return;
@@ -188,7 +180,6 @@
       }
       
       event.target.submit();
-
     } catch (err) {
       console.error(err);
       alert('An error occurred. Please try again');
@@ -200,7 +191,8 @@
     const imageError = document.getElementById('imageError');
     if (imageError) imageError.style.display = 'block';
   }
-  window.handleImageError = handleImageError;
+  window.handleImageError = handleImageError; 
+
   async function signupWithGoogle() {
     try {
       if (!window.supabase) {
@@ -222,6 +214,8 @@
       alert('Unexpected error during Google sign-in.');
     }
   }
+  // Make signupWithGoogle global for onclick
+  window.signupWithGoogle = signupWithGoogle; 
 
   document.addEventListener('DOMContentLoaded', function() {
     
@@ -251,7 +245,6 @@
         [{ 'list': 'ordered'}, { 'list': 'bullet' }],
         ['clean']
       ];
-
       window.quillInstance = new Quill('#editor_intro', {
         modules: {
           toolbar: toolbarOptions
