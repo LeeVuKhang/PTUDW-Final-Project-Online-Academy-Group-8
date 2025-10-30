@@ -93,4 +93,27 @@ router.post('/:id/remove', async (req, res) => {
     }
 });
 
+router.post('/:id/disable', async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    await courseModel.update(courseId, { is_disabled: true });
+    res.redirect('/admin/courses'); // or res.redirect('back')
+  } catch (e) {
+    console.error('[admin-course] disable failed:', e);
+    res.status(500).send('Disable failed');
+  }
+});
+
+// Re-enable a course
+router.post('/:id/enable', async (req, res) => {
+  try {
+    const courseId = req.params.id;
+    await courseModel.update(courseId, { is_disabled: false });
+    res.redirect('/admin/courses');
+  } catch (e) {
+    console.error('[admin-course] enable failed:', e);
+    res.status(500).send('Enable failed');
+  }
+});
+
 export default router;
