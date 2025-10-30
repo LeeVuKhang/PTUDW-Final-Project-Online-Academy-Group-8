@@ -185,7 +185,7 @@ export default {
     .count('r.rating_id as rating_count')
     .avg('r.value as avg_rating')
     .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
-    .andWhere('c.is_disable', false) 
+    .andWhere('c.is_disabled', false) 
     .groupBy('c.course_id', 'u.user_id', 'u.name', 'cat.cat_name')
     .limit(limit)
     .offset(offset);
@@ -195,7 +195,7 @@ export default {
     countSearch(keyword) {
     return db('courses as c')
     .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
-    .andWhere('c.is_disable', false)
+    .andWhere('c.is_disabled', false)
     .count('* as amount')
     .first();
 },
@@ -260,7 +260,7 @@ export default {
     .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
     .leftJoin('enrollments as e', 'c.course_id', 'e.course_id')
     .where('c.instructor_id', instructor_id)
-    .andWhere('c.is_disable', false) 
+    .andWhere('c.is_disabled', false) 
     .select(
       'c.course_id',
       'c.title',
@@ -307,7 +307,7 @@ async countAllByInstructorId(instructor_id, categoryId = 'all', searchTerm = '')
 
   const query = db('courses as c')
     .where('c.instructor_id', instructor_id)
-    .andWhere('c.is_disable', false) 
+    .andWhere('c.is_disabled', false) 
     .count('c.course_id as total')
     .first();
 
