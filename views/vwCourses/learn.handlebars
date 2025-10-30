@@ -140,13 +140,13 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
           const data = await response.json();
           if (data.success) {
-            console.log('✅ Đã lưu tiến độ học:', lessonId, 'Progress:', data.progress !== null ? data.progress + '%' : 'N/A');
+            console.log(' Đã lưu tiến độ học:', lessonId, 'Progress:', data.progress !== null ? data.progress + '%' : 'N/A');
           } else {
             console.error('Lỗi lưu tiến độ (server báo lỗi):', data.error);
           }
       }
     } catch (err) {
-      console.error('❌ Lỗi fetch khi lưu tiến độ:', err);
+      console.error(' Lỗi fetch khi lưu tiến độ:', err);
     }
   };
 

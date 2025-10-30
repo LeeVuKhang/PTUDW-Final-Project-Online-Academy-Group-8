@@ -5,6 +5,8 @@ import userModel from "../models/user.model.js";
 import courseModel from "../models/course.model.js";
 import categoryModel from '../models/category.model.js';
 import instructorModel from '../models/instructor.models.js';
+import enrollmentModel from "../models/enrollment.model.js";
+import progressModel from "../models/progress.model.js";
 
 const formatNumber = (num) => {
     if (typeof num === 'number' && num > 0) {
@@ -346,70 +348,34 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
 
 
 
-/* Cập nhật last_watched_lesson */
-router.post("/update-last-watch", checkAuthenticated, async (req, res) => {
+
+router.post('/update-last-watch', async (req, res) => {
   try {
-    const { course_id, lesson_id } = req.body;
-    const student_id = req.session.authUser.user_id;
+    const user = req.session?.authUser;
+    if (!user) return res.status(401).json({ success: false, error: 'Unauthenticated' });
 
+    const { course_id, lesson_id } = req.body || {};
     if (!course_id || !lesson_id) {
-        return res.status(400).json({ success: false, error: "Thiếu course_id hoặc lesson_id." });
-    }
-    const totalLessonsResult = await db("lessons as l")
-      .join("chapters as ch", "l.chapter_id", "ch.chapter_id")
-      .where("ch.course_id", course_id)
-      .count("l.lesson_id as total");
-
-    const totalLessons = parseInt(totalLessonsResult[0].total, 10);
-
-    if (totalLessons === 0) {
-       await db("enrollments")
-         .where({ course_id, student_id })
-         .update({ last_watched_lesson: lesson_id, progress: 0 }); 
-       return res.json({ success: true, progress: 0 });
+      return res.status(400).json({ success: false, error: 'Missing course_id or lesson_id' });
     }
 
-    const orderedLessonResult = await db.raw(`
-        WITH OrderedLessons AS (
-            SELECT
-                l.lesson_id,
-                ROW_NUMBER() OVER (ORDER BY ch.order_index ASC, l.order_index ASC) as overall_index
-            FROM lessons l
-            JOIN chapters ch ON l.chapter_id = ch.chapter_id
-            WHERE ch.course_id = ?
-        )
-        SELECT overall_index
-        FROM OrderedLessons
-        WHERE lesson_id = ?
-    `, [course_id, lesson_id]);
+    await progressModel.upsertWatched(req.session.authUser.user_id, course_id, lesson_id);
+    const progress = await progressModel.courseProgressPercent(req.session.authUser.user_id, course_id);
+    await db('enrollments')
+  .where({ student_id: req.session.authUser.user_id, course_id })
+  .update({ progress, last_watched_lesson: lesson_id });
 
-    const watchedLessonIndex = orderedLessonResult.rows[0]?.overall_index;
-
-    if (!watchedLessonIndex) {
-         console.error(`Không tìm thấy index cho lesson_id ${lesson_id} trong course_id ${course_id}`);
-         await db("enrollments")
-            .where({ course_id, student_id })
-            .update({ last_watched_lesson: lesson_id });
-         return res.json({ success: true, progress: null }); 
-    }
-    let progress = Math.min(100, Math.round((watchedLessonIndex / totalLessons) * 100));
-
-    await db("enrollments")
-      .where({ course_id, student_id })
-      .update({
-        last_watched_lesson: lesson_id,
-        progress: progress, 
-      });
-
-    console.log(`Updated progress for student ${student_id}, course ${course_id}: ${progress}% after watching lesson ${lesson_id}`);
-    res.json({ success: true, progress: progress });
-
-  } catch (err) {
-    console.error("Lỗi cập nhật last_watched_lesson và progress:", err);
-    res.status(500).json({ success: false, error: "Không thể cập nhật tiến độ học." });
+    return res.json({ success: true, progress });
+  } catch (e) {
+    console.error('[course] update-last-watch failed:', e);
+    return res.status(500).json({ success: false, error: 'Server error' });
   }
 });
-
+router.get('/my-courses', checkAuthenticated, async (req, res) => {
+  const user = req.session.authUser;
+  const courses = await enrollmentModel.findCoursesByStudent(user.user_id);
+  res.render('vwCourses/myCourses', { courses });
+});
 
 /*Đánh giá khóa học*/
 router.post("/rate/:id", checkAuthenticated, async (req, res) => {
@@ -593,16 +559,7 @@ router.post("/cart/checkout/:id", checkAuthenticated, async (req, res) => {
 
 
 /*Trang liệt kê tất cả khóa học đã mua*/
-router.get("/my-courses", checkAuthenticated, async (req, res) => {
-  const student_id = req.session.authUser.user_id;
 
-  const courses = await db("enrollments")
-    .join("courses", "enrollments.course_id", "courses.course_id")
-    .where("enrollments.student_id", student_id)
-    .select("courses.course_id", "courses.title", "courses.discount_price", "courses.image_url", "enrollments.progress");
-
-  res.render("vwCourses/myCourses", { layout: "main", courses });
-});
 /*Xóa khóa học đã ghi danh*/
 router.post("/my-courses/remove/:id", checkAuthenticated, async (req, res) => {
   const course_id = req.params.id;
