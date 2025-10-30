@@ -34,5 +34,43 @@ export default {
         progress,
         last_watched_lesson: lastLesson,
       });
-  }
+  },
+  async findCoursesByStudent(user_id) {
+    return db('enrollments as e')
+      .join('courses as c', 'e.course_id', 'c.course_id')
+      .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
+      .where('e.student_id', user_id)
+      .select(
+        'c.course_id',
+        'c.title',
+        'c.image_url',
+        'c.price',
+        'c.discount_price',
+        'cat.cat_name',
+        'e.erm_date as enrolled_at',
+        db.raw('COALESCE(e.progress, 0) as progress')
+      )
+      .orderBy('e.erm_date', 'desc');
+  },
+
+  //back up if need pagination
+  async findCoursesByStudentPaged(user_id, { limit = 12, offset = 0 } = {}) {
+    return db('enrollments as e')
+      .join('courses as c', 'e.course_id', 'c.course_id')
+      .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
+      .where('e.student_id', user_id)
+      .select(
+        'c.course_id',
+        'c.title',
+        'c.image_url',
+        'c.price',
+        'c.discount_price',
+        'cat.cat_name',
+        'e.erm_date as enrolled_at',
+        db.raw('COALESCE(e.progress, 0) as progress')
+      )
+      .orderBy('e.erm_date', 'desc')
+      .limit(limit)
+      .offset(offset);
+  },
 };

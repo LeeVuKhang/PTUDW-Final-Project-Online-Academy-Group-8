@@ -161,73 +161,90 @@ export default {
     return query.limit(limit).offset(offset);
   },
 
-   async  countCoursesByFilter(categoryId) {
-    let countQuery = db("courses");
+   async countCoursesByFilter(categoryId) {
+  // Lấy toàn bộ ID danh mục con (bao gồm chính nó)
+  let categoryIds = [];
+  if (categoryId && categoryId !== 0 && categoryId !== 'all') {
+    categoryIds = await categoryModel.findAllDescendants(categoryId);
+    categoryIds.push(categoryId);
+  }
 
-    if (categoryId && categoryId !== 0 && categoryId !== 'all') {
-      countQuery.where("catid", categoryId);
-    }
-    countQuery.where('is_disabled', false);
-    return countQuery.count("* as amount").first();
-  },
+  const countQuery = db("courses as c").count("* as amount");
+
+  if (categoryIds.length > 0) {
+    countQuery.whereIn("c.catid", categoryIds);
+  }
+
+  // Loại bỏ khóa học bị vô hiệu hóa
+  countQuery.where("c.is_disabled", false);
+
+  return countQuery.first();
+},
 
     search(keyword, limit, offset) {
-    const q = db('courses as c')
-      .join('categories as cat', 'c.catid', 'cat.cat_id')
-      .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
-      .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
-      .select(
-        'c.course_id',
-        'c.title',
-        'c.image_url',
-        'c.price',
-        'c.discount_price',
-        'c.views',
-        'u.user_id as instructor_id',
-        'u.name as instructor_name',
-        'cat.cat_name'
-      )
-      .count('r.rating_id as rating_count')
-      .avg('r.value as avg_rating')
-      .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
-      .groupBy('c.course_id', 'u.user_id', 'u.name', 'cat.cat_name')
-      .limit(limit)
-      .offset(offset);
-      excludeDisabled(q, 'c');
-      return q;
-  },
+  return db('courses as c')
+    .join('categories as cat', 'c.catid', 'cat.cat_id')
+    .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
+    .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
+    .select(
+      'c.course_id',
+      'c.title',
+      'c.image_url',
+      'c.price',
+      'c.discount_price',
+      'c.views',
+      'u.user_id as instructor_id',
+      'u.name as instructor_name',
+      'cat.cat_name'
+    )
+    .count('r.rating_id as rating_count')
+    .avg('r.value as avg_rating')
+    .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
+    .andWhere('c.is_disabled', false) 
+    .groupBy('c.course_id', 'u.user_id', 'u.name', 'cat.cat_name')
+    .limit(limit)
+    .offset(offset);
+},
+
 
     countSearch(keyword) {
-    return db('courses')
-      .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
-      .where('is_disabled', false)
-      .count('* as amount')
-      .first();
-  },
+    return db('courses as c')
+    .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
+    .andWhere('c.is_disabled', false)
+    .count('* as amount')
+    .first();
+},
   async findRelatedCourses(categoryId, currentCourseId, limit = 4, studentId = null) {
-        let relatedQuery = db("courses as c")
-            .leftJoin("categories as cat", "c.catid", "cat.cat_id")
-            .leftJoin("users as u", "c.instructor_id", "u.user_id")
-            .leftJoin("ratings as r", "c.course_id", "r.course_id")
-            .where("c.catid", categoryId)
-            .andWhereNot("c.course_id", currentCourseId)
-            .select(
-                "c.course_id", "c.title", "c.image_url", "c.price", "c.discount_price", "c.views",
-                "cat.cat_name",
-                "u.user_id as instructor_id", "u.name as instructor_name",
-                db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
-                db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
-            )
-            .groupBy("c.course_id", "cat.cat_name", "u.user_id", "u.name")
-            .orderByRaw("RANDOM()")
-            .limit(limit);
-            excludeDisabled(relatedQuery, 'c');
+  let relatedQuery = db("courses as c")
+    .leftJoin("categories as cat", "c.catid", "cat.cat_id")
+    .leftJoin("users as u", "c.instructor_id", "u.user_id")
+    .leftJoin("ratings as r", "c.course_id", "r.course_id")
+    .where("c.catid", categoryId)
+    .andWhereNot("c.course_id", currentCourseId)
+    .andWhere("c.is_disabled", false) // 🔹 Thêm trực tiếp điều kiện ở đây
+    .select(
+      "c.course_id",
+      "c.title",
+      "c.image_url",
+      "c.price",
+      "c.discount_price",
+      "c.views",
+      "cat.cat_name",
+      "u.user_id as instructor_id",
+      "u.name as instructor_name",
+      db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
+      db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
+    )
+    .groupBy("c.course_id", "cat.cat_name", "u.user_id", "u.name")
+    .orderByRaw("RANDOM()")
+    .limit(limit);
 
-        relatedQuery = addWatchlistSubquery(relatedQuery, studentId);
-        relatedQuery = addEnrollmentSubquery(relatedQuery, studentId);
+  // Thêm các subquery cho watchlist và enrollment nếu có
+  relatedQuery = addWatchlistSubquery(relatedQuery, studentId);
+  relatedQuery = addEnrollmentSubquery(relatedQuery, studentId);
 
-        return await relatedQuery;
-    },
+  return await relatedQuery;
+  },
   findByID(id) {
     return db('courses').where('course_id', id).andWhere('is_disabled', false).first();
   },
@@ -256,61 +273,82 @@ export default {
   //         .select('courses.*', 'categories.cat_name as category_name'); 
   // },
   async findAllByInstructorId(instructor_id, limit, offset, categoryId = 'all', searchTerm = '') {
-    let categoryIds = [];
-    if (categoryId && categoryId !== 'all') {
-      categoryIds = await categoryModel.findAllDescendants(categoryId);
-      categoryIds.push(parseInt(categoryId, 10));
-    }
-
-    const query = db('courses as c')
-      .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
-      .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
-      .leftJoin('enrollments as e', 'c.course_id', 'e.course_id')
-      .where('c.instructor_id', instructor_id)
-      .select(
-        'c.course_id', 'c.title', 'c.tinydes as short_description', 'c.image_url', 'c.is_complete', 'c.views',
-        'cat.cat_name as category_name',
-        db.raw('COALESCE(AVG(r.value), 0) as avg_rating'),
-        db.raw('COUNT(DISTINCT r.rating_id) as rating_count'),
-        db.raw('COUNT(DISTINCT e.erm_id) as student_count')
-      )
-      .groupBy('c.course_id', 'c.title', 'c.tinydes', 'c.image_url', 'c.is_complete', 'c.views', 'cat.cat_name')
-      .orderBy('c.course_id', 'desc');
-
-    if (categoryIds.length > 0) {
-      query.whereIn('c.catid', categoryIds);
-    }
-
-
-    if (searchTerm) {
-    query.whereRaw(`c.fts @@ to_tsquery('simple', remove_accents(?))`, [searchTerm.replace(/\s+/g, ' & ')]);
+  let categoryIds = [];
+  if (categoryId && categoryId !== 'all') {
+    categoryIds = await categoryModel.findAllDescendants(categoryId);
+    categoryIds.push(parseInt(categoryId, 10));
   }
 
-    return query.limit(limit).offset(offset);
-  },
+  const query = db('courses as c')
+    .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
+    .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
+    .leftJoin('enrollments as e', 'c.course_id', 'e.course_id')
+    .where('c.instructor_id', instructor_id)
+    .andWhere('c.is_disabled', false) 
+    .select(
+      'c.course_id',
+      'c.title',
+      'c.tinydes as short_description',
+      'c.image_url',
+      'c.is_complete',
+      'c.views',
+      'cat.cat_name as category_name',
+      db.raw('COALESCE(AVG(r.value), 0) as avg_rating'),
+      db.raw('COUNT(DISTINCT r.rating_id) as rating_count'),
+      db.raw('COUNT(DISTINCT e.erm_id) as student_count')
+    )
+    .groupBy(
+      'c.course_id',
+      'c.title',
+      'c.tinydes',
+      'c.image_url',
+      'c.is_complete',
+      'c.views',
+      'cat.cat_name'
+    )
+    .orderBy('c.course_id', 'desc');
 
-  async countAllByInstructorId(instructor_id, categoryId = 'all', searchTerm = '') {
-    let categoryIds = [];
-    if (categoryId && categoryId !== 'all') {
-      categoryIds = await categoryModel.findAllDescendants(categoryId);
-      categoryIds.push(parseInt(categoryId, 10));
-    }
-
-    const query = db('courses')
-      .where('instructor_id', instructor_id)
-      .count('course_id as total')
-      .first();
-
-    if (categoryIds.length > 0) {
-      query.whereIn('catid', categoryIds);
-    }
-
-    if (searchTerm) {
-    query.whereRaw(`fts @@ to_tsquery('simple', remove_accents(?))`, [searchTerm.replace(/\s+/g, ' & ')]);
+  if (categoryIds.length > 0) {
+    query.whereIn('c.catid', categoryIds);
   }
 
-    return query;
-  },
+  if (searchTerm) {
+    query.whereRaw(
+      `c.fts @@ to_tsquery('simple', remove_accents(?))`,
+      [searchTerm.trim().replace(/\s+/g, ' & ')]
+    );
+  }
+
+  return query.limit(limit).offset(offset);
+},
+
+async countAllByInstructorId(instructor_id, categoryId = 'all', searchTerm = '') {
+  let categoryIds = [];
+  if (categoryId && categoryId !== 'all') {
+    categoryIds = await categoryModel.findAllDescendants(categoryId);
+    categoryIds.push(parseInt(categoryId, 10));
+  }
+
+  const query = db('courses as c')
+    .where('c.instructor_id', instructor_id)
+    .andWhere('c.is_disabled', false) 
+    .count('c.course_id as total')
+    .first();
+
+  if (categoryIds.length > 0) {
+    query.whereIn('c.catid', categoryIds);
+  }
+
+  if (searchTerm) {
+    query.whereRaw(
+      `c.fts @@ to_tsquery('simple', remove_accents(?))`,
+      [searchTerm.trim().replace(/\s+/g, ' & ')]
+    );
+  }
+
+  return query;
+},
+
   deleteCascade(course_id) {
     return db.transaction(async trx => {
       const chapterRows = await trx('chapters').where('course_id', course_id).select('chapter_id');

@@ -101,6 +101,12 @@ app.engine('handlebars', engine({
     for (let i = s; i <= e; i++) out.push(i);
     return out;
   },
+  lteq(a, b) {
+    return a >= b;
+  },
+  lt(a,b){
+    return a < b;
+  },
 
     // Hiển thị sao (rating)
     renderStars(rating) {
