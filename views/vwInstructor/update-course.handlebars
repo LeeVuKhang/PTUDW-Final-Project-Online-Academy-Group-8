@@ -23,15 +23,15 @@ font-size: 1.2rem;
         {{!-- Header --}}
         <div class="mb-4 text-center">
             <h1 class="display-5 fw-bold text-dark mb-3">
-                <i class="fas fa-edit text-primary me-3"></i> Update Course
+                <i class="fas fa-edit text-primary me-3"></i> Cập nhật khoá học
             </h1>
-            <p class="text-muted fs-5">Update the information below for the course</p>
+            <p class="text-muted fs-5">Cập nhật thông tin khoá học bên dưới</p>
         </div>
         <hr class="my-5">
 
         {{!-- Course Title --}}
         <div class="mb-4">
-            <label for="title" class="form-label fs-6 fw-semibold"> Course Title <span class="text-danger">*</span>
+            <label for="title" class="form-label fs-6 fw-semibold"> Tiêu đề khoá học <span class="text-danger">*</span>
             </label>
             <input type="text" id="title" name="title" value="{{course.title}}" autofocus
                 class="form-control form-control-lg" placeholder="e.g. Complete Python Programming Masterclass 2025"
@@ -40,39 +40,38 @@ font-size: 1.2rem;
 
         {{!-- Short Description --}}
         <div class="mb-4">
-            <label for="tinydes" class="form-label fs-6 fw-semibold"> Short Course Description <span
+            <label for="tinydes" class="form-label fs-6 fw-semibold"> Mô tả ngắn <span
                     class="text-danger">*</span> </label>
             <textarea id="tinydes" name="tinydes" rows="4" class="form-control form-control-lg"
                 placeholder="Short summary for course listings..." required>{{course.tinydes}}</textarea>
-            <div class="form-text">Minimum 50 characters</div>
+            <div class="form-text">Tối thiểu 50 ký tự</div>
         </div>
 
         {{!-- Full Description --}}
         <div class="mb-4">
-            <label class="form-label fs-6 fw-semibold"> Full Course Description <span class="text-danger">*</span>
+            <label class="form-label fs-6 fw-semibold"> Mô tả chi tiết khoá học <span class="text-danger">*</span>
             </label>
             <div id="editor" style="height: 250px;">
                 {{{course.fulldes}}}
             </div>
             <input type="hidden" id="fulldes" name="fulldes">
-            <div class="form-text">Minimum 200 characters</div>
+            <div class="form-text">Tối thiểu 200 ký tự</div>
         </div>
 
         {{!-- Course Image URL + Preview --}}
         <div class="mb-4 ">
-            <label for="imageUrlInput" class="form-label fs-6 fw-semibold"> Course Image URL <span
+            <label for="imageUrlInput" class="form-label fs-6 fw-semibold"> Ảnh bìa khoá học (URL) <span
                     class="text-danger">*</span> </label>
             <input type="url" id="imageUrlInput" name="image_url" value="{{course.image_url}}"
                 class="form-control form-control-lg" placeholder="https://example.com/course-image.jpg" required>
-            <div class="form-text">Enter a valid image URL. The preview will update below.</div>
+            <div class="form-text">Điền vào đường dẫn ảnh bìa (URL) hợp lệ. Xem trước ở phía dưới.</div>
             <div class="mt-4">
                 <img id="imagePreview" src="{{course.image_url}}" alt="Course Image Preview"
                     class="rounded-3 shadow-sm border d-block mx-auto w-100"
                     style="max-width: 600px; height: 337px; object-fit: contain; background-color: #f8f9fa;"
                     onerror="handleImageError(this)">
                 <p id="imageError" class="mt-2 small text-danger fw-medium" style="display: none;"> <i
-                        class="fas fa-exclamation-triangle me-1"></i> Cannot load image preview. Please check the
-                    URL. </p>
+                        class="fas fa-exclamation-triangle me-1"></i> Không thể tải hình ảnh. Vui lòng kiểm tra lại URL. </p>
             </div>
         </div>
 
@@ -82,11 +81,11 @@ font-size: 1.2rem;
         <div class="row g-4 mb-4">
             {{!-- Total Hours --}}
             <div class="col-md-6">
-                <label for="total_hours" class="form-label fs-6 fw-semibold"> Total Hours <span
+                <label for="total_hours" class="form-label fs-6 fw-semibold"> Thời lượng khoá học <span
                         class="text-danger">*</span> </label>
                 <input type="text" id="total_hours" name="total_hours" value="{{course.total_hours}}"
                     class="form-control form-control-lg" placeholder="10.5" required>
-                <div class="form-text">Course duration in hours</div>
+                <div class="form-text">Thời lượng tính bằng giờ</div>
             </div>
             {{!-- Total Lectures
             <div class="col-md-6">
@@ -102,10 +101,10 @@ font-size: 1.2rem;
 
         {{!-- Category và Level --}}
         <div class="mb-4">
-            <label for="catid" class="form-label fs-6 fw-semibold"> Category <span class="text-danger">*</span>
+            <label for="catid" class="form-label fs-6 fw-semibold"> Danh mục khoá học <span class="text-danger">*</span>
             </label>
             <select id="catid" name="catid" required class="form-select form-select-lg">
-                <option value="">-- Select Category --</option>
+                <option value="">-- Lựa chọn danh mục --</option>
                 {{#each categories}}
                 <option value="{{this.cat_id}}" {{selectOption ../course.catid this.cat_id}}>{{this.cat_name}}
                 </option>
@@ -113,14 +112,14 @@ font-size: 1.2rem;
             </select>
         </div>
         <div class="mb-4">
-            <label for="level" class="form-label fs-6 fw-semibold"> Course Level <span class="text-danger">*</span>
+            <label for="level" class="form-label fs-6 fw-semibold"> Trình độ <span class="text-danger">*</span>
             </label>
             <select id="level" name="level" required class="form-select form-select-lg">
-                <option value="">-- Select Level --</option>
-                <option value="Beginner" {{selectOption course.level "Beginner" }}>Beginner</option>
-                <option value="Intermediate" {{selectOption course.level "Intermediate" }}>Intermediate</option>
-                <option value="Advanced" {{selectOption course.level "Advanced" }}>Advanced</option>
-                <option value="All Levels" {{selectOption course.level "All Levels" }}>All Levels</option>
+                <option value="">-- Lựa chọn trình độ --</option>
+                <option value="Beginner" {{selectOption course.level "Beginner" }}>Cơ bản</option>
+                <option value="Intermediate" {{selectOption course.level "Intermediate" }}>Trung cấp</option>
+                <option value="Advanced" {{selectOption course.level "Advanced" }}>Nâng cao</option>
+                <option value="All Levels" {{selectOption course.level "All Levels" }}>Mọi trình độ</option>
             </select>
         </div>
 
@@ -130,7 +129,7 @@ font-size: 1.2rem;
         <div class="row g-4 mb-4">
             {{!-- Current Price --}}
             <div class="col-md-6">
-                <label for="discount_price" class="form-label fs-6 fw-semibold"> Current Price (VND) <span
+                <label for="discount_price" class="form-label fs-6 fw-semibold"> Giá hiện tại (VND) <span
                         class="text-danger">*</span> </L>
                     <div class="input-group input-group-lg">
                         <span class="input-group-text">₫</span>
@@ -141,7 +140,7 @@ font-size: 1.2rem;
             </div>
             {{!-- Original Price --}}
             <div class="col-md-6">
-                <label for="price" class="form-label fs-6 fw-semibold"> Original Price (VND) <span
+                <label for="price" class="form-label fs-6 fw-semibold"> Giá gốc (VND) <span
                         class="text-danger">*</span> </label>
                 <div class="input-group input-group-lg">
                     <span class="input-group-text">₫</span>
@@ -156,14 +155,13 @@ font-size: 1.2rem;
         {{!-- Action Buttons --}}
         <div class="d-flex flex-column flex-sm-row justify-content-end gap-3">
             <a href="/instructor/courses" class="btn btn-outline-secondary btn-lg"> <i
-                    class="fas fa-arrow-left me-2"></i> Cancel </a>
+                    class="fas fa-arrow-left me-2"></i> Trở về </a>
             <button type="button" class="btn btn-outline-danger btn-lg me-auto" id="deleteButton">
-                <i class="fas fa-trash-alt me-2"></i> Delete
+                <i class="fas fa-trash-alt me-2"></i> Xoá
             </button>
-            <button type="reset" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-redo me-2"></i> Reset
-                Form </button>
+            <button type="reset" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-redo me-2"></i> Reset </button>
             <button type="submit" class="btn btn-primary btn-lg shadow-sm" id="submitButton">
-                <i class="fas fa-save me-2"></i> Save and Continue
+                <i class="fas fa-save me-2"></i> Lưu và tiếp tục
             </button>
         </div>
     </form>

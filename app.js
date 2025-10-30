@@ -89,6 +89,12 @@ app.engine('handlebars', engine({
       }
       return str;
     },
+    range(start, end) {
+    const s = Number(start), e = Number(end);
+    const out = [];
+    for (let i = s; i <= e; i++) out.push(i);
+    return out;
+  },
 
     // Hiển thị sao (rating)
     renderStars(rating) {
@@ -133,18 +139,6 @@ app.engine('handlebars', engine({
     // Giúp chọn option trong select
     selectOption(selectedValue, optionValue) {
       return String(selectedValue) === String(optionValue) ? 'selected' : '';
-    },
-
-    // Tạo link phân trang
-    createPaginationLink(page, queryParams) {
-      const params = new URLSearchParams(queryParams);
-      params.set('page', page);
-      return '?' + params.toString();
-    },
-    range(start, end) {
-      let arr = [];
-      for (let i = start; i <= end; i++) arr.push(i);
-      return arr;
     },
 
     lte(a, b) {
@@ -199,7 +193,7 @@ app.get('/', async (req, res) => {
   const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek(4, student_id); 
   const parents = await categoryModel.findParents();
   const rating = await ratingModel.findTop3RecentFiveStarCourses();
-  const topCate = await categoryModel.findTopCategoriesOfWeek(3);
+  const topCate = await categoryModel.findTopCategoriesOfWeek(5);
   // Thêm mảng stars để Handlebars each
   rating.forEach(r => {
     r.stars = Array.from({ length: r.value });

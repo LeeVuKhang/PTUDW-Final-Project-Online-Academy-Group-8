@@ -84,12 +84,20 @@
                      class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
                     <i class="bi bi-eye"></i>
                   </a>
+                  <form method="post" action="/admin/courses/{{course_id}}/{{#if is_disabled}}enable{{else}}disable{{/if}}" class="d-inline">
+  <button type="submit"
+          class="btn btn-sm {{#if is_disabled}}btn-success{{else}}btn-outline-warning{{/if}}"
+          title="{{#if is_disabled}}Bật hiển thị lại{{else}}Ẩn khóa học{{/if}}">
+    <i class="bi {{#if is_disabled}}bi-eye{{else}}bi-eye-slash{{/if}}"></i>
+  </button>
+</form>
                   <button type="button" 
                           class="btn btn-sm btn-outline-danger" 
                           onclick="confirmRemoveCourse({{course_id}}, '{{title}}')" 
                           title="Gỡ bỏ khóa học">
                     <i class="bi bi-trash"></i>
                   </button>
+                  
                 </div>
               </td>
             </tr>

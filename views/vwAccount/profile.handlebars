@@ -55,7 +55,7 @@ background-color: #f8f9fa;
 {{/fill_section}}
 
 <div class="container my-4">
-      <h3 class="mb-0">Account details</h3>
+      <h3 class="mb-0">Chi tiết tài khoản</h3>
   <div class="d-flex align-items-baseline gap-3 mb-5">
     <span class="text-muted username-large">@{{user.username}}</span>
   </div>
@@ -68,7 +68,7 @@ background-color: #f8f9fa;
       {{#if saved}}<div class="alert alert-success py-2">Profile updated.</div>{{/if}}
       <form method="post" action="/account/profile" class="row g-3" id="frmProfileInfo">
         <div class="col-12">
-          <label class="form-label">Full name</label>
+          <label class="form-label">Tên đầy đủ</label>
           <input class="form-control" name="name" value="{{user.name}}" required>
         </div>
 
@@ -76,13 +76,13 @@ background-color: #f8f9fa;
           <label class="form-label">Email</label>
            <div class="input-group">
             <input class="form-control" type="email" value="{{user.email}}" readonly>
-            <a class="btn btn-outline-secondary" href="/account/profile?tab=email">Change</a>
+            <a class="btn btn-outline-secondary" href="/account/profile?tab=email">Thay đổi</a>
           </div>
-          <div class="form-text">Email is your unique ID. Use the Change Email tab.</div>
+          <div class="form-text">Email là mã định danh duy nhất của bạn. Hãy sử dụng tab “Thay đổi Email” để chỉnh sửa.</div>
         </div>
 
         <div class="col-12">
-          <label for="txtdob" class="form-label">Date of Birth</label>
+          <label for="txtdob" class="form-label">Ngày tháng năm sinh</label>
           <input id="txtdob" class="form-control" type="date" name="dob" value="{{formatDate user.dob}}">
         </div>
 
@@ -112,17 +112,17 @@ background-color: #f8f9fa;
         </div>
 
        <div class="col-12">
-            <label class="form-label fs-6 fw-semibold"> Self Introduction <span class="text-danger">*</span>
+            <label class="form-label fs-6 fw-semibold"> Giới thiệu bản thân <span class="text-danger">*</span>
             </label>
             <div id="editor" style="height: 250px;">
                 {{{user.self_introduction}}}
             </div>
             <input type="hidden" id="self_introduction_hidden" name="self_introduction">
-            <div class="form-text">A brief bio about yourself.</div>
+            <div class="form-text">Thông tin về bản thân.</div>
         </div>
 
         <div class="col-12">
-          <button class="btn btn-primary">Save changes</button>
+          <button class="btn btn-primary">Lưu thay đổi</button>
         </div>
       </form>
     </div> 

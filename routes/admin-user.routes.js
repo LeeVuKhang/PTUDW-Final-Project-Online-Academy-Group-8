@@ -144,77 +144,50 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Kích hoạt lại tài khoản user
-router.post('/:id/activate', async (req, res) => {
-    try {
-        const userId = req.params.id;
-        
-        await userModel.updateStatus(userId, true);
-        
-        res.json({ 
-            success: true, 
-            message: 'Đã kích hoạt tài khoản' 
-        });
-    } catch (error) {
-        console.error('Lỗi khi kích hoạt tài khoản:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Lỗi hệ thống' 
-        });
-    }
+
+
+
+router.post('/:userId/promote', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await userModel.updateRole(userId, 2);
+    return res.redirect('back');
+  } catch (e) {
+    console.error(e);
+    return res.status(500).send('Promote failed');
+  }
 });
 
-// Tạm khóa tài khoản user
-router.post('/:id/deactivate', async (req, res) => {
+// Xóa người dùng
+router.post('/:id/delete', async (req, res) => {
     try {
-        const userId = req.params.id;
+        const userId = parseInt(req.params.id);
         
-        await userModel.updateStatus(userId, false);
-        
-        res.json({ 
-            success: true, 
-            message: 'Đã tạm khóa tài khoản' 
-        });
-    } catch (error) {
-        console.error('Lỗi khi khóa tài khoản:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Lỗi hệ thống' 
-        });
-    }
-});
-
-// Nâng cấp học viên lên làm giảng viên
-router.post('/:id/promote', async (req, res) => {
-    try {
-        const userId = req.params.id;
-        
-        // Kiểm tra user có tồn tại không và có phải học viên không
+        // Kiểm tra user có tồn tại không
         const user = await userModel.findById(userId);
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy người dùng'
-            });
+            return res.status(404).send('Không tìm thấy người dùng');
         }
 
-        if (user.role !== 1) {
-            return res.status(400).json({
-                success: false,
-                message: 'Chỉ có thể nâng cấp tài khoản học viên'
-            });
+        // Không cho phép xóa admin
+        if (user.role === 0) {
+            return res.status(403).send('Không thể xóa tài khoản admin');
         }
 
-        // Promote to instructor
-        await userModel.updateRole(userId, 2); // role 2 là giảng viên
-
-        res.redirect('/admin/users/students?promoted=1');
+        // Xóa user
+        await userModel.delete(userId);
+        
+        // Redirect về trang phù hợp
+        if (user.role === 1) {
+            res.redirect('/admin/users/students?deleted=1');
+        } else if (user.role === 2) {
+            res.redirect('/admin/users/instructors?deleted=1');
+        } else {
+            res.redirect('/admin/users/students');
+        }
     } catch (error) {
-        console.error('Lỗi khi nâng cấp user:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Lỗi hệ thống' 
-        });
+        console.error('Lỗi khi xóa user:', error);
+        res.status(500).send('Lỗi hệ thống: ' + error.message);
     }
 });
 
@@ -229,6 +202,28 @@ router.get('/check-email', async (req, res) => {
         console.error('Lỗi khi check email:', error);
         res.status(500).json(false);
     }
+});
+
+router.post('/:userId/activate', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await userModel.patch(userId, { is_locked: false });
+    return res.json({ success: true });
+  } catch (e) {
+    console.error('[admin-user] activate failed:', e);
+    return res.status(500).json({ success: false, message: 'Activate failed' });
+  }
+});
+
+router.post('/:userId/deactivate', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await userModel.patch(userId, { is_locked: true });
+    return res.json({ success: true });
+  } catch (e) {
+    console.error('[admin-user] deactivate failed:', e);
+    return res.status(500).json({ success: false, message: 'Deactivate failed' });
+  }
 });
 
 
