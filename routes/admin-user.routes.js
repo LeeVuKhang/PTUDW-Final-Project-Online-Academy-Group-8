@@ -150,78 +150,18 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// 4.3 Kích hoạt tài khoản
-router.post('/:id/activate', async (req, res) => {
-    try {
-        const userId = req.params.id;
-        
-        await userModel.updateStatus(userId, true);
-        
-        res.json({ 
-            success: true, 
-            message: 'Đã kích hoạt tài khoản' 
-        });
-    } catch (error) {
-        console.error('Error activating user:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Lỗi hệ thống' 
-        });
-    }
-});
 
-// 4.3 Tạm khóa tài khoản
-router.post('/:id/deactivate', async (req, res) => {
-    try {
-        const userId = req.params.id;
-        
-        await userModel.updateStatus(userId, false);
-        
-        res.json({ 
-            success: true, 
-            message: 'Đã tạm khóa tài khoản' 
-        });
-    } catch (error) {
-        console.error('Error deactivating user:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Lỗi hệ thống' 
-        });
-    }
-});
 
-// 4.3 Nâng cấp học viên thành giảng viên
-router.post('/:id/promote', async (req, res) => {
-    try {
-        const userId = req.params.id;
-        
-        // Check if user exists and is a student
-        const user = await userModel.findById(userId);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy người dùng'
-            });
-        }
 
-        if (user.role !== 1) {
-            return res.status(400).json({
-                success: false,
-                message: 'Chỉ có thể nâng cấp tài khoản học viên'
-            });
-        }
-
-        // Promote to instructor
-        await userModel.updateRole(userId, 2); // 2 = Instructor
-
-        res.redirect('/admin/users/students?promoted=1');
-    } catch (error) {
-        console.error('Error promoting user:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Lỗi hệ thống' 
-        });
-    }
+router.post('/:userId/promote', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await userModel.updateRole(userId, 2);
+    return res.redirect('back');
+  } catch (e) {
+    console.error(e);
+    return res.status(500).send('Promote failed');
+  }
 });
 
 // Check email availability for instructor creation
@@ -236,5 +176,28 @@ router.get('/check-email', async (req, res) => {
         res.status(500).json(false);
     }
 });
+
+router.post('/:userId/activate', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await userModel.patch(userId, { is_locked: false });
+    return res.json({ success: true });
+  } catch (e) {
+    console.error('[admin-user] activate failed:', e);
+    return res.status(500).json({ success: false, message: 'Activate failed' });
+  }
+});
+
+router.post('/:userId/deactivate', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await userModel.patch(userId, { is_locked: true });
+    return res.json({ success: true });
+  } catch (e) {
+    console.error('[admin-user] deactivate failed:', e);
+    return res.status(500).json({ success: false, message: 'Deactivate failed' });
+  }
+});
+
 
 export default router;

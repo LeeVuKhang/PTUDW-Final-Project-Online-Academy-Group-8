@@ -97,6 +97,13 @@
                      class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
                     <i class="bi bi-eye"></i>
                   </a>
+                  <button type="button"
+        class="btn btn-sm {{#if is_locked}}btn-success{{else}}btn-outline-warning{{/if}}"
+        title="{{#if is_locked}}Mở khóa tài khoản{{else}}Tạm khóa tài khoản{{/if}}"
+        onclick="toggleUserStatus({{user_id}}, {{#if is_locked}}true{{else}}false{{/if}})">
+  <i class="bi {{#if is_locked}}bi-unlock{{else}}bi-lock{{/if}}"></i>
+</button>
+
                   
                   <a href="/instructor/courses?instructor_id={{user_id}}" 
                      class="btn btn-sm btn-outline-info" title="Xem khóa học">
