@@ -89,14 +89,12 @@ app.engine('handlebars', engine({
       }
       return str;
     },
-    range(){
-        return (start, end) => {
-          const s = Number(start);
-          const e = Number(end);
-          if (Number.isNaN(s) || Number.isNaN(e) || s > e) return [];
-          return Array.from({ length: e - s + 1 }, (_, i) => i + s);
-        };
-      },
+    range(start, end) {
+    const s = Number(start), e = Number(end);
+    const out = [];
+    for (let i = s; i <= e; i++) out.push(i);
+    return out;
+  },
 
     // Hiển thị sao (rating)
     renderStars(rating) {
