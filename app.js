@@ -187,7 +187,7 @@ app.get('/', async (req, res) => {
   const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek(4, student_id); 
   const parents = await categoryModel.findParents();
   const rating = await ratingModel.findTop3RecentFiveStarCourses();
-  const topCate = await categoryModel.findTopCategoriesOfWeek(3);
+  const topCate = await categoryModel.findTopCategoriesOfWeek(5);
   // Thêm mảng stars để Handlebars each
   rating.forEach(r => {
     r.stars = Array.from({ length: r.value });

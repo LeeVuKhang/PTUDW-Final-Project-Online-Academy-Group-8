@@ -93,6 +93,13 @@
                      class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
                     <i class="bi bi-eye"></i>
                   </a>
+                  <button type="button"
+        class="btn btn-sm {{#if is_locked}}btn-success{{else}}btn-outline-warning{{/if}}"
+        title="{{#if is_locked}}Mở khóa tài khoản{{else}}Tạm khóa tài khoản{{/if}}"
+        onclick="toggleUserStatus({{user_id}}, {{#if is_locked}}true{{else}}false{{/if}})">
+  <i class="bi {{#if is_locked}}bi-unlock{{else}}bi-lock{{/if}}"></i>
+</button>
+
                   
                   <form method="POST" action="/admin/users/{{user_id}}/delete" style="display:inline;">
                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa giảng viên" onclick="return confirm('Bạn có chắc chắn muốn xóa giảng viên {{name}}?')">
