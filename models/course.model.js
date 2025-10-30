@@ -167,35 +167,38 @@ export default {
   },
 
     search(keyword, limit, offset) {
-    return db('courses as c')
-      .join('categories as cat', 'c.catid', 'cat.cat_id')
-      .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
-      .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
-      .select(
-        'c.course_id',
-        'c.title',
-        'c.image_url',
-        'c.price',
-        'c.discount_price',
-        'c.views',
-        'u.user_id as instructor_id',
-        'u.name as instructor_name',
-        'cat.cat_name'
-      )
-      .count('r.rating_id as rating_count')
-      .avg('r.value as avg_rating')
-      .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
-      .groupBy('c.course_id', 'u.user_id', 'u.name', 'cat.cat_name')
-      .limit(limit)
-      .offset(offset);
-  },
+  return db('courses as c')
+    .join('categories as cat', 'c.catid', 'cat.cat_id')
+    .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
+    .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
+    .select(
+      'c.course_id',
+      'c.title',
+      'c.image_url',
+      'c.price',
+      'c.discount_price',
+      'c.views',
+      'u.user_id as instructor_id',
+      'u.name as instructor_name',
+      'cat.cat_name'
+    )
+    .count('r.rating_id as rating_count')
+    .avg('r.value as avg_rating')
+    .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
+    .andWhere('c.is_disable', false) 
+    .groupBy('c.course_id', 'u.user_id', 'u.name', 'cat.cat_name')
+    .limit(limit)
+    .offset(offset);
+},
+
 
     countSearch(keyword) {
-    return db('courses')
-      .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
-      .count('* as amount')
-      .first();
-  },
+    return db('courses as c')
+    .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
+    .andWhere('c.is_disable', false)
+    .count('* as amount')
+    .first();
+},
   async findRelatedCourses(categoryId, currentCourseId, limit = 4, studentId = null) {
         let relatedQuery = db("courses as c")
             .leftJoin("categories as cat", "c.catid", "cat.cat_id")
