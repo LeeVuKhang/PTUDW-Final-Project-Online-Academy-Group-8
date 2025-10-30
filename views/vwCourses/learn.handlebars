@@ -17,26 +17,32 @@
 
 <div class="container-fluid mt-4">
   <div class="row">
-    <!-- VIDEO PLAYER -->
     <div class="col-md-9">
       <div class="card shadow-sm mb-4">
         <div class="card-body">
           <h4>{{course.title}}</h4>
           <h6 class="text-muted">{{currentLesson.title}}</h6>
 
-          <!-- Video -->
           <div class="card-video mt-3">
-            <div class="ratio ratio-16x9">
-              <iframe
-                id="player"
-                src="https://www.youtube.com/embed/{{extractYouTubeId currentLesson.video_url}}"
-                title="{{currentLesson.title}}"
-                allowfullscreen>
-              </iframe>
-            </div>
+            
+            {{#if (isYouTubeUrl currentLesson.video_url)}}
+                <div class="ratio ratio-16x9">
+                  <iframe
+                    id="player"
+                    src="https://www.youtube.com/embed/{{extractYouTubeId currentLesson.video_url}}"
+                    title="{{currentLesson.title}}"
+                    allowfullscreen>
+                  </iframe>
+                </div>
+            {{else}}
+                <video id="player" playsinline controls>
+                    <source src="{{currentLesson.video_url}}" type="video/mp4" />
+                    Trình duyệt của bạn không hỗ trợ thẻ video.
+                </video>
+            {{/if}}
+
           </div>
 
-          <!-- Rating Form -->
           {{#if isStudent}}
           <div class="mt-4 border-top pt-3">
             <h5>Đánh giá của học viên</h5>
@@ -46,7 +52,7 @@
                 <div>
                   {{#each (range 1 5)}}
                     <i 
-                      class="bi {{#if (lte this ../userRating)}}bi-star-fill{{else}}bi-star{{/if}}"
+                       class="bi {{#if (lte this ../userRating)}}bi-star-fill{{else}}bi-star{{/if}}"
                       data-value="{{this}}">
                     </i>
                   {{/each}}
@@ -67,12 +73,11 @@
           </div>
           {{/if}}
 
-          <!-- Rating List -->
           <div class="mt-4">
             {{#each ratings}}
               <div class="border-bottom pb-2 mb-2">
                 <strong>{{this.name}}</strong> – {{{renderStars this.value}}}  
-                <div>{{this.comment}}</div>
+                 <div>{{this.comment}}</div>
                 <small class="text-muted">{{moment this.create_time "fromNow"}}</small>
               </div>
             {{/each}}
@@ -82,7 +87,6 @@
       </div>
     </div>
 
-    <!-- LESSON LIST -->
     <div class="col-md-3">
       <div class="accordion" id="lessonAccordion">
         {{#each chapters}}
@@ -105,7 +109,7 @@
                 {{/each}}
               </ul>
             </div>
-          </div>
+           </div>
         </div>
         {{/each}}
       </div>
@@ -140,13 +144,13 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
           const data = await response.json();
           if (data.success) {
-            console.log('✅ Đã lưu tiến độ học:', lessonId, 'Progress:', data.progress !== null ? data.progress + '%' : 'N/A');
+            console.log('Đã lưu tiến độ học:', lessonId, 'Progress:', data.progress !== null ? data.progress + '%' : 'N/A');
           } else {
             console.error('Lỗi lưu tiến độ (server báo lỗi):', data.error);
           }
       }
     } catch (err) {
-      console.error('❌ Lỗi fetch khi lưu tiến độ:', err);
+      console.error('Lỗi fetch khi lưu tiến độ:', err);
     }
   };
 

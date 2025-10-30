@@ -1,5 +1,3 @@
-{{! views/vwInstructor/edit-syllabus.handlebars }}
-
 {{#fill_section 'css'}}
 <style>
     .chapter-card {
@@ -7,19 +5,63 @@
         border: 1px solid #dee2e6;
         border-radius: 0.5rem;
     }
-
     .lesson-item {
         background-color: #fff;
         border: 1px solid #e9ecef;
     }
-
     .btn-remove {
         color: #dc3545;
         cursor: pointer;
     }
-
     .btn-remove:hover {
         color: #a71d2a;
+    }
+    .video-drop-zone {
+        border: 2px dashed #adb5bd;
+        border-radius: .375rem;
+        padding: 1rem;
+        text-align: center;
+        color: #6c757d;
+        cursor: pointer;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        position: relative;
+    }
+    .video-drop-zone.drop-zone--over {
+        background-color: #e9ecef;
+        border-color: #0d6efd;
+    }
+    .video-drop-zone .video-feedback {
+        font-weight: 500;
+    }
+    .video-drop-zone .video-feedback.text-success {
+        font-weight: bold;
+    }
+    .video-drop-zone .spinner-border {
+        display: none;
+    }
+    .video-drop-zone.is-uploading .video-feedback {
+        display: none;
+    }
+    .video-drop-zone.is-uploading .spinner-border {
+        display: inline-block;
+    }
+    .video-preview-container {
+        display: none; 
+        width: 100%;
+        margin-top: 1rem;
+        border-radius: .375rem;
+        overflow: hidden;
+        background-color: #000; 
+        max-height: 400px; 
+        position: relative;
+    }
+    .video-preview-container video {
+        width: 100%;
+        height: 100%;
+        display: block;
+        max-height: 400px;
+        object-fit: contain; 
+    }
     }
 </style>
 {{/fill_section}}
@@ -29,6 +71,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const chaptersContainer = document.getElementById('chapters-container');
         const addChapterBtn = document.getElementById('add-chapter-btn');
+        const courseId = {{ course.course_id }};
 
         let chapterIndex = {{ chapters.length }};
 
@@ -39,17 +82,13 @@
                 <h4 class="mb-0">Chương ${chapIdx + 1}</h4>
                 <button type="button" class="btn-close btn-remove" title="Xoá chương" data-action="remove-chapter"></button>
             </div>
-            
             <div class="mb-3">
                 <label class="form-label fw-semibold">Tiêu đề chương</label>
                 <input type="text" name="chapters[${chapIdx}][title]" class="form-control form-control-lg" placeholder="e.g. Introduction">
             </div>
-
             <h6 class="fw-semibold mt-4 mb-3">Bài giảng trong chương:</h6>
             <div class="lessons-container ps-md-4">
-                {{! Lesson items sẽ được thêm vào đây }}
             </div>
-            
             <button type="button" class="btn btn-sm btn-outline-secondary mt-3" data-action="add-lesson">
                 <i class="fas fa-plus me-1"></i> Thêm mới bài giảng
             </button>
@@ -65,21 +104,31 @@
                 <button type="button" class="btn-close btn-remove" title="Xoá bài giảng" data-action="remove-lesson"></button>
             </div>
             <div class="row g-3">
-                <div class="col-md-6">
+                 <div class="col-md-6">
                     <label class="form-label small">Tiêu đề bài giảng</label>
                     <input type="text" name="chapters[${chapIdx}][lessons][${lessonIdx}][title]" class="form-control" placeholder="Tiêu đề bài giảng">
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label small">Video URL</label>
-                    <input type="url" name="chapters[${chapIdx}][lessons][${lessonIdx}][video_url]" class="form-control" placeholder="https://vimeo.com/...">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small">Thời lượng (phút)</label>
                     <input type="number" name="chapters[${chapIdx}][lessons][${lessonIdx}][duration]" class="form-control" placeholder="10" min="0" step="1">
                 </div>
-                <div class="col-md-6 d-flex align-items-end">
+                <div class="col-12">
+                     <label class="form-label small">Video URL (hoặc kéo thả video bên dưới)</label>
+                     <input type="text" name="chapters[${chapIdx}][lessons][${lessonIdx}][video_url]" class="form-control form-control-sm video-url-input" placeholder="https://youtube.com/... hoặc /static/course_video/...">
+                </div>
+                <div class="col-12">
+                    <div class="video-drop-zone" data-chap-idx="${chapIdx}" data-lesson-idx="${lessonIdx}">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="video-feedback"><i class="bi bi-upload"></i> Kéo thả file video vào đây (hoặc click)</span>
+                    </div>
+                    
+                    <div class="video-preview-container">
+                        <video controls></video>
+                    </div>
+                </div>
+                <div class="col-12 d-flex align-items-end">
                     <div class="form-check">
-                        <input type="checkbox" name="chapters[${chapIdx}][lessons][${lessonIdx}][is_preview]" value="true" class="form-check-input" id="preview_${chapIdx}_${lessonIdx}">
+                         <input type="checkbox" name="chapters[${chapIdx}][lessons][${lessonIdx}][is_preview]" value="true" class="form-check-input" id="preview_${chapIdx}_${lessonIdx}">
                         <label class="form-check-label" for="preview_${chapIdx}_${lessonIdx}">
                             Cho phép xem trước?
                         </label>
@@ -95,10 +144,14 @@
         chapterIndex = chapterCards.length; 
         chapterCards.forEach((chapter, chapIdx) => {
             chapter.querySelector(`input[name^="chapters["]`).name = `chapters[${chapIdx}][title]`;
-            chapter.querySelector('h4').textContent = `Chapter ${chapIdx + 1}`;
+            chapter.querySelector('h4').textContent = `Chương ${chapIdx + 1}`;
+            chapter.dataset.index = chapIdx;
 
             const lessonItems = chapter.querySelectorAll('.lesson-item');
             lessonItems.forEach((lesson, lessonIdx) => {
+                lesson.dataset.index = lessonIdx;
+                lesson.querySelector('h6').textContent = `Bài giảng ${lessonIdx + 1}`;
+                
                 lesson.querySelector(`input[name$="[title]"]`).name = `chapters[${chapIdx}][lessons][${lessonIdx}][title]`;
                 lesson.querySelector(`input[name$="[video_url]"]`).name = `chapters[${chapIdx}][lessons][${lessonIdx}][video_url]`;
                 lesson.querySelector(`input[name$="[duration]"]`).name = `chapters[${chapIdx}][lessons][${lessonIdx}][duration]`;
@@ -106,11 +159,15 @@
                 const previewCheck = lesson.querySelector(`input[name$="[is_preview]"]`);
                 const previewLabel = lesson.querySelector(`label[for^="preview_"]`);
                 const newPreviewId = `preview_${chapIdx}_${lessonIdx}`;
-
                 previewCheck.name = `chapters[${chapIdx}][lessons][${lessonIdx}][is_preview]`;
                 previewCheck.id = newPreviewId;
                 previewLabel.setAttribute('for', newPreviewId);
-                lesson.querySelector('h6').textContent = `Lesson ${lessonIdx + 1}`;
+
+                const dropZone = lesson.querySelector('.video-drop-zone');
+                if (dropZone) {
+                    dropZone.dataset.chapIdx = chapIdx;
+                    dropZone.dataset.lessonIdx = lessonIdx;
+                }
             });
         });
     }
@@ -128,20 +185,18 @@
         if (action === 'add-lesson') {
             const chapterCard = e.target.closest('.chapter-card');
             const lessonsContainer = chapterCard.querySelector('.lessons-container');
-            const chapIdx = Array.from(chaptersContainer.children).indexOf(chapterCard);
+            const chapIdx = chapterCard.dataset.index;
             const lessonIdx = lessonsContainer.children.length; 
 
             const newLessonHTML = createLessonTemplate(chapIdx, lessonIdx);
             lessonsContainer.insertAdjacentHTML('beforeend', newLessonHTML);
         }
-
         if (action === 'remove-chapter') {
             if (confirm('Bạn có chắc muốn xóa chương này và tất cả bài học bên trong?')) {
                 e.target.closest('.chapter-card').remove();
                 reIndexForm(); 
             }
         }
-
         if (action === 'remove-lesson') {
             if (confirm('Bạn có chắc muốn xóa bài học này?')) {
                 e.target.closest('.lesson-item').remove();
@@ -150,10 +205,100 @@
         }
     });
 
+    async function uploadVideoFile(file, dropZone) {
+        const feedbackEl = dropZone.querySelector('.video-feedback');
+        const urlInput = dropZone.closest('.lesson-item').querySelector('.video-url-input');
+        const oldVideoUrl = urlInput.value;
+
+        const videoPreviewContainer = dropZone.closest('.col-12').querySelector('.video-preview-container');
+        const videoPreview = videoPreviewContainer.querySelector('video');
+
+        dropZone.classList.add('is-uploading');
+        feedbackEl.textContent = 'Đang tải lên...';
+        
+        const formData = new FormData();
+        formData.append('videoFile', file);
+        formData.append('oldVideoUrl', oldVideoUrl);
+
+        try {
+            const response = await fetch(`/instructor/upload-video/${courseId}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                feedbackEl.textContent = 'Tải lên thành công!';
+                feedbackEl.classList.add('text-success');
+                urlInput.value = data.videoUrl;
+                videoPreview.src = data.videoUrl;
+                videoPreviewContainer.style.display = 'block';
+                videoPreview.load();
+            } else {
+                throw new Error(data.message || 'Lỗi không xác định');
+            }
+        } catch (error) {
+            console.error('Lỗi upload video:', error);
+            feedbackEl.textContent = `Lỗi: ${error.message}`;
+            feedbackEl.classList.add('text-danger');
+            videoPreviewContainer.style.display = 'none';
+            videoPreview.src = '';
+        } finally {
+            dropZone.classList.remove('is-uploading');
+        }
+    }
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = "video/mp4,video/x-m4v,video/*";
+    fileInput.style.display = 'none';
+
+    chaptersContainer.addEventListener('click', (e) => {
+        const dropZone = e.target.closest('.video-drop-zone');
+        if (dropZone) {
+            fileInput.onchange = () => {
+                if (fileInput.files.length > 0) {
+                    uploadVideoFile(fileInput.files[0], dropZone);
+                    fileInput.value = null;
+                }
+            };
+            fileInput.click();
+        }
+    });
+
+    chaptersContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const dropZone = e.target.closest('.video-drop-zone');
+        if (dropZone) {
+            dropZone.classList.add('drop-zone--over');
+        }
+    });
+
+    ['dragleave', 'dragend'].forEach(type => {
+        chaptersContainer.addEventListener(type, (e) => {
+            e.preventDefault();
+            const dropZone = e.target.closest('.video-drop-zone');
+            if (dropZone) {
+                dropZone.classList.remove('drop-zone--over');
+            }
+        });
+    });
+
+    chaptersContainer.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const dropZone = e.target.closest('.video-drop-zone');
+        if (dropZone) {
+            dropZone.classList.remove('drop-zone--over');
+            if (e.dataTransfer.files.length > 0) {
+                uploadVideoFile(e.dataTransfer.files[0], dropZone);
+            }
+        }
+    });
+
     function loadExistingData() {
         const existingChapters = {{#if chapters}} {{{json chapters}}} {{else}} [] {{/if}};
-
-            if (existingChapters.length > 0) {
+        if (existingChapters.length > 0) {
                 chaptersContainer.innerHTML = '';
                 existingChapters.forEach((chapter, chapIdx) => {
                     const newChapterHTML = createChapterTemplate(chapIdx);
@@ -170,7 +315,33 @@
 
                             const lessonItem = lessonsContainer.lastElementChild;
                             lessonItem.querySelector(`input[name$="[title]"]`).value = lesson.title;
-                            lessonItem.querySelector(`input[name$="[video_url]"]`).value = lesson.video_url;
+                            
+                            const videoUrlInput = lessonItem.querySelector(`input[name$="[video_url]"]`);
+                            videoUrlInput.value = lesson.video_url;
+
+                            const dropZone = lessonItem.querySelector('.video-drop-zone');
+                            const feedbackEl = dropZone.querySelector('.video-feedback');
+
+                            const videoPreviewContainer = lessonItem.querySelector('.video-preview-container');
+                            const videoPreview = videoPreviewContainer.querySelector('video');
+
+                            if (lesson.video_url) {
+                                feedbackEl.textContent = 'Đã tải lên 1 file. (Kéo thả để thay thế)';
+                                feedbackEl.classList.add('text-success');
+
+                                if (lesson.video_url.startsWith('http')) {
+                                    videoPreviewContainer.style.display = 'none'; 
+                                    videoPreview.src = '';
+                                } else if (lesson.video_url.startsWith('/static/course_video/')) {
+                                    videoPreview.src = lesson.video_url;
+                                    videoPreviewContainer.style.display = 'block';
+                                    videoPreview.load();
+                                }
+                            } else {
+                                videoPreviewContainer.style.display = 'none';
+                                videoPreview.src = '';
+                            }
+
                             lessonItem.querySelector(`input[name$="[duration]"]`).value = lesson.duration;
                             if (lesson.is_preview) {
                                 lessonItem.querySelector(`input[name$="[is_preview]"]`).checked = true;
@@ -178,7 +349,7 @@
                         });
                     }
                 });
-                chapterIndex = existingChapters.length; 
+                chapterIndex = existingChapters.length;
             }
         }
 
@@ -199,7 +370,8 @@
             </h1>
             <p class="text-muted fs-5">Quản lý nội dung bài giảng khoá học: <strong>{{course.title}}</strong></p>
             <p class="text-info">
-                <i class="fas fa-info-circle me-2"></i> Bạn có thể quay lại sau. Khoá học sẽ được đánh dấu "Hoàn thành" nếu như có ít nhất 1 chương và 1 bài giảng.
+                <i class="fas fa-info-circle me-2"></i> Bạn có thể quay lại sau.
+                Khoá học sẽ được đánh dấu "Hoàn thành" nếu như có ít nhất 1 chương và 1 bài giảng.
             </p>
         </div>
         <hr class="my-4">
@@ -209,14 +381,14 @@
             </div>
             <button type="button" id="add-chapter-btn" class="btn btn-outline-primary btn-lg w-100">
                 <i class="fas fa-plus me-2"></i> Thêm chương mới
-            </button>
+             </button>
 
             <hr class="my-5">
             <div class="d-flex flex-column flex-sm-row justify-content-end gap-3">
                 <a href="/instructor/courses" class="btn btn-outline-secondary btn-lg">
                     <i class="fas fa-arrow-left me-2"></i> Trở về
                 </a>
-                <button type="submit" class="btn btn-success btn-lg shadow-sm">
+                 <button type="submit" class="btn btn-success btn-lg shadow-sm">
                     <i class="fas fa-save me-2"></i> Lưu và Hoàn tất
                 </button>
             </div>

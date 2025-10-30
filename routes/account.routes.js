@@ -31,7 +31,6 @@ const avatarStorage = multer.diskStorage({
 
             if (oldFile) {
                 fs.unlinkSync(path.join(avatarDir, oldFile));
-                console.log(`[Avatar Upload] Đã xóa file cũ: ${oldFile}`);
             }
         } catch (err) {
             console.error("[Avatar Upload] Lỗi khi xóa file cũ:", err);
@@ -42,7 +41,7 @@ const avatarStorage = multer.diskStorage({
 const upload = multer({ 
     storage: avatarStorage,
     fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png|gif|webp/;
+        const filetypes = /jpeg|jpg|png|gif|webp|gif/;
         const mimetype = filetypes.test(file.mimetype);
         const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
         if (mimetype && extname) {

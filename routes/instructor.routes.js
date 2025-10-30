@@ -3,8 +3,40 @@ import courseModel from '../models/course.model.js';
 import categoryModel from '../models/category.model.js';
 import syllabusModel from '../models/syllabus.model.js';
 import { checkInstructor, checkAuthenticated } from '../models/auth.model.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
+const __dirname = import.meta.dirname;
 const router = express.Router();
+
+const videoStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const courseId = req.params.course_id;
+        const dir = path.join(__dirname, '..', 'static', 'course_video', courseId);
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        const newFilename = `${uniqueSuffix}${ext}`;
+        cb(null, newFilename);
+    }
+});
+
+const uploadVideo = multer({ 
+    storage: videoStorage,
+    fileFilter: (req, file, cb) => {
+        const filetypes = /mp4|mov|avi|mkv|webm/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype || extname) {
+            return cb(null, true);
+        }
+        cb(new Error("Error: Chỉ chấp nhận file video (mp4, mov, avi, mkv, webm)!"));
+    }
+}).single('videoFile');
 
 router.use(checkAuthenticated, checkInstructor);
 
@@ -14,7 +46,7 @@ router.get('/', (req, res) => {
 
 router.get('/courses', async (req, res) => {
     try {
-        const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+        const instructor_id = req.session.authUser.user_id;
         const LIMIT = 5;
         let page = +req.query.page || 1;
         if (page < 1) page = 1;
@@ -82,7 +114,7 @@ router.get('/create-course', async (req, res) => {
 });
 
 router.post('/create-course', async (req, res) => {
-    const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+    const instructor_id = req.session.authUser.user_id;
 
     const course = {
         title: req.body.title,
@@ -119,11 +151,62 @@ router.post('/create-course', async (req, res) => {
     }
 });
 
+router.post('/upload-video/:course_id', (req, res) => {
+    uploadVideo(req, res, async (err) => {
+        if (err) {
+            console.error("Lỗi Multer khi upload video:", err.message);
+            return res.status(400).json({ success: false, message: err.message });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'Không có file nào được tải lên.' });
+        }
+
+        const oldVideoUrl = req.body.oldVideoUrl;
+        
+        if (oldVideoUrl && oldVideoUrl.startsWith('/static/course_video/')) {
+            try {
+                const relativePath = oldVideoUrl.substring('/static'.length);
+                const oldFilePath = path.join(__dirname, '..', 'static', relativePath);
+
+                if (fs.existsSync(oldFilePath)) {
+                    fs.unlinkSync(oldFilePath);
+                    console.log(`[Video Upload] Đã xóa file video cũ: ${oldFilePath}`);
+                } else {
+                    console.warn(`[Video Upload] Muốn xóa file cũ nhưng không tìm thấy: ${oldFilePath}`);
+                }
+            } catch (unlinkErr) {
+                console.error(`[Video Upload] Lỗi khi xóa file video cũ: ${unlinkErr.message}`);
+            }
+        }
+
+        try {
+             const course_id = req.params.course_id;
+             const instructor_id = req.session.authUser.user_id;
+             const course = await courseModel.findByID(course_id);
+             
+             if (!course || (course.instructor_id !== instructor_id && req.session.authUser.role !== 0)) {
+                 fs.unlinkSync(req.file.path);
+                 return res.status(403).json({ success: false, message: 'Không có quyền tải lên cho khóa học này.' });
+             }
+        } catch(e) {
+             console.error("Lỗi kiểm tra quyền sở hữu video:", e);
+             return res.status(500).json({ success: false, message: 'Lỗi server khi kiểm tra tệp.' });
+        }
+
+        const videoUrl = `/static/course_video/${req.params.course_id}/${req.file.filename}`;
+        res.json({
+            success: true,
+            message: 'Tải file lên thành công!',
+            videoUrl: videoUrl 
+        });
+    });
+});
 
 router.get('/courses/edit-syllabus/:course_id', async (req, res) => {
     try {
         const course_id = req.params.course_id;
-        const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+        const instructor_id = req.session.authUser.user_id;
 
         const courseWithSyllabus = await syllabusModel.findByCourseId(course_id);
 
@@ -147,12 +230,12 @@ router.get('/courses/edit-syllabus/:course_id', async (req, res) => {
 
 router.post('/courses/edit-syllabus/:course_id', async (req, res) => {
     const course_id = req.params.course_id;
-    const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+    const instructor_id = req.session.authUser.user_id;
     const chapters = req.body.chapters || [];
 
      try {
         const course = await courseModel.findByID(course_id);
-        if (!course || course.instructor_id !== instructor_id && req.session.authUser.role != 0) {
+        if (!course || (course.instructor_id !== instructor_id && req.session.authUser.role != 0)) {
             return res.status(403).send('Bạn không có quyền lưu syllabus cho khóa học này.');
         }
 
@@ -200,7 +283,7 @@ router.get('/update/:course_id', async function(req, res) {
     try {
         const categories = await categoryModel.findParentsWithChildren();
         const course_id = req.params.course_id;
-        const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+        const instructor_id = req.session.authUser.user_id;
 
         const course = await courseModel.findByID(course_id);
 
@@ -223,11 +306,11 @@ router.get('/update/:course_id', async function(req, res) {
 
 router.post('/update/:course_id', async (req, res) => {
     const course_id = req.params.course_id;
-    const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+    const instructor_id = req.session.authUser.user_id;
 
     try {
         const existingCourse = await courseModel.findByID(course_id);
-        if (!existingCourse || existingCourse.instructor_id !== instructor_id && req.session.authUser.role != 0) {
+        if (!existingCourse || (existingCourse.instructor_id !== instructor_id && req.session.authUser.role != 0)) {
             return res.status(403).send("Không có quyền cập nhật khóa học này.");
         }
 
@@ -263,7 +346,7 @@ router.post('/update/:course_id', async (req, res) => {
 
 router.post('/delete-course', async (req, res) => {
     const { course_id } = req.body;
-    const instructor_id = req.query.instructor_id || req.session.authUser.user_id;
+    const instructor_id = req.session.authUser.user_id;
 
     if (!course_id) {
         return res.status(400).json({ message: 'Thiếu ID khóa học.' });
@@ -271,7 +354,7 @@ router.post('/delete-course', async (req, res) => {
 
     try {
         const course = await courseModel.findByID(course_id);
-        if (!course || course.instructor_id !== instructor_id) {
+        if (!course || (course.instructor_id !== instructor_id && req.session.authUser.role !== 0)) {
             return res.status(403).json({ message: 'Không có quyền xóa khóa học này.' });
         }
 

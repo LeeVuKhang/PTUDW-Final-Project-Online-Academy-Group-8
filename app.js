@@ -47,7 +47,13 @@ app.engine('handlebars', engine({
         const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^?&]+)/);
         return match ? match[1] : '';
     },
-
+    isYouTubeUrl(url) {
+        if (typeof url !== 'string' || url.trim() === '') {
+            return false;
+        }
+        const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+        return youtubeRegex.test(url);
+    },
     // Định dạng tiền tệ VND
     formatNumber(num) {
       if (typeof num !== 'number') num = parseFloat(num);
