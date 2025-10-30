@@ -135,18 +135,6 @@ app.engine('handlebars', engine({
       return String(selectedValue) === String(optionValue) ? 'selected' : '';
     },
 
-    // Tạo link phân trang
-    createPaginationLink(page, queryParams) {
-      const params = new URLSearchParams(queryParams);
-      params.set('page', page);
-      return '?' + params.toString();
-    },
-    range(start, end) {
-      let arr = [];
-      for (let i = start; i <= end; i++) arr.push(i);
-      return arr;
-    },
-
     lte(a, b) {
       return a <= b;
     },
