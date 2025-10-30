@@ -249,61 +249,82 @@ export default {
   //         .select('courses.*', 'categories.cat_name as category_name'); 
   // },
   async findAllByInstructorId(instructor_id, limit, offset, categoryId = 'all', searchTerm = '') {
-    let categoryIds = [];
-    if (categoryId && categoryId !== 'all') {
-      categoryIds = await categoryModel.findAllDescendants(categoryId);
-      categoryIds.push(parseInt(categoryId, 10));
-    }
-
-    const query = db('courses as c')
-      .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
-      .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
-      .leftJoin('enrollments as e', 'c.course_id', 'e.course_id')
-      .where('c.instructor_id', instructor_id)
-      .select(
-        'c.course_id', 'c.title', 'c.tinydes as short_description', 'c.image_url', 'c.is_complete', 'c.views',
-        'cat.cat_name as category_name',
-        db.raw('COALESCE(AVG(r.value), 0) as avg_rating'),
-        db.raw('COUNT(DISTINCT r.rating_id) as rating_count'),
-        db.raw('COUNT(DISTINCT e.erm_id) as student_count')
-      )
-      .groupBy('c.course_id', 'c.title', 'c.tinydes', 'c.image_url', 'c.is_complete', 'c.views', 'cat.cat_name')
-      .orderBy('c.course_id', 'desc');
-
-    if (categoryIds.length > 0) {
-      query.whereIn('c.catid', categoryIds);
-    }
-
-
-    if (searchTerm) {
-    query.whereRaw(`c.fts @@ to_tsquery('simple', remove_accents(?))`, [searchTerm.replace(/\s+/g, ' & ')]);
+  let categoryIds = [];
+  if (categoryId && categoryId !== 'all') {
+    categoryIds = await categoryModel.findAllDescendants(categoryId);
+    categoryIds.push(parseInt(categoryId, 10));
   }
 
-    return query.limit(limit).offset(offset);
-  },
+  const query = db('courses as c')
+    .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
+    .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
+    .leftJoin('enrollments as e', 'c.course_id', 'e.course_id')
+    .where('c.instructor_id', instructor_id)
+    .andWhere('c.is_disable', false) 
+    .select(
+      'c.course_id',
+      'c.title',
+      'c.tinydes as short_description',
+      'c.image_url',
+      'c.is_complete',
+      'c.views',
+      'cat.cat_name as category_name',
+      db.raw('COALESCE(AVG(r.value), 0) as avg_rating'),
+      db.raw('COUNT(DISTINCT r.rating_id) as rating_count'),
+      db.raw('COUNT(DISTINCT e.erm_id) as student_count')
+    )
+    .groupBy(
+      'c.course_id',
+      'c.title',
+      'c.tinydes',
+      'c.image_url',
+      'c.is_complete',
+      'c.views',
+      'cat.cat_name'
+    )
+    .orderBy('c.course_id', 'desc');
 
-  async countAllByInstructorId(instructor_id, categoryId = 'all', searchTerm = '') {
-    let categoryIds = [];
-    if (categoryId && categoryId !== 'all') {
-      categoryIds = await categoryModel.findAllDescendants(categoryId);
-      categoryIds.push(parseInt(categoryId, 10));
-    }
-
-    const query = db('courses')
-      .where('instructor_id', instructor_id)
-      .count('course_id as total')
-      .first();
-
-    if (categoryIds.length > 0) {
-      query.whereIn('catid', categoryIds);
-    }
-
-    if (searchTerm) {
-    query.whereRaw(`fts @@ to_tsquery('simple', remove_accents(?))`, [searchTerm.replace(/\s+/g, ' & ')]);
+  if (categoryIds.length > 0) {
+    query.whereIn('c.catid', categoryIds);
   }
 
-    return query;
-  },
+  if (searchTerm) {
+    query.whereRaw(
+      `c.fts @@ to_tsquery('simple', remove_accents(?))`,
+      [searchTerm.trim().replace(/\s+/g, ' & ')]
+    );
+  }
+
+  return query.limit(limit).offset(offset);
+},
+
+async countAllByInstructorId(instructor_id, categoryId = 'all', searchTerm = '') {
+  let categoryIds = [];
+  if (categoryId && categoryId !== 'all') {
+    categoryIds = await categoryModel.findAllDescendants(categoryId);
+    categoryIds.push(parseInt(categoryId, 10));
+  }
+
+  const query = db('courses as c')
+    .where('c.instructor_id', instructor_id)
+    .andWhere('c.is_disable', false) 
+    .count('c.course_id as total')
+    .first();
+
+  if (categoryIds.length > 0) {
+    query.whereIn('c.catid', categoryIds);
+  }
+
+  if (searchTerm) {
+    query.whereRaw(
+      `c.fts @@ to_tsquery('simple', remove_accents(?))`,
+      [searchTerm.trim().replace(/\s+/g, ' & ')]
+    );
+  }
+
+  return query;
+},
+
   deleteCascade(course_id) {
     return db.transaction(async trx => {
       const chapterRows = await trx('chapters').where('course_id', course_id).select('chapter_id');
