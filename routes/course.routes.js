@@ -145,74 +145,84 @@ router.get("/instructorProfile", async (req, res) => {
 });
 /*Chi tiết khóa học*/
 router.get("/details/:id", async (req, res) => {
- try {
+  try {
     const course_id = req.params.id;
     const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null;
+
     const course = await db("courses as c")
-        .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
-        .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
-        .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
-        .leftJoin(
-            db('enrollments').select('course_id').count('* as student_count').groupBy('course_id').as('enroll_stats'),
-            'c.course_id', 'enroll_stats.course_id'
-        )
-        .select(
-            "c.*", "cat.cat_name as category_name",
-            "u.name as instructor_name", "u.user_id as instructor_id",
-            db.raw("COALESCE(AVG(r.value), 0) as rating"),
-            db.raw("COUNT(DISTINCT r.rating_id) as total_reviews"),
-            db.raw("COALESCE(enroll_stats.student_count, 0) as student_count")
-         )
-        .where("c.course_id", course_id)
-        .groupBy("c.course_id", "cat.cat_name", "u.name", "u.user_id", "enroll_stats.student_count")
-        .first();
+      .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
+      .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
+      .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
+      .leftJoin(
+        db('enrollments').select('course_id').count('* as student_count').groupBy('course_id').as('enroll_stats'),
+        'c.course_id', 'enroll_stats.course_id'
+      )
+      .select(
+        "c.*", "cat.cat_name as category_name",
+        "u.name as instructor_name", "u.user_id as instructor_id",
+        db.raw("COALESCE(AVG(r.value), 0) as rating"),
+        db.raw("COUNT(DISTINCT r.rating_id) as total_reviews"),
+        db.raw("COALESCE(enroll_stats.student_count, 0) as student_count")
+      )
+      .where("c.course_id", course_id)
+      .groupBy("c.course_id", "cat.cat_name", "u.name", "u.user_id", "enroll_stats.student_count")
+      .first();
 
     if (!course) return res.render("vwCourses/not-found", { layout: "main" });
 
+    // ✅ GHI NHẬN LƯỢT XEM Ở ĐÂY
+    await courseModel.addCourseView(course_id, student_id);
+
+    // Tiếp tục phần còn lại
     const instructorPromise = instructorModel.findProfileById(course.instructor_id);
     const instructorStatsPromise = instructorModel.getInstructorStats(course.instructor_id);
     const chaptersPromise = db("chapters").where({ course_id }).orderBy("order_index");
     const ratingsPromise = db("ratings")
-        .join("users", "ratings.student_id", "users.user_id")
-        .where("course_id", course_id)
-        .select("users.name", "ratings.value", "ratings.comment", "ratings.create_time")
-        .orderBy("ratings.create_time", "desc");
+      .join("users", "ratings.student_id", "users.user_id")
+      .where("course_id", course_id)
+      .select("users.name", "ratings.value", "ratings.comment", "ratings.create_time")
+      .orderBy("ratings.create_time", "desc");
     const relatedCoursesPromise = courseModel.findRelatedCourses(course.catid, course_id, 4, student_id);
 
     let isEnrolled = false;
     let isInWatchlistMain = false;
     if (student_id) {
-        const [enrollment, watchlistEntry] = await Promise.all([
-             db("enrollments").where({ student_id: student_id, course_id }).first(),
-             db("watchlists").where({ student_id: student_id, course_id }).first() 
-        ]);
-        isEnrolled = !!enrollment;
-        isInWatchlistMain = !!watchlistEntry; 
+      const [enrollment, watchlistEntry] = await Promise.all([
+        db("enrollments").where({ student_id, course_id }).first(),
+        db("watchlists").where({ student_id, course_id }).first()
+      ]);
+      isEnrolled = !!enrollment;
+      isInWatchlistMain = !!watchlistEntry;
     }
 
     const [instructorProfile, instructorStats, chapters, ratings, relatedCourses] = await Promise.all([
-        instructorPromise, instructorStatsPromise, chaptersPromise, ratingsPromise, relatedCoursesPromise
+      instructorPromise, instructorStatsPromise, chaptersPromise, ratingsPromise, relatedCoursesPromise
     ]);
 
     for (const chapter of chapters) {
-        chapter.lessons = await db("lessons")
-            .where({ chapter_id: chapter.chapter_id })
-            .orderBy("order_index");
+      chapter.lessons = await db("lessons")
+        .where({ chapter_id: chapter.chapter_id })
+        .orderBy("order_index");
     }
 
     const instructor = { ...instructorProfile, ...instructorStats };
 
     res.render("vwCourses/course_detail", {
-        layout: "main", course,
-        isEnrolled,
-        isInWatchlist: isInWatchlistMain,
-        ratings, chapters, instructor, relatedCourses
+      layout: "main",
+      course,
+      isEnrolled,
+      isInWatchlist: isInWatchlistMain,
+      ratings,
+      chapters,
+      instructor,
+      relatedCourses
     });
   } catch (error) {
-     console.error("Error fetching course details:", error);
-     res.status(500).send("Error loading course details.");
+    console.error("Error fetching course details:", error);
+    res.status(500).send("Error loading course details.");
   }
 });
+
 
 
 /*Ghi danh khóa học*/
