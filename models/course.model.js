@@ -92,7 +92,14 @@ export default {
     query = addEnrollmentSubquery(query, studentId);
     return await query;
   },
-
+  async addCourseView(course_id, student_id = null) {
+    await db.transaction(async trx => {
+      await trx('course_views').insert({ course_id, student_id });
+      await trx('courses')
+        .where({ course_id })
+        .increment('views', 1);
+    });
+  },
   async findImpressiveCoursesLastWeek(limit = 4, studentId = null) {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
