@@ -395,6 +395,9 @@ router.post('/courses/edit-syllabus/:course_id', async (req, res) => {
 
         await syllabusModel.saveSyllabus(course_id, chapters, is_complete);
         console.log(`Syllabus updated for course ${course_id}, is_complete: ${is_complete}`);
+        if (req.session.authUser.role === 0){
+            return res.redirect('/admin');
+        }
         res.redirect('/instructor/courses');
     } catch (error) {
         console.error('Error saving syllabus:', error);
