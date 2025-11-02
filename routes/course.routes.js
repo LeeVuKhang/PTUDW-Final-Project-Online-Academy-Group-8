@@ -188,14 +188,22 @@ router.get("/details/:id", async (req, res) => {
 
     let isEnrolled = false;
     let isInWatchlistMain = false;
+    let isInstructorOwner = false; 
+
     if (student_id) {
-      const [enrollment, watchlistEntry] = await Promise.all([
-        db("enrollments").where({ student_id, course_id }).first(),
-        db("watchlists").where({ student_id, course_id }).first()
-      ]);
-      isEnrolled = !!enrollment;
-      isInWatchlistMain = !!watchlistEntry;
+        if (course.instructor_id === student_id) {
+            isInstructorOwner = true;
+        }
+
+        const [enrollment, watchlistEntry] = await Promise.all([
+            db("enrollments").where({ student_id, course_id }).first(),
+            db("watchlists").where({ student_id, course_id }).first()
+        ]);
+        isEnrolled = !!enrollment;
+        isInWatchlistMain = !!watchlistEntry;
     }
+
+    const effectiveIsEnrolled = isEnrolled || isInstructorOwner;
 
     const [instructorProfile, instructorStats, chapters, ratings, relatedCourses] = await Promise.all([
       instructorPromise, instructorStatsPromise, chaptersPromise, ratingsPromise, relatedCoursesPromise
@@ -217,7 +225,9 @@ router.get("/details/:id", async (req, res) => {
       ratings,
       chapters,
       instructor,
-      relatedCourses
+      relatedCourses,
+      isEnrolled: effectiveIsEnrolled,
+      isInstructorOwner: isInstructorOwner
     });
   } catch (error) {
     console.error("Error fetching course details:", error);
@@ -253,15 +263,21 @@ router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
     const { course_id } = req.params;
     const student_id = req.session.authUser.user_id;
 
-    // Kiểm tra học viên có ghi danh không
+    const course = await db("courses").where({ course_id }).first();
+    if (!course) return res.status(404).send("Không tìm thấy khóa học.");
+
     const enrolled = await db("enrollments")
       .where({ student_id, course_id, status: "enrolled" })
       .first();
 
-    if (!enrolled) return res.redirect(`/course/details/${course_id}`);
+    const isInstructorOwner = (course.instructor_id === student_id);
 
-    // Nếu đã xem dở thì vào bài đó, ngược lại vào bài đầu tiên
-    const lastLesson = enrolled.last_watched_lesson;
+    if (!enrolled && !isInstructorOwner) {
+      return res.redirect(`/course/details/${course_id}`);
+    }
+
+    const lastLesson = enrolled ? enrolled.last_watched_lesson : null;
+
     if (lastLesson) {
       return res.redirect(`/course/learn/${course_id}/${lastLesson}`);
     }
@@ -295,13 +311,19 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
     const { course_id, lesson_id } = req.params;
     const student_id = req.session.authUser.user_id;
 
+    const course = await db("courses").where({ course_id }).first();
+    if (!course) return res.status(404).send("Không tìm thấy khóa học.");
+
     const enrolled = await db("enrollments")
       .where({ student_id, course_id, status: "enrolled" })
       .first();
 
-    if (!enrolled) return res.redirect(`/course/details/${course_id}`);
+    const isInstructorOwner = (course.instructor_id === student_id);
 
-    const course = await db("courses").where({ course_id }).first();
+    if (!enrolled && !isInstructorOwner) {
+      return res.redirect(`/course/details/${course_id}`);
+    }
+
 
     const chapters = await db("chapters")
       .where({ course_id })
@@ -314,6 +336,8 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
     }
 
     const currentLesson = await db("lessons").where({ lesson_id }).first();
+
+    const effectiveIsEnrolled = !!enrolled || isInstructorOwner;
 
     // --- Lấy đánh giá ---
     const ratings = await db("ratings")
@@ -346,9 +370,11 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
       avgRating,
       totalRatings,
       ratings,
-      isStudent: true,
+      isStudent: !!enrolled,
       userRating,
       userComment,
+      isEnrolled: effectiveIsEnrolled,
+      isInstructorOwner: isInstructorOwner,
     });
   } catch (err) {
     console.error("Lỗi khi load bài học:", err);
