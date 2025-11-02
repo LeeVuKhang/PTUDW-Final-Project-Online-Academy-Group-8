@@ -291,69 +291,72 @@ router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
 
 /* Học bài cụ thể */
 router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) => {
-  try {
-    const { course_id, lesson_id } = req.params;
-    const student_id = req.session.authUser.user_id;
+   try {
+       const { course_id, lesson_id } = req.params;
+       const student_id = req.session.authUser.user_id;
 
-    const enrolled = await db("enrollments")
-      .where({ student_id, course_id, status: "enrolled" })
-      .first();
+       const currentLesson = await db("lessons").where({ lesson_id }).first();
+       if (!currentLesson) return res.status(404).send("Không tìm thấy bài học này.");
 
-    if (!enrolled) return res.redirect(`/course/details/${course_id}`);
+       const enrolled = await db("enrollments")
+           .where({ student_id, course_id, status: "enrolled" })
+           .first();
 
-    const course = await db("courses").where({ course_id }).first();
+       if (!enrolled && currentLesson.is_preview !== true) {
+         console.log(`[AUTH] Học viên ${student_id} chưa ghi danh và bài ${lesson_id} không phải bài xem thử. Redirect.`);
+         return res.redirect(`/course/details/${course_id}`);
+       }
+    
+       const course = await db("courses").where({ course_id }).first();
 
-    const chapters = await db("chapters")
-      .where({ course_id })
-      .orderBy("order_index", "asc");
+       const chapters = await db("chapters")
+           .where({ course_id })
+           .orderBy("order_index", "asc");
 
-    for (const chapter of chapters) {
-      chapter.lessons = await db("lessons")
-        .where({ chapter_id: chapter.chapter_id })
-        .orderBy("order_index");
-    }
+       for (const chapter of chapters) {
+         chapter.lessons = await db("lessons")
+               .where({ chapter_id: chapter.chapter_id })
+               .orderBy("order_index");
+       }
 
-    const currentLesson = await db("lessons").where({ lesson_id }).first();
+       const ratings = await db("ratings")
+           .join("users", "ratings.student_id", "users.user_id")
+           .where("ratings.course_id", course_id)
+           .select("users.name", "ratings.value", "ratings.comment", "ratings.create_time");
 
-    // --- Lấy đánh giá ---
-    const ratings = await db("ratings")
-      .join("users", "ratings.student_id", "users.user_id")
-      .where("ratings.course_id", course_id)
-      .select("users.name", "ratings.value", "ratings.comment", "ratings.create_time");
+       const avgRatingResult = await db("ratings")
+           .where({ course_id })
+           .avg("value as avgRating")
+           .count("value as totalRatings")
+           .first();
 
-    const avgRatingResult = await db("ratings")
-      .where({ course_id })
-      .avg("value as avgRating")
-      .count("value as totalRatings")
-      .first();
+       const avgRating = parseFloat(avgRatingResult.avgRating || 0).toFixed(1);
+       const totalRatings = avgRatingResult.totalRatings || 0;
 
-    const avgRating = parseFloat(avgRatingResult.avgRating || 0).toFixed(1);
-    const totalRatings = avgRatingResult.totalRatings || 0;
+       const userRatingData = await db("ratings")
+           .where({ course_id, student_id })
+           .first();
 
-    const userRatingData = await db("ratings")
-      .where({ course_id, student_id })
-      .first();
+       const userRating = userRatingData ? userRatingData.value : 0;
+       const userComment = userRatingData ? userRatingData.comment : "";
 
-    const userRating = userRatingData ? userRatingData.value : 0;
-    const userComment = userRatingData ? userRatingData.comment : "";
-
-    res.render("vwCourses/learn", {
-      layout: "main",
-      course,
-      chapters,
-      currentLesson,
-      course_id,
-      avgRating,
-      totalRatings,
-      ratings,
-      isStudent: true,
-      userRating,
-      userComment,
-    });
-  } catch (err) {
-    console.error("Lỗi khi load bài học:", err);
-    res.status(500).send("Lỗi máy chủ khi tải bài học.");
-  }
+       res.render("vwCourses/learn", {
+           layout: "main",
+           course,
+           chapters,
+           currentLesson,
+           course_id,
+           avgRating,
+           totalRatings,
+           ratings,
+           isStudent: true,
+           userRating,
+           userComment,
+       });
+   } catch (err) {
+       console.error("Lỗi khi load bài học:", err);
+       res.status(500).send("Lỗi máy chủ khi tải bài học.");
+   }
 });
 
 
