@@ -612,6 +612,9 @@ router.get("/instructorProfile", async (req, res) => {
 router.get('/search', async function (req, res) {
   try {
     const q = req.query.q || '';
+    const sort = req.query.sort || 'newest';
+    const page = parseInt(req.query.page) || 1;
+
     if (q.trim().length === 0) {
       return res.render('vwCourses/search', {
         q,
@@ -620,35 +623,21 @@ router.get('/search', async function (req, res) {
     }
 
     const keywords = q.replace(/ /g, ' & ');
-
-    // Lấy trang hiện tại
-    const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * pageLimit;
 
-    // Gọi DB song song (dữ liệu + tổng số dòng)
-    const [courses, totalResult] = await Promise.all([
-      courseModel.search(keywords, pageLimit, offset),
-      courseModel.countSearch(keywords)
-    ]);
+    const courses = await courseModel.search(keywords, pageLimit, offset, sort);
 
-    const total = totalResult.amount;
-    const nPages = Math.ceil(total / pageLimit);
+    console.log('🔍 Search result:', courses);
 
-    const page_numbers = [];
-    for (let i = 1; i <= nPages; i++) {
-      page_numbers.push({
-        value: i,
-        isCurrent: i === page,
-        q
-      });
-    }
+    const empty = !courses || courses.length === 0;
 
     res.render('vwCourses/search', {
       layout: 'main',
       q,
       courses,
-      empty: courses.length === 0,
-      page_numbers,
+      empty,
+      sort,
+      page_numbers: [], 
     });
 
   } catch (error) {
@@ -656,5 +645,7 @@ router.get('/search', async function (req, res) {
     res.status(500).send('Lỗi máy chủ');
   }
 });
+
+
 
 export default router;

@@ -214,8 +214,9 @@ export default {
   return countQuery.first();
 },
 
-    search(keyword, limit, offset) {
-  return db('courses as c')
+    search(keyword, limit, offset, sort = 'newest') {
+  // Tạo query gốc
+  let query = db('courses as c')
     .join('categories as cat', 'c.catid', 'cat.cat_id')
     .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
     .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
@@ -233,11 +234,33 @@ export default {
     .count('r.rating_id as rating_count')
     .avg('r.value as avg_rating')
     .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
-    .andWhere('c.is_disabled', false) 
+    .andWhere('c.is_disabled', false)
     .groupBy('c.course_id', 'u.user_id', 'u.name', 'cat.cat_name')
     .limit(limit)
     .offset(offset);
+
+  switch (sort) {
+    case 'price_asc':
+      query = query.orderBy('c.discount_price', 'asc');
+      break;
+    case 'price_desc':
+      query = query.orderBy('c.discount_price', 'desc');
+      break;
+    case 'views':
+      query = query.orderBy('c.views', 'desc');
+      break;
+    case 'rating':
+      query = query.orderBy('avg_rating', 'desc'); 
+      break;
+    case 'newest':
+    default:
+      query = query.orderBy('c.last_update', 'desc');
+      break;
+  }
+
+  return query;
 },
+
 
 
     countSearch(keyword) {
