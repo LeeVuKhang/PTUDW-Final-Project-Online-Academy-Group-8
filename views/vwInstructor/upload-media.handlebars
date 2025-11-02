@@ -1,13 +1,10 @@
 {{#fill_section 'stylesheet'}}
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
 {{/fill_section}}
 
 {{#fill_section 'css'}}
 body { background-color: #f8f9fa; }
-.ql-editor { font-size: 1.2rem; }
-.ql-editor.ql-blank::before { font-size: 1.2rem; }
 
-/* CSS cho vùng kéo thả (MỚI) */
+/* CSS cho vùng kéo thả (Copy từ update-course) */
 .drop-zone {
     border: 2px dashed #adb5bd;
     border-radius: .5rem;
@@ -43,7 +40,6 @@ body { background-color: #f8f9fa; }
 .drop-zone.is-uploading .upload-spinner {
     display: block;
 }
-/* CSS cho image preview */
 #imageDropZone {
     min-height: 337px;
     max-width: 600px;
@@ -60,7 +56,6 @@ body { background-color: #f8f9fa; }
     object-fit: contain;
     border-radius: .375rem;
 }
-/* CSS cho video preview */
 #videoPreviewContainer {
     display: {{#if course.intro_url}}'block'{{else}}'none'{{/if}};
     width: 100%;
@@ -79,32 +74,16 @@ body { background-color: #f8f9fa; }
 {{/fill_section}}
 
 <div class="container-lg py-5">
-    <form id="courseForm" class="card shadow-lg p-4 p-md-5 rounded-4" method="post"
-        action="/instructor/update/{{course.course_id}}">
+    <div class="card shadow-lg p-4 p-md-5 rounded-4">
 
         <div class="mb-4 text-center">
             <h1 class="display-5 fw-bold text-dark mb-3">
-                <i class="fas fa-edit text-primary me-3"></i> Cập nhật khoá học
+                <i class="fas fa-photo-video text-primary me-3"></i> Upload Media
             </h1>
-             <p class="text-muted fs-5">Cập nhật thông tin khoá học bên dưới</p>
+            <p class="text-muted fs-5">Tải lên ảnh bìa và video giới thiệu cho khóa học: <strong>{{course.title}}</strong></p>
+            <p class="text-muted"> (Bước 2/3)</p>
         </div>
         <hr class="my-5">
-
-        <div class="mb-4">
-            <label for="title" class="form-label fs-6 fw-semibold"> Tên khóa học <span class="text-danger">*</span></label>
-            <input type="text" id="title" name="title" value="{{course.title}}" autofocus class="form-control form-control-lg" required>
-        </div>
-        <div class="mb-4">
-            <label for="tinydes" class="form-label fs-6 fw-semibold"> Mô tả ngắn <span class="text-danger">*</span> </label>
-            <textarea id="tinydes" name="tinydes" rows="4" class="form-control form-control-lg" required>{{course.tinydes}}</textarea>
-            <div class="form-text">Tối thiểu 50 ký tự</div>
-        </div>
-        <div class="mb-4">
-             <label class="form-label fs-6 fw-semibold"> Mô tả chi tiết khoá học <span class="text-danger">*</span></label>
-            <div id="editor" style="height: 250px;">{{{course.fulldes}}}</div>
-            <input type="hidden" id="fulldes" name="fulldes">
-            <div class="form-text">Tối thiểu 200 ký tự</div>
-        </div>
 
         <div class="mb-4 ">
             <label for="imageUrlInput" class="form-label fs-6 fw-semibold"> Ảnh bìa khoá học <span class="text-danger">*</span> </label>
@@ -114,10 +93,10 @@ body { background-color: #f8f9fa; }
             
             <div id="imageDropZone" class="mt-4 drop-zone">
                 <img id="imagePreview" src="{{#if course.image_url}}{{course.image_url}}{{else}}https://via.placeholder.com/600x337?text=Image+Preview{{/if}}" alt="Course Image Preview"
-                    class="preview-content"
-                    onerror="handleImageError(this, 'imagePreview', 'imageError')">
+                     class="preview-content"
+                     onerror="handleImageError(this, 'imagePreview', 'imageError')">
                 <div class="drop-zone-overlay">
-                    <i class="bi bi-upload fs-1"></i>
+                    <i class="fas fa-upload fs-1"></i>
                     <span>Kéo thả ảnh bìa</span>
                     <small>(hoặc click để chọn file)</small>
                 </div>
@@ -128,7 +107,6 @@ body { background-color: #f8f9fa; }
         </div>
 
         <hr class="my-5">
-
         <div class="mb-4">
             <label for="introUrlInput" class="form-label fs-6 fw-semibold"> Video giới thiệu (Tùy chọn) </label>
             <input type="text" id="introUrlInput" name="intro_url" value="{{course.intro_url}}"
@@ -137,7 +115,7 @@ body { background-color: #f8f9fa; }
             
             <div id="videoDropZone" class="mt-4 drop-zone p-4">
                 <div class="drop-zone-overlay">
-                    <i class="bi bi-camera-video fs-1"></i>
+                    <i class="fas fa-camera-video fs-1"></i>
                     <span>Kéo thả video giới thiệu</span>
                     <small>(hoặc click để chọn file)</small>
                 </div>
@@ -151,71 +129,21 @@ body { background-color: #f8f9fa; }
         </div>
 
         <hr class="my-5">
-        
-         <div class="row g-4 mb-4">
-            <div class="col-md-6">
-                 <label for="total_hours" class="form-label fs-6 fw-semibold"> Thời lượng khoá học (giờ) <span class="text-danger">*</span> </label>
-                <input type="text" id="total_hours" name="total_hours" value="{{course.total_hours}}" class="form-control form-control-lg" placeholder="10.5" required>
-            </div>
-        </div>
-        <div class="mb-4">
-             <label for="catid" class="form-label fs-6 fw-semibold"> Danh mục khoá học <span class="text-danger">*</span></label>
-            <select id="catid" name="catid" required class="form-select form-select-lg">
-                <option value="">-- Lựa chọn danh mục --</option>
-                {{#each categories}}
-                <option value="{{this.cat_id}}" {{selectOption ../course.catid this.cat_id}}>{{this.cat_name}}</option>
-                    {{#each this.children}}
-                    <option value="{{this.cat_id}}" {{selectOption ../../course.catid this.cat_id}}>&nbsp;&nbsp;&nbsp;{{this.cat_name}}</option>
-                    {{/each}}
-                {{/each}}
-            </select>
-        </div>
-        <div class="mb-4">
-            <label for="level" class="form-label fs-6 fw-semibold"> Cấp độ khóa học <span class="text-danger">*</span></label>
-             <select id="level" name="level" required class="form-select form-select-lg">
-                <option value="">-- Lựa chọn trình độ --</option>
-                <option value="Beginner" {{selectOption course.level "Beginner" }}>Cơ bản</option>
-                <option value="Intermediate" {{selectOption course.level "Intermediate" }}>Trung cấp</option>
-                <option value="Advanced" {{selectOption course.level "Advanced" }}>Nâng cao</option>
-                <option value="All Levels" {{selectOption course.level "All Levels" }}>Mọi trình độ</option>
-            </select>
-        </div>
-        <hr class="my-5">
-        <div class="row g-4 mb-4">
-             <div class="col-md-6">
-                <label for="discount_price" class="form-label fs-6 fw-semibold"> Giá hiện tại (VND) <span class="text-danger">*</span> </label>
-                    <div class="input-group input-group-lg">
-                     <span class="input-group-text">₫</span>
-                        <input type="text" id="discount_price" name="discount_price" data-initial-value="{{course.discount_price}}" class="form-control" placeholder="279000" required>
-                     </div>
-            </div>
-            <div class="col-md-6">
-                <label for="price" class="form-label fs-6 fw-semibold"> Giá gốc (VND) <span class="text-danger">*</span> </label>
-                 <div class="input-group input-group-lg">
-                    <span class="input-group-text">₫</span>
-                    <input type="text" id="price" name="price" data-initial-value="{{course.price}}" class="form-control" placeholder="399000" required>
-                 </div>
-            </div>
-        </div>
-        <hr class="my-5">
 
-        <div class="d-flex flex-column flex-sm-row justify-content-end gap-3">
-            <a href="/instructor/courses" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-arrow-left me-2"></i> Quay lại </a>
-             <button type="button" class="btn btn-outline-danger btn-lg me-auto" id="deleteButton">
-                <i class="fas fa-trash-alt me-2"></i> Xoá khóa học
-            </button>
-            <button type="reset" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-redo me-2"></i> Reset </button>
-            <button type="submit" class="btn btn-primary btn-lg shadow-sm" id="submitButton">
-                 <i class="fas fa-save me-2"></i> Lưu và tiếp tục
-            </button>
+        <div class="d-flex flex-column flex-sm-row justify-content-between gap-3">
+            <a href="/instructor/update/{{course.course_id}}" class="btn btn-outline-secondary btn-lg"> 
+                <i class="fas fa-arrow-left me-2"></i> Back (Edit Info) 
+            </a>
+
+            <a href="/instructor/courses/edit-syllabus/{{course.course_id}}" class="btn btn-primary btn-lg shadow-sm">
+                Save and Continue <i class="fas fa-arrow-right ms-2"></i>
+            </a>
         </div>
-    </form>
+    </div>
 </div>
 
 
 {{#fill_section 'js'}}
-<script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script>
     window.handleImageError = function (imgElement, previewId, errorId) {
         const defaultSrc = 'https://via.placeholder.com/600x337?text=Invalid+Image';
@@ -231,47 +159,7 @@ body { background-color: #f8f9fa; }
 
     document.addEventListener('DOMContentLoaded', function () {
         const courseId = {{ course.course_id }};
-        
-        const quill = new Quill('#editor', {
-            theme: 'snow',
-            placeholder: 'Detailed description for the course page...',
-            modules: { toolbar: [ [{'header': [1, 2, 3, false]}], ['bold', 'italic', 'underline'], [{'list': 'ordered'}, {'list': 'bullet'}], ['link', 'image'] ] }
-        });
-        const fulldesInput = document.getElementById('fulldes');
 
-        const discountPriceInput = document.getElementById('discount_price');
-        const priceInput = document.getElementById('price');
-        let cleaveCurrent = null;
-        let cleaveOriginal = null;
-        if (discountPriceInput) {
-            cleaveCurrent = new Cleave(discountPriceInput, { numeral: true, numeralThousandsGroupStyle: 'thousand' });
-            const initialDiscountValue = discountPriceInput.getAttribute('data-initial-value');
-            if (initialDiscountValue && cleaveCurrent) cleaveCurrent.setRawValue(initialDiscountValue);
-        }
-        if (priceInput) {
-            cleaveOriginal = new Cleave(priceInput, { numeral: true, numeralThousandsGroupStyle: 'thousand' });
-            const initialPriceValue = priceInput.getAttribute('data-initial-value');
-            if (initialPriceValue && cleaveOriginal) cleaveOriginal.setRawValue(initialPriceValue);
-        }
-
-        const form = document.getElementById('courseForm');
-        const submitButton = document.getElementById('submitButton');
-        if (form) {
-            form.addEventListener('submit', function (e) {
-                if (quill && fulldesInput) {
-                    fulldesInput.value = quill.root.innerHTML;
-                    if (quill.getText().trim().length === 0) fulldesInput.value = "";
-                }
-                if (cleaveCurrent && discountPriceInput) discountPriceInput.value = cleaveCurrent.getRawValue();
-                if (cleaveOriginal && priceInput) priceInput.value = cleaveOriginal.getRawValue();
-
-                if (submitButton) {
-                    submitButton.disabled = true;
-                    submitButton.innerHTML = `<span class...</span> Đang xử lý...`;
-                }
-            });
-        }
-        
         async function uploadFile(file, uploadUrl, inputField, previewElement, errorElement, oldUrl) {
             const dropZone = inputField.closest('.mb-4').querySelector('.drop-zone');
             dropZone.classList.add('is-uploading');
@@ -303,6 +191,13 @@ body { background-color: #f8f9fa; }
                         previewElement.load();
                         previewElement.parentElement.style.display = 'block';
                     }
+                    
+                    if (fieldName === 'courseImage') {
+                        await updateCourseField('image_url', newUrl);
+                    } else if (fieldName === 'introVideo') {
+                        await updateCourseField('intro_url', newUrl);
+                    }
+
                 } else {
                     throw new Error(data.message || 'Upload failed');
                 }
@@ -314,7 +209,25 @@ body { background-color: #f8f9fa; }
                 dropZone.classList.remove('is-uploading');
             }
         }
-        
+
+        async function updateCourseField(fieldName, value) {
+            try {
+                const response = await fetch(`/instructor/update-field/${courseId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ [fieldName]: value })
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to save URL to database');
+                }
+                console.log(`${fieldName} updated successfully`);
+            } catch (error) {
+                console.error(`Error updating ${fieldName}:`, error);
+            }
+        }
+
         const imageDropZone = document.getElementById('imageDropZone');
         const imageFileInput = document.getElementById('imageFileInput');
         const imageUrlInput = document.getElementById('imageUrlInput');
@@ -339,7 +252,11 @@ body { background-color: #f8f9fa; }
             });
             imageUrlInput.addEventListener('input', () => {
                 imageError.style.display = 'none';
-                if (imageUrlInput.value) imagePreview.src = imageUrlInput.value;
+                if (imageUrlInput.value) {
+                    imagePreview.src = imageUrlInput.value;
+                    // Tự động lưu khi dán URL và blur
+                    imageUrlInput.onblur = () => updateCourseField('image_url', imageUrlInput.value);
+                }
                 else imagePreview.src = 'https://via.placeholder.com/600x337?text=Image+Preview';
             });
         }
@@ -375,42 +292,10 @@ body { background-color: #f8f9fa; }
                     videoPreview.src = introUrlInput.value;
                     videoPreviewContainer.style.display = 'block';
                     videoPreview.load();
+                    introUrlInput.onblur = () => updateCourseField('intro_url', introUrlInput.value);
                 } else {
                     videoPreview.src = '';
                     videoPreviewContainer.style.display = 'none';
-                }
-            });
-        }
-
-        const deleteButton = document.getElementById('deleteButton');
-        if (deleteButton && courseId) {
-            deleteButton.addEventListener('click', async function (e) {
-                e.preventDefault();
-                const isConfirmed = confirm("BẠN CÓ CHẮC CHẮN MUỐN XÓA KHÓA HỌC NÀY KHÔNG?");
-                if (isConfirmed) {
-                    try {
-                        deleteButton.disabled = true;
-                        deleteButton.innerHTML = `<span class...</span> Đang xóa...`;
-                        const response = await fetch(`/instructor/delete-course`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ course_id: courseId })
-                        });
-                        if (response.ok) {
-                            alert('Complete Delete course!');
-                            window.location.href = '/instructor/courses';
-                        } else {
-                            const errorData = await response.json();
-                            alert(`Lỗi khi xóa khóa học: ${errorData.message || 'Error'}`);
-                            deleteButton.disabled = false;
-                            deleteButton.innerHTML = '<i class="fas fa-trash-alt me-2"></i> Xóa khóa học';
-                        }
-                    } catch (error) {
-                        console.error('Fetch error:', error);
-                        alert('Lỗi kết nối. Không thể xóa khóa học.');
-                        deleteButton.disabled = false;
-                        deleteButton.innerHTML = '<i class="fas fa-trash-alt me-2"></i> Xóa khóa học';
-                    }
                 }
             });
         }
