@@ -22,23 +22,23 @@ font-size: 1.2rem;
         {{!-- Header --}}
         <div class="mb-4 text-center">
             <h1 class="display-5 fw-bold text-dark mb-3">
-                <i class="fas fa-plus-circle text-primary me-3"></i> Create New Course
+                <i class="fas fa-plus-circle text-primary me-3"></i> Nhập thông tin khóa học của bạn
             </h1>
-            <p class="text-muted fs-5">Fill in the information below to create a new course</p>
+            <p class="text-muted fs-5">Vui lòng điền các thông tin bên dưới</p>
         </div>
         <hr class="my-5">
 
         {{!-- Course Title --}}
         <div class="mb-4">
-            <label for="title" class="form-label fs-6 fw-semibold"> Course Title <span class="text-danger">*</span>
+            <label for="title" class="form-label fs-6 fw-semibold"> Tên khóa học <span class="text-danger">*</span>
             </label>
             <input type="text" id="title" name="title" autofocus class="form-control form-control-lg"
-                placeholder="e.g. Complete Python Programming Masterclass 2025" required>
+                placeholder="ví dụ: Complete Python Programming Masterclass 2025" required>
         </div>
 
         {{!-- Short Description --}}
         <div class="mb-4">
-            <label for="tinydes" class="form-label fs-6 fw-semibold"> Short Course Description <span
+            <label for="tinydes" class="form-label fs-6 fw-semibold"> Mô tả ngắn <span
                     class="text-danger">*</span> </label>
             <textarea id="tinydes" name="tinydes" rows="4" class="form-control form-control-lg"
                 placeholder="Describe what students will learn in this course..." required></textarea>
@@ -46,79 +46,64 @@ font-size: 1.2rem;
         </div>
 
         <div class="mb-4">
-            <label class="form-label fs-6 fw-semibold"> Full Course Description <span class="text-danger">*</span>
+            <label class="form-label fs-6 fw-semibold"> Mô tả chi tiết khoá học <span class="text-danger">*</span>
             </label>
             <div id="editor" style="height: 250px;">
             </div>
             <input type="hidden" id="fulldes" name="fulldes" required>
-            <div class="form-text">Minimum 200 characters</div>
+            <div class="form-text">Ít nhất 200 kí tự</div>
         </div>
 
         {{!-- Course Image URL + Preview --}}
-        <div class="mb-4">
-            <label for="imageUrlInput" class="form-label fs-6 fw-semibold"> Course Image URL <span
-                    class="text-danger">*</span> </label>
-            <input type="url" id="imageUrlInput" name="image_url" class="form-control form-control-lg"
-                placeholder="https://example.com/course-image.jpg" required>
-            <div class="form-text">Enter a valid image URL. The preview will update below.</div>
-            <div class="mt-4">
-                <img id="imagePreview" src="{{course.image_url}}" alt="Course Image Preview"
-                    class="rounded-3 shadow-sm border d-block mx-auto w-100"
-                    style="max-width: 600px; height: 337px; object-fit: contain; background-color: #f8f9fa;"
-                    onerror="handleImageError(this)">
-                <p id="imageError" class="mt-2 small text-danger fw-medium" style="display: none;"> <i
-                        class="fas fa-exclamation-triangle me-1"></i> Cannot load image preview. Please check the URL.
-                </p>
-            </div>
-        </div>
+        <input type="hidden" name="image_url" value="">
 
         <hr class="my-5">
 
         <div class="row g-4 mb-4">
             <div class="col-md-6">
-                <label for="total_hours" class="form-label fs-6 fw-semibold"> Total Hours <span
+                <label for="total_hours" class="form-label fs-6 fw-semibold"> Thời lượng khoá học<span
                         class="text-danger">*</span> </label>
                 <input type="text" id="total_hours" name="total_hours" class="form-control form-control-lg"
                     placeholder="10.5" required>
-                <div class="form-text">Course duration in hours</div>
-            </div>
+                <div class="form-text">Thời lượng khóa học (giờ)</div>
+            {{!-- </div>
             <div class="col-md-6">
                 <label for="totalLectures" class="form-label fs-6 fw-semibold"> Total Lectures <span
                         class="text-danger">*</span> </label>
                 <input type="number" id="totalLectures" name="total_lectures" min="0"
                     class="form-control form-control-lg" placeholder="Enter number of lectures" required>
-            </div>
+            </div> --}}
         </div>
 
         <div id="lecturerInputsContainer" class="mb-4">
         </div>
 
         <div class="mb-4">
-            <label for="catid" class="form-label fs-6 fw-semibold"> Category <span class="text-danger">*</span> </label>
+            <label for="catid" class="form-label fs-6 fw-semibold"> Danh mục khoá học <span class="text-danger">*</span> </label>
             <select id="catid" name="catid" required class="form-select form-select-lg">
-                <option value="">-- Select Category --</option>
+                <option value="">-- Lựa chọn danh mục --</option>
                 {{#each categories}} <option value="{{this.cat_id}}">{{this.cat_name}}</option> {{/each}}
             </select>
         </div>
         <div class="mb-4">
-            <label for="level" class="form-label fs-6 fw-semibold"> Course Level <span class="text-danger">*</span>
+            <label for="level" class="form-label fs-6 fw-semibold"> Cấp độ khóa học <span class="text-danger">*</span>
             </label>
             <select id="level" name="level" required class="form-select form-select-lg">
-                <option value="">-- Select Level --</option>
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
-                <option value="All Levels">All Levels</option>
+                <option value="">-- Lựa chọn trình độ --</option>
+                <option value="Beginner">Cơ bản</option>
+                <option value="Intermediate">Trung cấp</option>
+                <option value="Advanced">Nâng cao</option>
+                <option value="All Levels">Mọi trình độ</option>
             </select>
         </div>
 
         <hr class="my-5">
 
-        {{!-- Nhóm Price Inputs --}}
+        {{!-- Price Inputs --}}
         <div class="row g-4 mb-4">
             {{!-- Current Price --}}
             <div class="col-md-6">
-                <label for="discount_price" class="form-label fs-6 fw-semibold"> Current Price (VND) <span
+                <label for="discount_price" class="form-label fs-6 fw-semibold"> Giá hiện tại (VND) <span
                         class="text-danger">*</span> </label>
                 <div class="input-group input-group-lg">
                     <span class="input-group-text">₫</span>
@@ -128,7 +113,7 @@ font-size: 1.2rem;
             </div>
             {{!-- Original Price --}}
             <div class="col-md-6">
-                <label for="price" class="form-label fs-6 fw-semibold"> Original Price (VND) <span
+                <label for="price" class="form-label fs-6 fw-semibold"> Giá gốc (VND) <span
                         class="text-danger">*</span> </label>
                 <div class="input-group input-group-lg">
                     <span class="input-group-text">₫</span>
@@ -142,11 +127,11 @@ font-size: 1.2rem;
         {{!-- Action Buttons --}}
         <div class="d-flex flex-column flex-sm-row justify-content-end gap-3">
             <a href="/instructor/courses" class="btn btn-outline-secondary btn-lg"> <i
-                    class="fas fa-arrow-left me-2"></i> Back </a>
+                    class="fas fa-arrow-left me-2"></i> Quay lại </a>
             <button type="reset" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-redo me-2"></i> Reset Form
             </button>
             <button type="submit" class="btn btn-primary btn-lg shadow-sm" id="submitButton">
-                <i class="fas fa-arrow-right me-2"></i> Save and Continue
+                <i class="fas fa-arrow-right me-2"></i> Lưu và Tiếp tục
             </button>
         </div>
     </form>
