@@ -1,17 +1,16 @@
 {{#fill_section 'js'}}
 <script>
   async function signupWithGoogle() {
-    try {
-      if (!window.supabase) {
-        alert('Supabase client not found. Make sure it is loaded in your layout.');
-        return;
+    const { error } = await window.supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/account/oauth-done'
       }
-      const { data, error } = await window.supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin + '/account/oauth-done' }
-      });
-      if (error) { console.error(error); alert('Google sign-in failed. Please try again.'); }
-    } catch (e) { console.error(e); alert('Unexpected error during Google sign-in.'); }
+    });
+    if (error) {
+      console.error(error);
+      alert('Google sign-up failed. Please try again.');
+    }
   }
   document.getElementById('frmRegister')?.addEventListener('submit', function(e) {
     const u = document.getElementById('txtUsername').value.trim();
