@@ -317,7 +317,6 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
                .where({ chapter_id: chapter.chapter_id })
                .orderBy("order_index");
        }
-
        const ratings = await db("ratings")
            .join("users", "ratings.student_id", "users.user_id")
            .where("ratings.course_id", course_id)
