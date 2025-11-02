@@ -91,7 +91,7 @@ body { background-color: #f8f9fa; }
         <hr class="my-5">
 
         <div class="mb-4">
-            <label for="title" class="form-label fs-6 fw-semibold"> Tiêu đề khoá học <span class="text-danger">*</span></label>
+            <label for="title" class="form-label fs-6 fw-semibold"> Tên khóa học <span class="text-danger">*</span></label>
             <input type="text" id="title" name="title" value="{{course.title}}" autofocus class="form-control form-control-lg" required>
         </div>
         <div class="mb-4">
@@ -171,7 +171,7 @@ body { background-color: #f8f9fa; }
             </select>
         </div>
         <div class="mb-4">
-            <label for="level" class="form-label fs-6 fw-semibold"> Trình độ <span class="text-danger">*</span></label>
+            <label for="level" class="form-label fs-6 fw-semibold"> Cấp độ khóa học <span class="text-danger">*</span></label>
              <select id="level" name="level" required class="form-select form-select-lg">
                 <option value="">-- Lựa chọn trình độ --</option>
                 <option value="Beginner" {{selectOption course.level "Beginner" }}>Cơ bản</option>
@@ -200,9 +200,9 @@ body { background-color: #f8f9fa; }
         <hr class="my-5">
 
         <div class="d-flex flex-column flex-sm-row justify-content-end gap-3">
-            <a href="/instructor/courses" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-arrow-left me-2"></i> Trở về </a>
+            <a href="/instructor/courses" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-arrow-left me-2"></i> Quay lại </a>
              <button type="button" class="btn btn-outline-danger btn-lg me-auto" id="deleteButton">
-                <i class="fas fa-trash-alt me-2"></i> Xoá
+                <i class="fas fa-trash-alt me-2"></i> Xoá khóa học
             </button>
             <button type="reset" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-redo me-2"></i> Reset </button>
             <button type="submit" class="btn btn-primary btn-lg shadow-sm" id="submitButton">

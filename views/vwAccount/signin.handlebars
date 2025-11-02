@@ -1,16 +1,16 @@
 {{#fill_section 'js'}}
 <script>
   async function signinWithGoogle() {
-    try {
-      if (!window.supabase) {
-        alert('Supabase client not found.'); return;
+    const { error } = await window.supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/account/oauth-done'
       }
-      const { error } = await window.supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin + '/account/oauth-done' }
-      });
-      if (error) { console.error(error); alert('Google sign-in failed.'); }
-    } catch (e) { console.error(e); alert('Unexpected error with Google sign-in.'); }
+    });
+    if (error) {
+      console.error(error);
+      alert('Google sign-in failed. Please try again.');
+    }
   }
 </script>
 {{/fill_section}}
