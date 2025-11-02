@@ -84,32 +84,65 @@ export default {
     return await query;
   },
 
-   async  findImpressiveCoursesLastWeek(limit = 4, studentId = null) {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    async addCourseView(course_id, student_id = null) {
+  await db.transaction(async trx => {
+    // 1️⃣ Ghi log lượt xem vào bảng course_views
+    await trx('course_views').insert({ course_id, student_id });
 
-    let query = db('courses as c')
-      .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
-      .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
-      .leftJoin("ratings as r", "c.course_id", "r.course_id")
-      .select(
-        'c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views',
-        'cat.cat_name',
-        'u.name as instructor_name', 'u.user_id as instructor_id',
-        'c.last_update',
-        db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
-        db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
-      )
-      .where('c.last_update', '>=', sevenDaysAgo)
-      .orderBy('c.views', 'desc')
-      .groupBy('c.course_id', 'c.title', 'c.price', 'c.discount_price', 'c.image_url', 'c.views', 'cat.cat_name', 'u.name', 'u.user_id', 'c.last_update') // THÊM GROUP BY
-      .limit(limit);
-      excludeDisabled(query, 'c');
+    // 2️⃣ Tăng tổng view của khóa học lên 1
+    await trx('courses')
+      .where({ course_id })
+      .increment('views', 1);
+  });
+},
 
-    query = addWatchlistSubquery(query, studentId);
-    query = addEnrollmentSubquery(query, studentId);
-    return await query;
-  },
+    async findImpressiveCoursesLastWeek(limit = 4, studentId = null) {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  let query = db('courses as c')
+    .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
+    .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
+    .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
+    .leftJoin('course_views as v', 'c.course_id', 'v.course_id')
+    .select(
+      'c.course_id',
+      'c.title',
+      'c.price',
+      'c.discount_price',
+      'c.image_url',
+      'cat.cat_name',
+      'u.name as instructor_name',
+      'u.user_id as instructor_id',
+      'c.last_update',
+      db.raw('COUNT(v.view_id) as views_last_7_days'),
+      db.raw('COALESCE(AVG(r.value), 0) as avg_rating'),
+      db.raw('COUNT(DISTINCT r.rating_id) as rating_count'),
+      'c.views' // tổng view hiện có
+    )
+    .where('v.viewed_at', '>=', sevenDaysAgo) // lọc lượt xem 7 ngày gần nhất
+    .groupBy(
+      'c.course_id',
+      'c.title',
+      'c.price',
+      'c.discount_price',
+      'c.image_url',
+      'c.views',
+      'cat.cat_name',
+      'u.name',
+      'u.user_id',
+      'c.last_update'
+    )
+    .orderBy('views_last_7_days', 'desc')
+    .limit(limit);
+
+  excludeDisabled(query, 'c');
+
+  query = addWatchlistSubquery(query, studentId);
+  query = addEnrollmentSubquery(query, studentId);
+
+  return await query;
+},
 
    async  findCoursesByFilter(categoryId, studentId, limit, offset, sort = 'newest') {
     // Lấy toàn bộ ID danh mục con (bao gồm cả chính nó)
