@@ -183,17 +183,15 @@ export default {
       categoryIds.push(parseInt(categoryId, 10)); // Ensure parent is included and is number
     }
 
-    let countQuery = db("courses");
+    let countQuery = db("courses as c")
+        .where("c.is_disabled", false);
 
     if (categoryIds.length > 0) {
-      countQuery.whereIn("catid", categoryIds);
+        countQuery.whereIn("c.catid", categoryIds); // Dùng 'c.'
     }
 
-  // Loại bỏ khóa học bị vô hiệu hóa
-  countQuery.where("c.is_disabled", false);
-
-  return countQuery.first();
-},
+    return countQuery.count("* as amount").first();
+  },
 
     search(keyword, limit, offset, sort = 'newest') {
   // Tạo query gốc
