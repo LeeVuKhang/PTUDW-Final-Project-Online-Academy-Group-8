@@ -256,8 +256,6 @@ router.get("/enroll/:id", checkAuthenticated, async (req, res) => {
   res.redirect(`/course/learn/${course_id}`);
 });
 
-/*Trang học khóa học*/
-/* Mở khóa học → tự động mở bài gần nhất */
 router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
   try {
     const { course_id } = req.params;
@@ -272,32 +270,40 @@ router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
 
     const isInstructorOwner = (course.instructor_id === student_id);
 
-    if (!enrolled && !isInstructorOwner) {
-      return res.redirect(`/course/details/${course_id}`);
-    }
+    if (enrolled || isInstructorOwner) {
+      const lastLesson = enrolled ? enrolled.last_watched_lesson : null;
 
-    const lastLesson = enrolled ? enrolled.last_watched_lesson : null;
+      if (lastLesson) {
+        return res.redirect(`/course/learn/${course_id}/${lastLesson}`);
+      }
+      const firstChapter = await db("chapters")
+        .where({ course_id })
+        .orderBy("order_index")
+        .first();
+      if (!firstChapter) return res.status(404).send("Khóa học chưa có chương nào.");
+        
+      const firstLesson = await db("lessons")
+        .where({ chapter_id: firstChapter.chapter_id })
+        .orderBy("order_index")
+        .first();
+      if (!firstLesson) return res.status(404).send("Chương đầu tiên chưa có bài học nào.");
 
-    if (lastLesson) {
-      return res.redirect(`/course/learn/${course_id}/${lastLesson}`);
-    }
-
-    // Lấy bài đầu tiên
-    const firstChapter = await db("chapters")
-      .where({ course_id })
-      .orderBy("order_index")
-      .first();
-
-    const firstLesson = await db("lessons")
-      .where({ chapter_id: firstChapter.chapter_id })
-      .orderBy("order_index")
-      .first();
-
-    if (firstLesson) {
       return res.redirect(`/course/learn/${course_id}/${firstLesson.lesson_id}`);
     }
+    const firstPreviewLesson = await db("lessons")
+      .join("chapters", "lessons.chapter_id", "chapters.chapter_id")
+      .where("chapters.course_id", course_id)
+      .andWhere("lessons.is_preview", true) 
+      .orderBy("chapters.order_index", "asc")
+      .orderBy("lessons.order_index", "asc")
+      .select("lessons.lesson_id")
+      .first();
 
-    res.status(404).send("Không tìm thấy bài học nào trong khóa học này.");
+    if (firstPreviewLesson) {
+      return res.redirect(`/course/learn/${course_id}/${firstPreviewLesson.lesson_id}`);
+    }
+    return res.redirect(`/course/details/${course_id}`);
+
   } catch (err) {
     console.error("Lỗi khi mở khóa học:", err);
     res.status(500).send("Lỗi máy chủ khi mở khóa học.");
@@ -305,7 +311,6 @@ router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
 });
 
 
-/* Học bài cụ thể */
 router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) => {
   try {
     const { course_id, lesson_id } = req.params;
@@ -314,17 +319,20 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
     const course = await db("courses").where({ course_id }).first();
     if (!course) return res.status(404).send("Không tìm thấy khóa học.");
 
+    const currentLesson = await db("lessons").where({ lesson_id }).first();
+    if (!currentLesson) return res.status(404).send("Không tìm thấy bài học này.");
+
     const enrolled = await db("enrollments")
       .where({ student_id, course_id, status: "enrolled" })
       .first();
-
+    const isEnrolledStudent = !!enrolled;
     const isInstructorOwner = (course.instructor_id === student_id);
+    const isPreviewLesson = currentLesson.is_preview === true;
 
-    if (!enrolled && !isInstructorOwner) {
+    if (!isInstructorOwner && !isEnrolledStudent && !isPreviewLesson) {
+      console.log(`[AUTH] User ${student_id} bị từ chối truy cập bài ${lesson_id}.`);
       return res.redirect(`/course/details/${course_id}`);
     }
-
-
     const chapters = await db("chapters")
       .where({ course_id })
       .orderBy("order_index", "asc");
@@ -335,11 +343,6 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
         .orderBy("order_index");
     }
 
-    const currentLesson = await db("lessons").where({ lesson_id }).first();
-
-    const effectiveIsEnrolled = !!enrolled || isInstructorOwner;
-
-    // --- Lấy đánh giá ---
     const ratings = await db("ratings")
       .join("users", "ratings.student_id", "users.user_id")
       .where("ratings.course_id", course_id)
@@ -360,7 +363,9 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
 
     const userRating = userRatingData ? userRatingData.value : 0;
     const userComment = userRatingData ? userRatingData.comment : "";
-
+    
+    const hasFullAccess = isEnrolledStudent || isInstructorOwner;
+    
     res.render("vwCourses/learn", {
       layout: "main",
       course,
@@ -370,10 +375,10 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
       avgRating,
       totalRatings,
       ratings,
-      isStudent: !!enrolled,
+      isStudent: isEnrolledStudent,      
       userRating,
       userComment,
-      isEnrolled: effectiveIsEnrolled,
+      isEnrolled: hasFullAccess,      
       isInstructorOwner: isInstructorOwner,
     });
   } catch (err) {
@@ -381,7 +386,6 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
     res.status(500).send("Lỗi máy chủ khi tải bài học.");
   }
 });
-
 
 
 
@@ -640,7 +644,7 @@ router.get('/search', async function (req, res) {
     const q = req.query.q || '';
     const sort = req.query.sort || 'newest';
     const page = parseInt(req.query.page) || 1;
-    const pageLimit = 12; // ✅ Khai báo giới hạn số khóa học mỗi trang
+    const pageLimit = 12; 
 
     if (q.trim().length === 0) {
       return res.render('vwCourses/search', {
@@ -649,37 +653,23 @@ router.get('/search', async function (req, res) {
       });
     }
 
-    // Chuẩn hóa từ khóa cho full-text search
     const keywords = q.replace(/ /g, ' & ');
-
-    // Lấy trang hiện tại
-    const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * pageLimit;
 
-    // Gọi DB song song (dữ liệu + tổng số dòng)
-    const [courses, totalResult] = await Promise.all([
-      courseModel.search(keywords, pageLimit, offset, sort),
-      courseModel.countSearch(keywords)
-    ]);
 
-    const total = totalResult.amount;
-    const nPages = Math.ceil(total / pageLimit);
+    const courses = await courseModel.search(keywords, pageLimit, offset, sort);
 
-    const page_numbers = [];
-    for (let i = 1; i <= nPages; i++) {
-      page_numbers.push({
-        value: i,
-        isCurrent: i === page,
-        q
-      });
-    }
+    console.log('🔍 Search result:', courses);
+
+    const empty = !courses || courses.length === 0;
 
     res.render('vwCourses/search', {
       layout: 'main',
       q,
       courses,
-      empty: courses.length === 0,
-      page_numbers,
+      empty,
+      sort,
+      page_numbers: [], 
     });
 
   } catch (error) {
