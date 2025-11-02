@@ -86,11 +86,7 @@ export default {
 
     async addCourseView(course_id, student_id = null) {
   await db.transaction(async trx => {
-    // 1️⃣ Ghi log lượt xem vào bảng course_views
     await trx('course_views').insert({ course_id, student_id });
-
-    
-    // 2️⃣ Tăng tổng view của khóa học lên 1
     await trx('courses')
       .where({ course_id })
       .increment('views', 1);
