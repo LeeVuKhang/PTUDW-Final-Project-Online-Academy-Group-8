@@ -188,14 +188,22 @@ router.get("/details/:id", async (req, res) => {
 
     let isEnrolled = false;
     let isInWatchlistMain = false;
+    let isInstructorOwner = false; 
+
     if (student_id) {
-      const [enrollment, watchlistEntry] = await Promise.all([
-        db("enrollments").where({ student_id, course_id }).first(),
-        db("watchlists").where({ student_id, course_id }).first()
-      ]);
-      isEnrolled = !!enrollment;
-      isInWatchlistMain = !!watchlistEntry;
+        if (course.instructor_id === student_id) {
+            isInstructorOwner = true;
+        }
+
+        const [enrollment, watchlistEntry] = await Promise.all([
+            db("enrollments").where({ student_id, course_id }).first(),
+            db("watchlists").where({ student_id, course_id }).first()
+        ]);
+        isEnrolled = !!enrollment;
+        isInWatchlistMain = !!watchlistEntry;
     }
+
+    const effectiveIsEnrolled = isEnrolled || isInstructorOwner;
 
     const [instructorProfile, instructorStats, chapters, ratings, relatedCourses] = await Promise.all([
       instructorPromise, instructorStatsPromise, chaptersPromise, ratingsPromise, relatedCoursesPromise
@@ -217,7 +225,9 @@ router.get("/details/:id", async (req, res) => {
       ratings,
       chapters,
       instructor,
-      relatedCourses
+      relatedCourses,
+      isEnrolled: effectiveIsEnrolled,
+      isInstructorOwner: isInstructorOwner
     });
   } catch (error) {
     console.error("Error fetching course details:", error);
@@ -253,15 +263,21 @@ router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
     const { course_id } = req.params;
     const student_id = req.session.authUser.user_id;
 
-    // Kiểm tra học viên có ghi danh không
+    const course = await db("courses").where({ course_id }).first();
+    if (!course) return res.status(404).send("Không tìm thấy khóa học.");
+
     const enrolled = await db("enrollments")
       .where({ student_id, course_id, status: "enrolled" })
       .first();
 
-    if (!enrolled) return res.redirect(`/course/details/${course_id}`);
+    const isInstructorOwner = (course.instructor_id === student_id);
 
-    // Nếu đã xem dở thì vào bài đó, ngược lại vào bài đầu tiên
-    const lastLesson = enrolled.last_watched_lesson;
+    if (!enrolled && !isInstructorOwner) {
+      return res.redirect(`/course/details/${course_id}`);
+    }
+
+    const lastLesson = enrolled ? enrolled.last_watched_lesson : null;
+
     if (lastLesson) {
       return res.redirect(`/course/learn/${course_id}/${lastLesson}`);
     }
@@ -293,16 +309,21 @@ router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
 router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) => {
   try {
     const { course_id, lesson_id } = req.params;
-
     const student_id = req.session.authUser.user_id;
+
+    const course = await db("courses").where({ course_id }).first();
+    if (!course) return res.status(404).send("Không tìm thấy khóa học.");
 
     const enrolled = await db("enrollments")
       .where({ student_id, course_id, status: "enrolled" })
       .first();
 
-    if (!enrolled) return res.redirect(`/course/details/${course_id}`);
+    const isInstructorOwner = (course.instructor_id === student_id);
 
-    const course = await db("courses").where({ course_id }).first();
+    if (!enrolled && !isInstructorOwner) {
+      return res.redirect(`/course/details/${course_id}`);
+    }
+
 
     const chapters = await db("chapters")
       .where({ course_id })
@@ -315,6 +336,8 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
     }
 
     const currentLesson = await db("lessons").where({ lesson_id }).first();
+
+    const effectiveIsEnrolled = !!enrolled || isInstructorOwner;
 
     // --- Lấy đánh giá ---
     const ratings = await db("ratings")
@@ -347,9 +370,11 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
       avgRating,
       totalRatings,
       ratings,
-      isStudent: true,
+      isStudent: !!enrolled,
       userRating,
       userComment,
+      isEnrolled: effectiveIsEnrolled,
+      isInstructorOwner: isInstructorOwner,
     });
   } catch (err) {
     console.error("Lỗi khi load bài học:", err);
@@ -626,22 +651,35 @@ router.get('/search', async function (req, res) {
 
     // Chuẩn hóa từ khóa cho full-text search
     const keywords = q.replace(/ /g, ' & ');
+
+    // Lấy trang hiện tại
+    const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * pageLimit;
 
-    // Gọi model
-    const courses = await courseModel.search(keywords, pageLimit, offset, sort);
+    // Gọi DB song song (dữ liệu + tổng số dòng)
+    const [courses, totalResult] = await Promise.all([
+      courseModel.search(keywords, pageLimit, offset, sort),
+      courseModel.countSearch(keywords)
+    ]);
 
-    console.log('🔍 Search result:', courses);
+    const total = totalResult.amount;
+    const nPages = Math.ceil(total / pageLimit);
 
-    const empty = !courses || courses.length === 0;
+    const page_numbers = [];
+    for (let i = 1; i <= nPages; i++) {
+      page_numbers.push({
+        value: i,
+        isCurrent: i === page,
+        q
+      });
+    }
 
     res.render('vwCourses/search', {
       layout: 'main',
       q,
       courses,
-      empty,
-      sort,
-      page_numbers: [], 
+      empty: courses.length === 0,
+      page_numbers,
     });
 
   } catch (error) {
@@ -649,7 +687,5 @@ router.get('/search', async function (req, res) {
     res.status(500).send('Lỗi máy chủ');
   }
 });
-
-
 
 export default router;
