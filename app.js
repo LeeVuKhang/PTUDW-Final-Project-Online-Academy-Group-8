@@ -9,7 +9,7 @@ import moment from 'moment';
 import Handlebars from 'handlebars';
 
 import categoryModel from './models/category.model.js';
-import * as courseModel from './models/course.model.js';
+import courseModel from './models/course.model.js';
 import { checkAdmin, checkAuthenticated, checkInstructor} from './models/auth.model.js';
 import ratingModel from './models/rating.model.js';
 
@@ -47,7 +47,13 @@ app.engine('handlebars', engine({
         const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^?&]+)/);
         return match ? match[1] : '';
     },
-
+    isYouTubeUrl(url) {
+        if (typeof url !== 'string' || url.trim() === '') {
+            return false;
+        }
+        const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+        return youtubeRegex.test(url);
+    },
     // Định dạng tiền tệ VND
     formatNumber(num) {
       if (typeof num !== 'number') num = parseFloat(num);
@@ -89,6 +95,18 @@ app.engine('handlebars', engine({
       }
       return str;
     },
+    range(start, end) {
+    const s = Number(start), e = Number(end);
+    const out = [];
+    for (let i = s; i <= e; i++) out.push(i);
+    return out;
+  },
+  lteq(a, b) {
+    return a >= b;
+  },
+  lt(a,b){
+    return a < b;
+  },
 
     // Hiển thị sao (rating)
     renderStars(rating) {
@@ -135,18 +153,6 @@ app.engine('handlebars', engine({
       return String(selectedValue) === String(optionValue) ? 'selected' : '';
     },
 
-    // Tạo link phân trang
-    createPaginationLink(page, queryParams) {
-      const params = new URLSearchParams(queryParams);
-      params.set('page', page);
-      return '?' + params.toString();
-    },
-    range(start, end) {
-      let arr = [];
-      for (let i = start; i <= end; i++) arr.push(i);
-      return arr;
-    },
-
     lte(a, b) {
       return a <= b;
     },
@@ -167,6 +173,7 @@ app.use((req, res, next) => {
     res.locals.isAuthenticated = true;
     res.locals.authUser = req.session.authUser;
   }
+  res.locals.currentUrl = req.originalUrl;
   next();
 });
 
@@ -198,7 +205,7 @@ app.get('/', async (req, res) => {
   const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek(4, student_id); 
   const parents = await categoryModel.findParents();
   const rating = await ratingModel.findTop3RecentFiveStarCourses();
-  const topCate = await categoryModel.findTopCategoriesOfWeek(3);
+  const topCate = await categoryModel.findTopCategoriesOfWeek(5);
   // Thêm mảng stars để Handlebars each
   rating.forEach(r => {
     r.stars = Array.from({ length: r.value });

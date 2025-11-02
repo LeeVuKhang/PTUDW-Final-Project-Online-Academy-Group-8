@@ -5,26 +5,93 @@
         <a class="btn btn-primary float-end" href="/admin/categories/add" role="button"> <i class="bi bi-file-earmark-plus-fill"></i> Thêm danh mục</a>
     </div>
     <div class="card-body">
-        <table class="table table-striped __web-inspector-hide-shortcut__">
+        <!-- Thanh tìm kiếm -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <form method="GET" action="/admin/categories">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control" name="search" value="{{searchKeyword}}" placeholder="Tìm kiếm danh mục...">
+                        <button class="btn btn-outline-secondary" type="submit">Tìm</button>
+                        {{#if searchKeyword}}
+                        <a href="/admin/categories" class="btn btn-outline-danger">Xóa</a>
+                        {{/if}}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <table class="table table-striped __web-inspector-hide-shortcut__" id="categoryTable">
             <thead>
                 <tr>
-                    <th scope="col">#</th>
                     <th scope="col">Danh mục</th>
-                    <th scope="col" class="text-end">Hành động</th>
+                    <th scope="col" class="text-end">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 {{#each categories}}
-                <tr>
-                    <th scope="row">{{cat_id}}</th>
-                    <td>{{cat_name}}</td>
+                <!-- Danh mục cha -->
+                <tr class="table-light" style="cursor: pointer;" onclick="toggleChildren({{cat_id}})">
+                    <td>
+                        <strong>
+                            {{#if children}}
+                                <i class="bi bi-chevron-right" id="icon-{{cat_id}}" style="transition: transform 0.3s ease; margin-right: 8px;"></i>
+                            {{else}}
+                                <span style="margin-right: 20px;"></span>
+                            {{/if}}
+                            <i class="bi bi-folder-fill"></i> {{cat_name}}
+                        </strong>
+                    </td>
                     <td class="text-end">
-                        <a name="" id="" class="btn btn-sm btn-outline-primary" href="/admin/categories/edit?id={{cat_id}}" role="button"><i class="bi bi-pencil-fill"></i> Chỉnh sửa</a>
+                        <a class="btn btn-sm btn-outline-primary" href="/admin/categories/edit?id={{cat_id}}" role="button" onclick="event.stopPropagation()" title="Chỉnh sửa">
+                            <i class="bi bi-pencil-fill"></i>
+                        </a>
+                        <form method="POST" action="/admin/categories/delete" style="display:inline;" onclick="event.stopPropagation()">
+                            <input type="hidden" name="cat_id" value="{{cat_id}}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa danh mục" {{#if children}}disabled{{/if}} onclick="return confirm('Bạn có chắc chắn muốn xóa danh mục này không?')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
                     </td>
                 </tr>
+                
+                <!-- Danh mục con (ẩn ban đầu) -->
+                {{#if children}}
+                {{#each children}}
+                <tr id="child-{{../cat_id}}-{{@index}}" style="display: none;">
+                    <td class="ps-4"> {{cat_name}}</td>
+                    <td class="text-end"></td>
+                </tr>
+                {{/each}}
+                {{/if}}
                 {{/each}}
             </tbody>
         </table>
     </div>
-    <div class="card-footer text-muted">Footer</div>
 </div>
+
+<script>
+function toggleChildren(categoryId) {
+    // Tìm tất cả các row con của category này
+    const childRows = document.querySelectorAll(`[id^="child-${categoryId}-"]`);
+    const icon = document.getElementById(`icon-${categoryId}`);
+    
+    if (childRows.length > 0) {
+        // Kiểm tra trạng thái hiện tại
+        const isHidden = childRows[0].style.display === 'none';
+        
+        // Toggle hiển thị tất cả các row con
+        childRows.forEach(row => {
+            row.style.display = isHidden ? 'table-row' : 'none';
+        });
+        
+        // Xoay icon
+        if (icon) {
+            icon.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+        }
+    }
+}
+</script>
+

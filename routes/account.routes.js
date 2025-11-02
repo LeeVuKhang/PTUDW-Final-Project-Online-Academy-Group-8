@@ -6,6 +6,50 @@ import { checkAuthenticated } from '../models/auth.model.js';
 import { sendOtpEmail } from '../utils/mailer.js';
 
 import watchlistModel from '../models/watchlist.model.js'
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+const __dirname = import.meta.dirname;
+const avatarDir = path.join(__dirname, '..', 'static', 'avatar');
+
+if (!fs.existsSync(avatarDir)) {
+    fs.mkdirSync(avatarDir, { recursive: true });
+}
+const avatarStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, avatarDir);
+    },
+    filename: (req, file, cb) => {
+        const userId = req.session.authUser.user_id;
+        const ext = path.extname(file.originalname);
+        const newFilename = `${userId}${ext}`;
+
+        try {
+            const filesInDir = fs.readdirSync(avatarDir);
+            
+            const oldFile = filesInDir.find(f => f.startsWith(`${userId}.`));
+
+            if (oldFile) {
+                fs.unlinkSync(path.join(avatarDir, oldFile));
+            }
+        } catch (err) {
+            console.error("[Avatar Upload] Lỗi khi xóa file cũ:", err);
+        }
+        cb(null, newFilename);
+    }
+});
+const upload = multer({ 
+    storage: avatarStorage,
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|gif|webp|gif/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb("Error: Chỉ chấp nhận file ảnh (jpeg, jpg, png, gif, webp)!");
+    }
+});
 const router = express.Router();
 
 
@@ -13,69 +57,142 @@ const router = express.Router();
 router.get('/signup', (req, res) => {
     res.render('vwAccount/signup');
 }); 
+
 router.post('/signup', async (req, res) => {
   try {
-    const { username, password, confirm, name, email, dob, image_url, self_introduction } = req.body;
-    if (!username || !password || !confirm || !name || !email) {
-      return res.render('vwAccount/signup', { err: 'Please fill all required fields.' });
-    }
-    if (password !== confirm) {
-      return res.render('vwAccount/signup', { err: 'Passwords do not match.' });
-    }
-    const existedUser = await userModel.findByUsername(username.trim());
-    if (existedUser) {
-      return res.render('vwAccount/signup', { err: 'Username is already taken.' });
-    }
-    const existedEmail = await userModel.findByEmail(email.trim());
-    if (existedEmail) {
-      return res.render('vwAccount/signup', { err: 'Email is already registered.' });
-    }
-    const hash = bcrypt.hashSync(password, 10);
+    const raw = req.body || {};
+    const payload = {
+      username: String(raw.username || '').trim(),
+      password: String(raw.password || ''),
+      confirm:  String(raw.confirm  || ''),
+      name:     String(raw.name  || '').trim(),
+      email:    String(raw.email || '').trim().toLowerCase(),
+      dob:      String(raw.dob || ''),
+    };
+    const rerender = (fieldErrors) =>
+      res.status(400).render('vwAccount/signup', {
+        fieldErrors,
+        last: {
+          username: payload.username,
+          name: payload.name,
+          email: payload.email,
+          dob: payload.dob,
+        }
+      });
 
+    const errs = {};
+    if (payload.password.length < 6) {
+      errs.password = 'Password must be at least 6 characters.';
+    }
+    if (payload.password !== payload.confirm) {
+      errs.confirm = 'Passwords do not match.';
+    }
+    if (Object.keys(errs).length > 0) {
+      return rerender(errs);
+    }
+    const existedUser  = await userModel.findByUsername(payload.username);
+    if (existedUser) {
+      errs.username = 'Username is already taken.';
+    }
+    const existedEmail = await userModel.findByEmail(payload.email);
+    if (existedEmail) {
+      errs.email = 'Email is already taken.';
+    }
+
+    if (Object.keys(errs).length > 0) {
+      return rerender(errs);
+    }
+    const hash = bcrypt.hashSync(payload.password, 10);
     req.session.pendingSignup = {
-      username: username.trim(),
+      username: payload.username,
       password: hash,
-      name: name.trim(),
-      email: email.trim(),
-      dob: dob,
+      name: payload.name,
+      email: payload.email,
+      dob: payload.dob,
       role: 1,
-      self_introduction: self_introduction || null,
-      image_url: image_url || null,
+      self_introduction: null,
+      image_url: null,
     };
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-    req.session.signupOtp = {
-      code: otp,
-      expiresAt: Date.now() + 10 * 60 * 1000,
-    };
+    req.session.signupOtp = { code: otp, expiresAt: Date.now() + 10 * 60 * 1000 };
+
     const { sendOtpEmail } = await import('../utils/mailer.js');
-    await sendOtpEmail(email.trim(), otp, 'Complete your registration');
-    return res.render('vwAccount/signup-verify', { email: email.trim() });
+    await sendOtpEmail(payload.email, otp, 'Complete your registration');
+
+    return res.render('vwAccount/signup-verify', { email: payload.email });
+
   } catch (e) {
+    if (e?.code === '23505') {
+      const fieldErrors = {};
+      if (/users_username_key/i.test(e.constraint || '')) fieldErrors.username = 'Username is already taken.';
+      if (/users_email_key/i.test(e.constraint || ''))    fieldErrors.email    = 'Email is already taken.';
+      if (Object.keys(fieldErrors).length > 0) {
+        return res.status(400).render('vwAccount/signup', { fieldErrors });
+      }
+    }
     console.error('[signup] error:', e);
     return res.status(500).render('vwAccount/403');
   }
 });
+
 router.get('/signin', (req, res) => {
-    res.render('vwAccount/signin');
+    res.render('vwAccount/signin', {
+        retUrl: req.query.retUrl || '' 
+    });
 });
 router.post('/signin', async (req, res) => {
+  try {
     const { username, password } = req.body;
-    const user = await userModel.findByUsername(username);
+    const u = String(username || '').trim();
+    const p = String(password || '');
+    const user = await userModel.findByUsername(u);
     const invalid = () =>
       res.status(401).render('vwAccount/signin', {
         err: 'Invalid username or password.',
-        lastUsername: username || '',
+        lastUsername: u
       });
     if (!user) return invalid();
-    const matchPassword = bcrypt.compareSync(password, user.password)
-    if (!matchPassword) return invalid();
+    if (!bcrypt.compareSync(p, user.password)) return invalid();
+
     req.session.isAuthenticated = true;
     req.session.authUser = user;
-
-    const retUrl = req.session.retUrl || '/';
+    
+    // Ưu tiên retUrl nếu có, không thì dùng role-based redirect
+    const sessionRetUrl = req.session.retUrl;
+    const bodyRetUrl = req.body.retUrl;
     delete req.session.retUrl;
-    return res.redirect(retUrl);
+    
+    // Nếu có retUrl cụ thể từ session hoặc form thì dùng
+    if (sessionRetUrl && sessionRetUrl !== '/') {
+      return res.redirect(sessionRetUrl);
+    }
+    if (bodyRetUrl && bodyRetUrl !== '/') {
+      return res.redirect(bodyRetUrl);
+    }
+    
+    // Không có retUrl cụ thể -> redirect theo role
+    let redirectUrl;
+    if (user.role === 0) {
+      // Admin - chuyển đến trang admin
+      redirectUrl = '/admin';
+    } else if (user.role === 1) {
+      // Student - chuyển đến trang chủ
+      redirectUrl = '/';
+    } else if (user.role === 2) {
+      // Instructor - chuyển đến trang instructor
+      redirectUrl = '/instructor';
+    } else {
+      // Default - trang chủ
+      redirectUrl = '/';
+    }
+    
+    return res.redirect(redirectUrl);
+  } catch (e) {
+    console.error('[signin] error:', e);
+    return res.status(500).render('vwAccount/signin', { err: 'Server error. Please try again.' });
+  }
 });
+
 router.get('/signup/verify', (req, res) => {
   const pending = req.session.pendingSignup;
   if (!pending) return res.redirect('/account/signup');
@@ -152,7 +269,32 @@ router.get('/profile', checkAuthenticated, (req, res) => {
   });
 });
 
+router.post('/upload-avatar', checkAuthenticated, upload.single('avatar'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'Không có file nào được tải lên hoặc file không phải là ảnh.' });
+        }
 
+        const newImageUrl = `/static/avatar/${req.file.filename}`;
+        const userId = req.session.authUser.user_id;
+
+        await userModel.patch(userId, { image_url: newImageUrl });
+
+        req.session.authUser.image_url = newImageUrl;
+        
+        req.session.save(err => {
+            if (err) {
+                 console.error("Lỗi lưu session sau khi upload avatar:", err);
+                 return res.status(500).json({ success: false, message: 'Lỗi khi lưu session.' });
+            }
+            res.json({ success: true, newImageUrl: newImageUrl });
+        });
+
+    } catch (error) {
+        console.error("Lỗi upload avatar:", error);
+        res.status(500).json({ success: false, message: 'Lỗi server khi tải ảnh lên.' });
+    }
+});
 
 
 

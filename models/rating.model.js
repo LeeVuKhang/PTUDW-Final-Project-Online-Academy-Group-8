@@ -28,7 +28,8 @@ export default {
         'c.title',
         'u.name as student_name',
         'r.comment',
-        'r.value'
+        'r.value',
+        'u.image_url'
       )
       .orderBy('r.create_time', 'desc')
       

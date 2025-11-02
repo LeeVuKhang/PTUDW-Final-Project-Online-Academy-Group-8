@@ -2,7 +2,11 @@ export function checkAuthenticated(req, res, next) {
   if (req.session.isAuthenticated) {
     next();
   } else {
-    req.session.reUrl = req.originalUrl;
+    const url = req.originalUrl || req.url || '/';
+    const isAuthRoute = /^\/account(\/|$)/i.test(url);
+    if (!isAuthRoute) {
+    req.session.retUrl = url;
+  }
     return res.redirect('/account/signin'); 
   }
 }

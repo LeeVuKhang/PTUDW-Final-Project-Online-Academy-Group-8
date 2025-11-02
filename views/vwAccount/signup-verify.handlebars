@@ -1,17 +1,17 @@
 <div class="container my-4">
-  <h3 class="mb-3">Verify your email</h3>
+  <h3 class="mb-3">Xác minh Email</h3>
 
-  <p>We sent a 6-digit code to <strong>{{email}}</strong>. Enter it to complete your registration.</p>
+  <p>Chúng tôi sẽ gửi mã xác nhận 6 ký tự đến <strong>{{email}}</strong>. Nhập mã để hoàn tất đăng ký.</p>
   {{#if err}}<div class="alert alert-danger py-2">{{err}}</div>{{/if}}
 
   <form method="post" action="/account/signup/verify" class="row g-3">
     <div class="col-12">
-      <label class="form-label">Verification code</label>
+      <label class="form-label">Mã xác minh</label>
       <input class="form-control" name="code" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required>
     </div>
     <div class="col-12">
-      <button class="btn btn-primary">Verify & Create account</button>
-      <a class="btn btn-link" href="/account/signup">Start over</a>
+      <button class="btn btn-primary">Xác minh & Tạo tài khoản</button>
+      <a class="btn btn-link" href="/account/signup">Bắt đầu</a>
     </div>
   </form>
 </div>

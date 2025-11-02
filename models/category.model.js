@@ -21,6 +21,12 @@ export default {
         .whereNull('parent_id')
         .orderBy('cat_id', 'asc'); // sắp theo ID tăng dần
     },
+    searchByName(keyword) {
+        return db('categories')
+            .where('cat_name', 'ILIKE', `%${keyword}%`)
+            .orderBy('parent_id', 'asc')
+            .orderBy('cat_id', 'asc');
+    },
     findChildren(parentId) {
         return db('categories').where('parent_id', parentId);
     },
@@ -47,7 +53,7 @@ export default {
     },
 
     // Top categories of week
-    async findTopCategoriesOfWeek(limit = 3) {
+    async findTopCategoriesOfWeek(limit = 5) {
     return db('enrollments as e')
         .join('courses as c', 'e.course_id', 'c.course_id')
         .join('categories as cat', 'c.catid', 'cat.cat_id') // chú ý alias đúng với DB của em

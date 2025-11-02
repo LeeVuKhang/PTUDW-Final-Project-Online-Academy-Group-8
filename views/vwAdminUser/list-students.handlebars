@@ -40,10 +40,14 @@
             {{#each students}}
             <tr>
               <td>
-                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" 
-                     style="width: 40px; height: 40px;">
-                  <span class="text-white fw-bold">{{substr name 0 1}}</span>
-                </div>
+                {{#if image_url}}
+                  <img src="{{image_url}}" alt="Avatar" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                {{else}}
+                  <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center" 
+                       style="width: 40px; height: 40px;">
+                    <span class="text-white fw-bold">{{substr name 0 1}}</span>
+                  </div>
+                {{/if}}
               </td>
               <td>
                 <div>
@@ -68,6 +72,12 @@
                      class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
                     <i class="bi bi-eye"></i>
                   </a>
+                  <button type="button"
+                  class="btn btn-sm {{#if is_locked}}btn-success{{else}}btn-outline-warning{{/if}}"
+                  title="{{#if is_locked}}Mở khóa tài khoản{{else}}Tạm khóa tài khoản{{/if}}"
+                  onclick="toggleUserStatus({{user_id}}, {{#if is_locked}}true{{else}}false{{/if}})">
+            <i class="bi {{#if is_locked}}bi-unlock{{else}}bi-lock{{/if}}"></i>
+          </button>
                   
                   <button type="button" 
                           class="btn btn-sm btn-outline-info" 
@@ -75,6 +85,12 @@
                           title="Nâng cấp thành giảng viên">
                     <i class="bi bi-arrow-up"></i>
                   </button>
+                  
+                  <form method="POST" action="/admin/users/{{user_id}}/delete" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa học viên" onclick="return confirm('Bạn có chắc chắn muốn xóa học viên {{name}}?')">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
                 </div>
               </td>
             </tr>
@@ -88,6 +104,8 @@
         <h5 class="text-muted mt-3">Chưa có học viên nào</h5>
       </div>
       {{/if}}
+      
+
     </div>
   </div>
 </div>

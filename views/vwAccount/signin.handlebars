@@ -20,7 +20,7 @@
   <div class="row justify-content-center">
     <div class="col-lg-6 col-md-8">
       <div class="card shadow-sm">
-        <h5 class="card-header">Sign in</h5>
+        <h5 class="card-header">Đăng nhập</h5>
         <div class="card-body">
 
           {{#if err}}
@@ -29,28 +29,29 @@
 
 
           <form method="post" action="/account/signin" id="frmSignin" novalidate>
+          <input type="hidden" name="retUrl" value="{{retUrl}}">
             <div class="mb-3">
-              <label class="form-label">Username</label>
+              <label class="form-label">Tài khoản</label>
               <input class="form-control" name="username" required value="{{lastUsername}}">
             </div>
 
             <div class="mb-3">
               <div class="d-flex justify-content-between">
-                <label class="form-label">Password</label>
+                <label class="form-label">Mật khẩu</label>
                 
               </div>
               <input type="password" class="form-control" name="password" required>
             </div>
             <div class="mb-3 justify-content-end d-flex">
-                <a class="link-primary small" href="/account/forgot">Forgot password?</a>
+                <a class="link-primary small" href="/account/forgot">Quên mật khẩu?</a>
             </div>
 
-            <button class="btn btn-primary w-100">Sign in</button>
+            <button class="btn btn-primary w-100">Đăng nhập</button>
 
 
                         <div class="d-flex align-items-center my-3">
               <div class="flex-grow-1" style="height:1px; background:#e9ecef;"></div>
-              <div class="px-3 text-muted small">or</div>
+              <div class="px-3 text-muted small">hoặc</div>
               <div class="flex-grow-1" style="height:1px; background:#e9ecef;"></div>
             </div>
               
@@ -58,7 +59,7 @@
               <button type="button" class="btn btn-outline-dark w-100 d-flex align-items-center justify-content-center gap-2"
                       onclick="signinWithGoogle()">
                 <i class="bi bi-google"></i>
-                Continue with Google
+                Đăng nhập với tài khoản Google
               </button>
             </div>
 
@@ -68,7 +69,7 @@
 
 
       <div class="text-center mt-3">
-        <a class="link-secondary" href="/account/signup">Sign up</a>
+        <a class="link-secondary" href="/account/signup">Đăng ký</a>
       </div>
     </div>
   </div>

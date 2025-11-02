@@ -92,29 +92,12 @@
                   <input type="text" class="form-control" id="name" name="name" 
                          required value="{{oldData.name}}">
                 </div>
-                
-                <div class="col-md-6 mb-3">
-                  <label for="phone" class="form-label">Số điện thoại</label>
-                  <input type="tel" class="form-control" id="phone" name="phone" 
-                         value="{{oldData.phone}}">
-                </div>
-              </div>
-
+              
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label for="dob" class="form-label">Ngày sinh</label>
                   <input type="date" class="form-control" id="dob" name="dob" 
                          value="{{oldData.dob}}">
-                </div>
-                
-                <div class="col-md-6 mb-3">
-                  <label for="gender" class="form-label">Giới tính</label>
-                  <select class="form-select" id="gender" name="gender">
-                    <option value="">Chọn giới tính</option>
-                    <option value="male" {{#if (eq oldData.gender 'male')}}selected{{/if}}>Nam</option>
-                    <option value="female" {{#if (eq oldData.gender 'female')}}selected{{/if}}>Nữ</option>
-                    <option value="other" {{#if (eq oldData.gender 'other')}}selected{{/if}}>Khác</option>
-                  </select>
                 </div>
               </div>
 
@@ -123,44 +106,30 @@
                 <textarea class="form-control" id="bio" name="bio" rows="4" 
                           placeholder="Mô tả ngắn về kinh nghiệm và chuyên môn...">{{oldData.bio}}</textarea>
               </div>
+
+              <div class="mb-3">
+                <label for="image_url" class="form-label">Hình đại diện</label>
+                <input type="url" class="form-control" id="image_url" name="image_url" 
+                       placeholder="https://example.com/avatar.jpg" 
+                       value="{{oldData.image_url}}">
+                <div class="form-text">Nhập URL hình ảnh đại diện của giảng viên</div>
+                
+                <!-- Preview image -->
+                <div class="mt-2" id="imagePreview" style="display: none;">
+                  <img id="previewImg" src="" alt="Preview" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                </div>
+              </div>
             </div>
 
+            {{!-- Professional Information fields commented out - not in database schema
             <hr>
-
-            <!-- Professional Information -->
             <div class="mb-4">
               <h5 class="text-primary mb-3">
                 <i class="bi bi-mortarboard"></i> Thông tin chuyên môn
               </h5>
-              
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label for="specialization" class="form-label">Chuyên môn</label>
-                  <input type="text" class="form-control" id="specialization" name="specialization" 
-                         placeholder="Ví dụ: Lập trình Web, Data Science..." 
-                         value="{{oldData.specialization}}">
-                </div>
-                
-                <div class="col-md-6 mb-3">
-                  <label for="experience_years" class="form-label">Số năm kinh nghiệm</label>
-                  <input type="number" class="form-control" id="experience_years" name="experience_years" 
-                         min="0" max="50" value="{{oldData.experience_years}}">
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label for="education" class="form-label">Trình độ học vấn</label>
-                <input type="text" class="form-control" id="education" name="education" 
-                       placeholder="Ví dụ: Thạc sĩ Khoa học Máy tính - ĐH Bách Khoa..." 
-                       value="{{oldData.education}}">
-              </div>
-
-              <div class="mb-3">
-                <label for="certificates" class="form-label">Chứng chỉ</label>
-                <textarea class="form-control" id="certificates" name="certificates" rows="3" 
-                          placeholder="Liệt kê các chứng chỉ chuyên môn (mỗi chứng chỉ một dòng)">{{oldData.certificates}}</textarea>
-              </div>
+              <p class="text-muted">Các thông tin này sẽ được cập nhật trong phiên bản sau</p>
             </div>
+            --}}
           </div>
 
           <div class="card-footer">
@@ -197,6 +166,29 @@ document.addEventListener('DOMContentLoaded', function() {
   let usernameValid = false;
   let emailValid = false;
   let passwordMatch = false;
+  
+  // Check existing values on page load (for form re-render after error)
+  function validateExistingValues() {
+    // Check username if has value
+    if (usernameInput.value.trim()) {
+      const username = usernameInput.value.trim();
+      if (username.length >= 3) {
+        // Trigger username check
+        usernameInput.dispatchEvent(new Event('blur'));
+      }
+    }
+    
+    // Check email if has value
+    if (emailInput.value.trim()) {
+      // Trigger email validation
+      emailInput.dispatchEvent(new Event('blur'));
+    }
+    
+    // Check password match if both fields have values
+    if (passwordInput.value && confirmPasswordInput.value) {
+      checkPasswordMatch();
+    }
+  }
 
   // Check username availability
   usernameInput.addEventListener('blur', async function() {
@@ -228,14 +220,15 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSubmitButton();
   });
 
-  // Check email format and availability
-  emailInput.addEventListener('blur', async function() {
+  // Simple email format validation
+  emailInput.addEventListener('blur', function() {
     const email = this.value.trim();
     const checkDiv = document.getElementById('emailCheck');
     
     if (!email) {
       checkDiv.innerHTML = '';
       emailValid = false;
+      updateSubmitButton();
       return;
     }
     
@@ -244,26 +237,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!emailRegex.test(email)) {
       checkDiv.innerHTML = '<span class="text-danger">Email không hợp lệ</span>';
       emailValid = false;
-      updateSubmitButton();
-      return;
+    } else {
+      checkDiv.innerHTML = '<span class="text-success">Email hợp lệ</span>';
+      emailValid = true;
     }
-    
-    try {
-      const response = await fetch(`/admin/users/check-email?email=${encodeURIComponent(email)}`);
-      const available = await response.json();
-      
-      if (available) {
-        checkDiv.innerHTML = '<span class="text-success">✓ Email khả dụng</span>';
-        emailValid = true;
-      } else {
-        checkDiv.innerHTML = '<span class="text-danger">✗ Email đã được sử dụng</span>';
-        emailValid = false;
-      }
-    } catch (error) {
-      checkDiv.innerHTML = '<span class="text-warning">Không thể kiểm tra email</span>';
-      emailValid = false;
-    }
-    
     updateSubmitButton();
   });
 
@@ -308,5 +285,29 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Vui lòng kiểm tra lại thông tin đã nhập');
     }
   });
+  
+  // Image preview functionality
+  const imageUrlInput = document.getElementById('image_url');
+  const imagePreview = document.getElementById('imagePreview');
+  const previewImg = document.getElementById('previewImg');
+
+  imageUrlInput.addEventListener('input', function() {
+    const url = this.value.trim();
+    
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      previewImg.src = url;
+      imagePreview.style.display = 'block';
+      
+      // Hide preview if image fails to load
+      previewImg.onerror = function() {
+        imagePreview.style.display = 'none';
+      };
+    } else {
+      imagePreview.style.display = 'none';
+    }
+  });
+
+  // Validate existing values when page loads (after form re-render)
+  validateExistingValues();
 });
 </script>
