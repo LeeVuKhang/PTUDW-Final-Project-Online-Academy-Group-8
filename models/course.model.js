@@ -427,8 +427,8 @@ async countAllByInstructorId(instructor_id, categoryId = 'all', searchTerm = '')
     });
   },
 
-  findAllForAdmin() {
-    return db('courses')
+  findAllForAdmin(limit = null, offset = 0, filters = {}) {
+    let query = db('courses')
       .leftJoin('categories', 'courses.catid', 'categories.cat_id')
       .leftJoin('users', 'courses.instructor_id', 'users.user_id')
       .leftJoin(
@@ -444,8 +444,49 @@ async countAllByInstructorId(instructor_id, categoryId = 'all', searchTerm = '')
         'categories.cat_name as category_name',
         'users.name as instructor_name',
         db.raw('COALESCE(course_stats.student_count, 0) as student_count')
-      )
-      .orderBy('courses.last_update', 'desc');
+      );
+
+    // Áp dụng bộ lọc
+    if (filters.categoryId && filters.categoryId !== 'all') {
+      query = query.where('courses.catid', filters.categoryId);
+    }
+    if (filters.instructorId && filters.instructorId !== 'all') {
+      query = query.where('courses.instructor_id', filters.instructorId);
+    }
+    if (filters.searchTerm && filters.searchTerm.trim() !== '') {
+      query = query.where(function() {
+        this.where('courses.title', 'like', `%${filters.searchTerm}%`)
+            .orWhere('courses.tinydes', 'like', `%${filters.searchTerm}%`);
+      });
+    }
+
+    query = query.orderBy('courses.last_update', 'desc');
+
+    if (limit !== null) {
+      query = query.limit(limit).offset(offset);
+    }
+
+    return query;
+  },
+
+  async countAllForAdmin(filters = {}) {
+    let query = db('courses').count('* as total');
+
+    // Áp dụng bộ lọc
+    if (filters.categoryId && filters.categoryId !== 'all') {
+      query = query.where('courses.catid', filters.categoryId);
+    }
+    if (filters.instructorId && filters.instructorId !== 'all') {
+      query = query.where('courses.instructor_id', filters.instructorId);
+    }
+    if (filters.searchTerm && filters.searchTerm.trim() !== '') {
+      query = query.where(function() {
+        this.where('courses.title', 'like', `%${filters.searchTerm}%`)
+            .orWhere('courses.tinydes', 'like', `%${filters.searchTerm}%`);
+      });
+    }
+
+    return await query.first();
   },
 
   findByIdForAdmin(id) {
