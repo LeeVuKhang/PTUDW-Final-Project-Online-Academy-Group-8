@@ -12,24 +12,36 @@
     
     <div class="card-body">
       <!-- Search and Filter -->
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="bi bi-search"></i>
-            </span>
-            <input type="text" class="form-control" id="searchCourse" placeholder="Tìm kiếm khóa học...">
+      <form id="filterForm" method="get" action="/admin/courses">
+        <div class="row mb-3 g-2">
+          <div class="col-md-4">
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" name="search" placeholder="Tìm theo tên khóa học..." value="{{currentFilters.searchTerm}}">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" name="category">
+              <option value="all">Tất cả danh mục</option>
+              {{#each categories}}
+              <option value="{{this.cat_id}}" {{selectOption ../currentFilters.categoryId this.cat_id}}>{{this.cat_name}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" name="instructor">
+              <option value="all">Tất cả giảng viên</option>
+              {{#each instructors}}
+              <option value="{{this.user_id}}" {{selectOption ../currentFilters.instructorId this.user_id}}>{{this.name}}</option>
+              {{/each}}
+            </select>
+          </div>
+          <div class="col-md-2 d-flex">
+            <button type="submit" class="btn btn-primary w-100">Lọc</button>
+            <a href="/admin/courses" class="btn btn-outline-secondary ms-2" title="Xóa bộ lọc"><i class="bi bi-x-lg"></i></a>
           </div>
         </div>
-        <div class="col-md-6">
-          <select class="form-select" id="filterCategory">
-            <option value="">Tất cả danh mục</option>
-            {{#each categories}}
-            <option value="{{cat_name}}">{{cat_name}}</option>
-            {{/each}}
-          </select>
-        </div>
-      </div>
+      </form>
 
       <!-- Courses Table -->
       {{#if courses}}
@@ -111,6 +123,35 @@
         <h5 class="text-muted mt-3">Chưa có khóa học nào</h5>
       </div>
       {{/if}}
+
+      <!-- Pagination -->
+      {{#if (isGreater pagination.totalPages 1)}}
+      <div class="d-flex justify-content-between align-items-center mt-4">
+          <span class="text-muted">
+              Hiển thị {{currentItemsCount}} trên tổng số {{totalItems}} {{itemType}}
+          </span>
+          
+          <nav aria-label="{{itemType}} pagination">
+              <ul class="pagination justify-content-end mb-0">
+                  <li class="page-item {{#unless pagination.hasPrevPage}}disabled{{/unless}}">
+                      <a class="page-link" href="{{createPaginationLink pagination.prevPage ../queryParams}}"
+                          tabindex="-1" aria-disabled="true">Trước</a>
+                  </li>
+                  {{#each pagination.pageNumbers}}
+                  <li class="page-item {{#if this.isCurrent}}active{{/if}}">
+                      <a class="page-link"
+                          href="{{createPaginationLink this.value ../../queryParams}}">{{this.value}}</a>
+                  </li>
+                  {{/each}}
+                  <li class="page-item {{#unless pagination.hasNextPage}}disabled{{/unless}}">
+                      <a class="page-link"
+                          href="{{createPaginationLink pagination.nextPage ../queryParams}}">Sau</a>
+                  </li>
+              </ul>
+          </nav>
+      </div>
+      {{/if}}
+
     </div>
   </div>
 </div>

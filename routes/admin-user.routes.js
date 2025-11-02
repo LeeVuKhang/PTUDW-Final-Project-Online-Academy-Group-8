@@ -7,12 +7,51 @@ const router = express.Router();
 // Xem danh sách học viên 
 router.get('/students', async (req, res) => {
     try {
-        const students = await userModel.findAllStudents();
-        
+        const LIMIT = 10;
+        const page = +req.query.page || 1;
+        const offset = (page - 1) * LIMIT;
+
+        // Get filters
+        const filters = {
+            searchTerm: req.query.search || ''
+        };
+
+        // Fetch data in parallel
+        const [students, totalStudents] = await Promise.all([
+            userModel.findAllStudentsPaginated(LIMIT, offset, filters),
+            userModel.countAllStudents(filters)
+        ]);
+
+        const totalPages = Math.ceil(totalStudents / LIMIT);
+        const currentPage = Math.min(Math.max(1, page), totalPages || 1);
+
+        // Generate page numbers
+        const pageNumbers = [];
+        for (let i = 1; i <= totalPages; i++) {
+            pageNumbers.push({
+                value: i,
+                isCurrent: i === currentPage
+            });
+        }
+
         res.render('vwAdminUser/list-students', {
             layout: 'admin',
             students: students,
-            title: 'Quản lý học viên'
+            title: 'Quản lý học viên',
+            pagination: {
+                page: currentPage,
+                totalPages: totalPages,
+                pageNumbers: pageNumbers,
+                hasPrevPage: currentPage > 1,
+                hasNextPage: currentPage < totalPages,
+                prevPage: currentPage - 1,
+                nextPage: currentPage + 1
+            },
+            totalItems: totalStudents,
+            currentItemsCount: students.length,
+            itemType: 'học viên',
+            queryParams: req.query,
+            currentFilters: filters
         });
     } catch (error) {
         console.error('Lỗi khi tải danh sách học viên:', error);
@@ -23,12 +62,51 @@ router.get('/students', async (req, res) => {
 // Xem danh sách giảng viên
 router.get('/instructors', async (req, res) => {
     try {
-        const instructors = await userModel.findAllInstructors();
-        
+        const LIMIT = 10;
+        const page = +req.query.page || 1;
+        const offset = (page - 1) * LIMIT;
+
+        // Get filters
+        const filters = {
+            searchTerm: req.query.search || ''
+        };
+
+        // Fetch data in parallel
+        const [instructors, totalInstructors] = await Promise.all([
+            userModel.findAllInstructorsPaginated(LIMIT, offset, filters),
+            userModel.countAllInstructors(filters)
+        ]);
+
+        const totalPages = Math.ceil(totalInstructors / LIMIT);
+        const currentPage = Math.min(Math.max(1, page), totalPages || 1);
+
+        // Generate page numbers
+        const pageNumbers = [];
+        for (let i = 1; i <= totalPages; i++) {
+            pageNumbers.push({
+                value: i,
+                isCurrent: i === currentPage
+            });
+        }
+
         res.render('vwAdminUser/list-instructors', {
             layout: 'admin',
             instructors: instructors,
-            title: 'Quản lý giảng viên'
+            title: 'Quản lý giảng viên',
+            pagination: {
+                page: currentPage,
+                totalPages: totalPages,
+                pageNumbers: pageNumbers,
+                hasPrevPage: currentPage > 1,
+                hasNextPage: currentPage < totalPages,
+                prevPage: currentPage - 1,
+                nextPage: currentPage + 1
+            },
+            totalItems: totalInstructors,
+            currentItemsCount: instructors.length,
+            itemType: 'giảng viên',
+            queryParams: req.query,
+            currentFilters: filters
         });
     } catch (error) {
         console.error('Lỗi khi tải danh sách giảng viên:', error);

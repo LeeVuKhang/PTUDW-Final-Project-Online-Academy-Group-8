@@ -173,8 +173,8 @@ router.post('/signin', async (req, res) => {
     // Không có retUrl cụ thể -> redirect theo role
     let redirectUrl;
     if (user.role === 0) {
-      // Admin - chuyển đến trang admin
-      redirectUrl = '/admin';
+      // Admin - chuyển đến trang chủ
+      redirectUrl = '/';
     } else if (user.role === 1) {
       // Student - chuyển đến trang chủ
       redirectUrl = '/';

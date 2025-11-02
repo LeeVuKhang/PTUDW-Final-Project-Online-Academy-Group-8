@@ -107,6 +107,15 @@ app.engine('handlebars', engine({
   lt(a,b){
     return a < b;
   },
+  gt(a, b) {
+    return a > b;
+  },
+  add(a, b) {
+    return Number(a) + Number(b);
+  },
+  subtract(a, b) {
+    return Number(a) - Number(b);
+  },
 
     // Hiển thị sao (rating)
     renderStars(rating) {
@@ -151,6 +160,13 @@ app.engine('handlebars', engine({
     // Giúp chọn option trong select
     selectOption(selectedValue, optionValue) {
       return String(selectedValue) === String(optionValue) ? 'selected' : '';
+    },
+
+    // Tạo link phân trang
+    createPaginationLink(page, queryParams) {
+      const params = new URLSearchParams(queryParams);
+      params.set('page', page);
+      return '?' + params.toString();
     },
 
     lte(a, b) {

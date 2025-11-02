@@ -197,5 +197,114 @@ export default{
     // Delete user function
     delete(userId) {
         return db('users').where('user_id', userId).del();
+    },
+
+    // Pagination functions for admin
+    async findAllStudentsPaginated(limit, offset, filters = {}) {
+        let query = db('users')
+            .where('role', 1) // 1 = Student
+            .leftJoin(
+                db('enrollments')
+                    .select('student_id')
+                    .count('* as enrolled_courses_count')
+                    .groupBy('student_id')
+                    .as('course_counts'),
+                'users.user_id', 'course_counts.student_id'
+            )
+            .select(
+                'users.*',
+                db.raw('COALESCE(course_counts.enrolled_courses_count, 0) as enrolled_courses_count')
+            );
+
+        // Apply search filter
+        if (filters.searchTerm) {
+            query = query.where(function() {
+                this.where('users.name', 'ilike', `%${filters.searchTerm}%`)
+                    .orWhere('users.email', 'ilike', `%${filters.searchTerm}%`)
+                    .orWhere('users.username', 'ilike', `%${filters.searchTerm}%`);
+            });
+        }
+
+        return query
+            .orderBy('users.user_id', 'desc')
+            .limit(limit)
+            .offset(offset);
+    },
+
+    async countAllStudents(filters = {}) {
+        let query = db('users')
+            .where('role', 1)
+            .count('* as total');
+
+        // Apply search filter
+        if (filters.searchTerm) {
+            query = query.where(function() {
+                this.where('users.name', 'ilike', `%${filters.searchTerm}%`)
+                    .orWhere('users.email', 'ilike', `%${filters.searchTerm}%`)
+                    .orWhere('users.username', 'ilike', `%${filters.searchTerm}%`);
+            });
+        }
+
+        const result = await query.first();
+        return +result.total;
+    },
+
+    async findAllInstructorsPaginated(limit, offset, filters = {}) {
+        let query = db('users')
+            .where('role', 2) // 2 = Instructor
+            .leftJoin(
+                db('courses')
+                    .select('instructor_id')
+                    .count('* as courses_count')
+                    .groupBy('instructor_id')
+                    .as('instructor_stats'),
+                'users.user_id', 'instructor_stats.instructor_id'
+            )
+            .leftJoin(
+                db('enrollments')
+                    .join('courses', 'enrollments.course_id', 'courses.course_id')
+                    .select('courses.instructor_id')
+                    .count('* as total_students')
+                    .groupBy('courses.instructor_id')
+                    .as('student_stats'),
+                'users.user_id', 'student_stats.instructor_id'
+            )
+            .select(
+                'users.*',
+                db.raw('COALESCE(instructor_stats.courses_count, 0) as courses_count'),
+                db.raw('COALESCE(student_stats.total_students, 0) as total_students')
+            );
+
+        // Apply search filter
+        if (filters.searchTerm) {
+            query = query.where(function() {
+                this.where('users.name', 'ilike', `%${filters.searchTerm}%`)
+                    .orWhere('users.email', 'ilike', `%${filters.searchTerm}%`)
+                    .orWhere('users.username', 'ilike', `%${filters.searchTerm}%`);
+            });
+        }
+
+        return query
+            .orderBy('users.user_id', 'desc')
+            .limit(limit)
+            .offset(offset);
+    },
+
+    async countAllInstructors(filters = {}) {
+        let query = db('users')
+            .where('role', 2)
+            .count('* as total');
+
+        // Apply search filter
+        if (filters.searchTerm) {
+            query = query.where(function() {
+                this.where('users.name', 'ilike', `%${filters.searchTerm}%`)
+                    .orWhere('users.email', 'ilike', `%${filters.searchTerm}%`)
+                    .orWhere('users.username', 'ilike', `%${filters.searchTerm}%`);
+            });
+        }
+
+        const result = await query.first();
+        return +result.total;
     }
 }

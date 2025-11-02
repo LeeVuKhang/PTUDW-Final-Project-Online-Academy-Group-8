@@ -307,10 +307,11 @@ router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
 
 /* Học bài cụ thể */
 router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) => {
-  try {
-    const { course_id, lesson_id } = req.params;
-    const student_id = req.session.authUser.user_id;
+   try {
+       const { course_id, lesson_id } = req.params;
+       const student_id = req.session.authUser.user_id;
 
+<<<<<<< HEAD
     const course = await db("courses").where({ course_id }).first();
     if (!course) return res.status(404).send("Không tìm thấy khóa học.");
 
@@ -324,19 +325,45 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
       return res.redirect(`/course/details/${course_id}`);
     }
 
+=======
+       const currentLesson = await db("lessons").where({ lesson_id }).first();
+       if (!currentLesson) return res.status(404).send("Không tìm thấy bài học này.");
 
-    const chapters = await db("chapters")
-      .where({ course_id })
-      .orderBy("order_index", "asc");
+       const enrolled = await db("enrollments")
+           .where({ student_id, course_id, status: "enrolled" })
+           .first();
 
-    for (const chapter of chapters) {
-      chapter.lessons = await db("lessons")
-        .where({ chapter_id: chapter.chapter_id })
-        .orderBy("order_index");
-    }
+       if (!enrolled && currentLesson.is_preview !== true) {
+         console.log(`[AUTH] Học viên ${student_id} chưa ghi danh và bài ${lesson_id} không phải bài xem thử. Redirect.`);
+         return res.redirect(`/course/details/${course_id}`);
+       }
+    
+       const course = await db("courses").where({ course_id }).first();
+       const chapters = await db("chapters")
+           .where({ course_id })
+           .orderBy("order_index", "asc");
+>>>>>>> 0da515925b054fe68987b370c7cf0e4d97bcf2f2
 
-    const currentLesson = await db("lessons").where({ lesson_id }).first();
+       for (const chapter of chapters) {
+         chapter.lessons = await db("lessons")
+               .where({ chapter_id: chapter.chapter_id })
+               .orderBy("order_index");
+       }
+       const ratings = await db("ratings")
+           .join("users", "ratings.student_id", "users.user_id")
+           .where("ratings.course_id", course_id)
+           .select("users.name", "ratings.value", "ratings.comment", "ratings.create_time");
 
+       const avgRatingResult = await db("ratings")
+           .where({ course_id })
+           .avg("value as avgRating")
+           .count("value as totalRatings")
+           .first();
+
+       const avgRating = parseFloat(avgRatingResult.avgRating || 0).toFixed(1);
+       const totalRatings = avgRatingResult.totalRatings || 0;
+
+<<<<<<< HEAD
     const effectiveIsEnrolled = !!enrolled || isInstructorOwner;
 
     // --- Lấy đánh giá ---
@@ -344,13 +371,16 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
       .join("users", "ratings.student_id", "users.user_id")
       .where("ratings.course_id", course_id)
       .select("users.name", "ratings.value", "ratings.comment", "ratings.create_time");
+=======
+       const userRatingData = await db("ratings")
+           .where({ course_id, student_id })
+           .first();
+>>>>>>> 0da515925b054fe68987b370c7cf0e4d97bcf2f2
 
-    const avgRatingResult = await db("ratings")
-      .where({ course_id })
-      .avg("value as avgRating")
-      .count("value as totalRatings")
-      .first();
+       const userRating = userRatingData ? userRatingData.value : 0;
+       const userComment = userRatingData ? userRatingData.comment : "";
 
+<<<<<<< HEAD
     const avgRating = parseFloat(avgRatingResult.avgRating || 0).toFixed(1);
     const totalRatings = avgRatingResult.totalRatings || 0;
 
@@ -380,6 +410,25 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
     console.error("Lỗi khi load bài học:", err);
     res.status(500).send("Lỗi máy chủ khi tải bài học.");
   }
+=======
+       res.render("vwCourses/learn", {
+           layout: "main",
+           course,
+           chapters,
+           currentLesson,
+           course_id,
+           avgRating,
+           totalRatings,
+           ratings,
+           isStudent: true,
+           userRating,
+           userComment,
+       });
+   } catch (err) {
+       console.error("Lỗi khi load bài học:", err);
+       res.status(500).send("Lỗi máy chủ khi tải bài học.");
+   }
+>>>>>>> 0da515925b054fe68987b370c7cf0e4d97bcf2f2
 });
 
 
@@ -638,6 +687,9 @@ router.get("/instructorProfile", async (req, res) => {
 router.get('/search', async function (req, res) {
   try {
     const q = req.query.q || '';
+    const sort = req.query.sort || 'newest';
+    const page = parseInt(req.query.page) || 1;
+
     if (q.trim().length === 0) {
       return res.render('vwCourses/search', {
         q,
@@ -646,35 +698,21 @@ router.get('/search', async function (req, res) {
     }
 
     const keywords = q.replace(/ /g, ' & ');
-
-    // Lấy trang hiện tại
-    const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * pageLimit;
 
-    // Gọi DB song song (dữ liệu + tổng số dòng)
-    const [courses, totalResult] = await Promise.all([
-      courseModel.search(keywords, pageLimit, offset),
-      courseModel.countSearch(keywords)
-    ]);
+    const courses = await courseModel.search(keywords, pageLimit, offset, sort);
 
-    const total = totalResult.amount;
-    const nPages = Math.ceil(total / pageLimit);
+    console.log('🔍 Search result:', courses);
 
-    const page_numbers = [];
-    for (let i = 1; i <= nPages; i++) {
-      page_numbers.push({
-        value: i,
-        isCurrent: i === page,
-        q
-      });
-    }
+    const empty = !courses || courses.length === 0;
 
     res.render('vwCourses/search', {
       layout: 'main',
       q,
       courses,
-      empty: courses.length === 0,
-      page_numbers,
+      empty,
+      sort,
+      page_numbers: [], 
     });
 
   } catch (error) {
@@ -682,5 +720,7 @@ router.get('/search', async function (req, res) {
     res.status(500).send('Lỗi máy chủ');
   }
 });
+
+
 
 export default router;
