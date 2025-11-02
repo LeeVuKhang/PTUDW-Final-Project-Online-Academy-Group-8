@@ -3,16 +3,78 @@
 {{/fill_section}}
 
 {{#fill_section 'css'}}
-body {
-background-color: #f8f9fa;
-}
+body { background-color: #f8f9fa; }
+.ql-editor { font-size: 1.2rem; }
+.ql-editor.ql-blank::before { font-size: 1.2rem; }
 
-.ql-editor {
-font-size: 1.2rem;
+/* CSS cho vùng kéo thả (MỚI) */
+.drop-zone {
+    border: 2px dashed #adb5bd;
+    border-radius: .5rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    background-color: #f8f9fa;
 }
-
-.ql-editor.ql-blank::before {
-font-size: 1.2rem;
+.drop-zone:hover, .drop-zone.drop-zone--over {
+    background-color: #e9ecef;
+    border-color: #0d6efd;
+}
+.drop-zone .drop-zone-overlay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #495057;
+    font-weight: 500;
+}
+.drop-zone.is-uploading .drop-zone-overlay,
+.drop-zone.is-uploading .preview-content {
+    opacity: 0.3;
+}
+.drop-zone .upload-spinner {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.drop-zone.is-uploading .upload-spinner {
+    display: block;
+}
+/* CSS cho image preview */
+#imageDropZone {
+    min-height: 337px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    justify-content: center;
+}
+#imagePreview {
+    max-width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    border-radius: .375rem;
+}
+/* CSS cho video preview */
+#videoPreviewContainer {
+    display: {{#if course.intro_url}}'block'{{else}}'none'{{/if}};
+    width: 100%;
+    margin-top: 1rem;
+    border-radius: .375rem;
+    overflow: hidden;
+    background-color: #000;
+    max-height: 400px;
+}
+#videoPreviewContainer video {
+    width: 100%;
+    height: 100%;
+    max-height: 400px;
+    object-fit: contain;
 }
 {{/fill_section}}
 
@@ -20,101 +82,97 @@ font-size: 1.2rem;
     <form id="courseForm" class="card shadow-lg p-4 p-md-5 rounded-4" method="post"
         action="/instructor/update/{{course.course_id}}">
 
-        {{!-- Header --}}
         <div class="mb-4 text-center">
             <h1 class="display-5 fw-bold text-dark mb-3">
                 <i class="fas fa-edit text-primary me-3"></i> Cập nhật khoá học
             </h1>
-            <p class="text-muted fs-5">Cập nhật thông tin khoá học bên dưới</p>
+             <p class="text-muted fs-5">Cập nhật thông tin khoá học bên dưới</p>
         </div>
         <hr class="my-5">
 
-        {{!-- Course Title --}}
         <div class="mb-4">
-            <label for="title" class="form-label fs-6 fw-semibold"> Tiêu đề khoá học <span class="text-danger">*</span>
-            </label>
-            <input type="text" id="title" name="title" value="{{course.title}}" autofocus
-                class="form-control form-control-lg" placeholder="e.g. Complete Python Programming Masterclass 2025"
-                required>
+            <label for="title" class="form-label fs-6 fw-semibold"> Tiêu đề khoá học <span class="text-danger">*</span></label>
+            <input type="text" id="title" name="title" value="{{course.title}}" autofocus class="form-control form-control-lg" required>
         </div>
-
-        {{!-- Short Description --}}
         <div class="mb-4">
-            <label for="tinydes" class="form-label fs-6 fw-semibold"> Mô tả ngắn <span
-                    class="text-danger">*</span> </label>
-            <textarea id="tinydes" name="tinydes" rows="4" class="form-control form-control-lg"
-                placeholder="Short summary for course listings..." required>{{course.tinydes}}</textarea>
+            <label for="tinydes" class="form-label fs-6 fw-semibold"> Mô tả ngắn <span class="text-danger">*</span> </label>
+            <textarea id="tinydes" name="tinydes" rows="4" class="form-control form-control-lg" required>{{course.tinydes}}</textarea>
             <div class="form-text">Tối thiểu 50 ký tự</div>
         </div>
-
-        {{!-- Full Description --}}
         <div class="mb-4">
-            <label class="form-label fs-6 fw-semibold"> Mô tả chi tiết khoá học <span class="text-danger">*</span>
-            </label>
-            <div id="editor" style="height: 250px;">
-                {{{course.fulldes}}}
-            </div>
+             <label class="form-label fs-6 fw-semibold"> Mô tả chi tiết khoá học <span class="text-danger">*</span></label>
+            <div id="editor" style="height: 250px;">{{{course.fulldes}}}</div>
             <input type="hidden" id="fulldes" name="fulldes">
             <div class="form-text">Tối thiểu 200 ký tự</div>
         </div>
 
-        {{!-- Course Image URL + Preview --}}
         <div class="mb-4 ">
-            <label for="imageUrlInput" class="form-label fs-6 fw-semibold"> Ảnh bìa khoá học (URL) <span
-                    class="text-danger">*</span> </label>
-            <input type="url" id="imageUrlInput" name="image_url" value="{{course.image_url}}"
-                class="form-control form-control-lg" placeholder="https://example.com/course-image.jpg" required>
-            <div class="form-text">Điền vào đường dẫn ảnh bìa (URL) hợp lệ. Xem trước ở phía dưới.</div>
-            <div class="mt-4">
-                <img id="imagePreview" src="{{course.image_url}}" alt="Course Image Preview"
-                    class="rounded-3 shadow-sm border d-block mx-auto w-100"
-                    style="max-width: 600px; height: 337px; object-fit: contain; background-color: #f8f9fa;"
-                    onerror="handleImageError(this)">
-                <p id="imageError" class="mt-2 small text-danger fw-medium" style="display: none;"> <i
-                        class="fas fa-exclamation-triangle me-1"></i> Không thể tải hình ảnh. Vui lòng kiểm tra lại URL. </p>
+            <label for="imageUrlInput" class="form-label fs-6 fw-semibold"> Ảnh bìa khoá học <span class="text-danger">*</span> </label>
+            <input type="text" id="imageUrlInput" name="image_url" value="{{course.image_url}}"
+                   class="form-control form-control-lg" placeholder="Kéo thả ảnh vào khung bên dưới, hoặc dán URL" required>
+            <div class="form-text">Điền URL, hoặc kéo thả file ảnh vào khung bên dưới.</div>
+            
+            <div id="imageDropZone" class="mt-4 drop-zone">
+                <img id="imagePreview" src="{{#if course.image_url}}{{course.image_url}}{{else}}https://via.placeholder.com/600x337?text=Image+Preview{{/if}}" alt="Course Image Preview"
+                    class="preview-content"
+                    onerror="handleImageError(this, 'imagePreview', 'imageError')">
+                <div class="drop-zone-overlay">
+                    <i class="bi bi-upload fs-1"></i>
+                    <span>Kéo thả ảnh bìa</span>
+                    <small>(hoặc click để chọn file)</small>
+                </div>
+                <div class="spinner-border text-primary upload-spinner" role="status"></div>
+                <input type="file" id="imageFileInput" accept="image/*" class="d-none">
             </div>
+            <p id="imageError" class="mt-2 small text-danger fw-medium" style="display: none;"></p>
         </div>
 
         <hr class="my-5">
 
-        {{!--  Total Hours --}}
-        <div class="row g-4 mb-4">
-            {{!-- Total Hours --}}
-            <div class="col-md-6">
-                <label for="total_hours" class="form-label fs-6 fw-semibold"> Thời lượng khoá học <span
-                        class="text-danger">*</span> </label>
-                <input type="text" id="total_hours" name="total_hours" value="{{course.total_hours}}"
-                    class="form-control form-control-lg" placeholder="10.5" required>
-                <div class="form-text">Thời lượng tính bằng giờ</div>
+        <div class="mb-4">
+            <label for="introUrlInput" class="form-label fs-6 fw-semibold"> Video giới thiệu (Tùy chọn) </label>
+            <input type="text" id="introUrlInput" name="intro_url" value="{{course.intro_url}}"
+                   class="form-control form-control-lg" placeholder="Kéo thả video vào khung bên dưới, hoặc dán URL">
+            <div class="form-text">Điền URL (YouTube, Vimeo...) hoặc kéo thả file video (mp4, webm...).</div>
+            
+            <div id="videoDropZone" class="mt-4 drop-zone p-4">
+                <div class="drop-zone-overlay">
+                    <i class="bi bi-camera-video fs-1"></i>
+                    <span>Kéo thả video giới thiệu</span>
+                    <small>(hoặc click để chọn file)</small>
+                </div>
+                <div class="spinner-border text-primary upload-spinner" role="status"></div>
+                <input type="file" id="videoFileInput" accept="video/*" class="d-none">
             </div>
-            {{!-- Total Lectures
-            <div class="col-md-6">
-                <label for="totalLectures" class="form-label fs-6 fw-semibold"> Total Lectures <span
-                        class="text-danger">*</span> </label>
-                <input type="number" id="totalLectures" name="total_lectures" value="{{course.total_lectures}}" min="0"
-                    class="form-control form-control-lg" placeholder="Enter number of lectures" required>
+            <div id="videoPreviewContainer">
+                <video id="videoPreview" controls src="{{course.intro_url}}"></video>
             </div>
-        </div> --}}
-
-        <div id="lecturerInputsContainer" class="mb-4">
+            <p id="videoError" class="mt-2 small text-danger fw-medium" style="display: none;"></p>
         </div>
 
-        {{!-- Category và Level --}}
+        <hr class="my-5">
+        
+         <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                 <label for="total_hours" class="form-label fs-6 fw-semibold"> Thời lượng khoá học (giờ) <span class="text-danger">*</span> </label>
+                <input type="text" id="total_hours" name="total_hours" value="{{course.total_hours}}" class="form-control form-control-lg" placeholder="10.5" required>
+            </div>
+        </div>
         <div class="mb-4">
-            <label for="catid" class="form-label fs-6 fw-semibold"> Danh mục khoá học <span class="text-danger">*</span>
-            </label>
+             <label for="catid" class="form-label fs-6 fw-semibold"> Danh mục khoá học <span class="text-danger">*</span></label>
             <select id="catid" name="catid" required class="form-select form-select-lg">
                 <option value="">-- Lựa chọn danh mục --</option>
                 {{#each categories}}
-                <option value="{{this.cat_id}}" {{selectOption ../course.catid this.cat_id}}>{{this.cat_name}}
-                </option>
+                <option value="{{this.cat_id}}" {{selectOption ../course.catid this.cat_id}}>{{this.cat_name}}</option>
+                    {{#each this.children}}
+                    <option value="{{this.cat_id}}" {{selectOption ../../course.catid this.cat_id}}>&nbsp;&nbsp;&nbsp;{{this.cat_name}}</option>
+                    {{/each}}
                 {{/each}}
             </select>
         </div>
         <div class="mb-4">
-            <label for="level" class="form-label fs-6 fw-semibold"> Trình độ <span class="text-danger">*</span>
-            </label>
-            <select id="level" name="level" required class="form-select form-select-lg">
+            <label for="level" class="form-label fs-6 fw-semibold"> Trình độ <span class="text-danger">*</span></label>
+             <select id="level" name="level" required class="form-select form-select-lg">
                 <option value="">-- Lựa chọn trình độ --</option>
                 <option value="Beginner" {{selectOption course.level "Beginner" }}>Cơ bản</option>
                 <option value="Intermediate" {{selectOption course.level "Intermediate" }}>Trung cấp</option>
@@ -122,46 +180,33 @@ font-size: 1.2rem;
                 <option value="All Levels" {{selectOption course.level "All Levels" }}>Mọi trình độ</option>
             </select>
         </div>
-
         <hr class="my-5">
-
-        {{!-- Price Inputs --}}
         <div class="row g-4 mb-4">
-            {{!-- Current Price --}}
-            <div class="col-md-6">
-                <label for="discount_price" class="form-label fs-6 fw-semibold"> Giá hiện tại (VND) <span
-                        class="text-danger">*</span> </L>
+             <div class="col-md-6">
+                <label for="discount_price" class="form-label fs-6 fw-semibold"> Giá hiện tại (VND) <span class="text-danger">*</span> </label>
                     <div class="input-group input-group-lg">
-                        <span class="input-group-text">₫</span>
-                        <input type="text" id="discount_price" name="discount_price"
-                            data-initial-value="{{course.discount_price}}" class="form-control" placeholder="279000"
-                            required>
-                    </div>
+                     <span class="input-group-text">₫</span>
+                        <input type="text" id="discount_price" name="discount_price" data-initial-value="{{course.discount_price}}" class="form-control" placeholder="279000" required>
+                     </div>
             </div>
-            {{!-- Original Price --}}
             <div class="col-md-6">
-                <label for="price" class="form-label fs-6 fw-semibold"> Giá gốc (VND) <span
-                        class="text-danger">*</span> </label>
-                <div class="input-group input-group-lg">
+                <label for="price" class="form-label fs-6 fw-semibold"> Giá gốc (VND) <span class="text-danger">*</span> </label>
+                 <div class="input-group input-group-lg">
                     <span class="input-group-text">₫</span>
-                    <input type="text" id="price" name="price" data-initial-value="{{course.price}}"
-                        class="form-control" placeholder="399000" required>
-                </div>
+                    <input type="text" id="price" name="price" data-initial-value="{{course.price}}" class="form-control" placeholder="399000" required>
+                 </div>
             </div>
         </div>
-
         <hr class="my-5">
 
-        {{!-- Action Buttons --}}
         <div class="d-flex flex-column flex-sm-row justify-content-end gap-3">
-            <a href="/instructor/courses" class="btn btn-outline-secondary btn-lg"> <i
-                    class="fas fa-arrow-left me-2"></i> Trở về </a>
-            <button type="button" class="btn btn-outline-danger btn-lg me-auto" id="deleteButton">
+            <a href="/instructor/courses" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-arrow-left me-2"></i> Trở về </a>
+             <button type="button" class="btn btn-outline-danger btn-lg me-auto" id="deleteButton">
                 <i class="fas fa-trash-alt me-2"></i> Xoá
             </button>
             <button type="reset" class="btn btn-outline-secondary btn-lg"> <i class="fas fa-redo me-2"></i> Reset </button>
             <button type="submit" class="btn btn-primary btn-lg shadow-sm" id="submitButton">
-                <i class="fas fa-save me-2"></i> Lưu và tiếp tục
+                 <i class="fas fa-save me-2"></i> Lưu và tiếp tục
             </button>
         </div>
     </form>
@@ -172,244 +217,203 @@ font-size: 1.2rem;
 <script src="https://cdn.jsdelivr.net/npm/cleave.js@1.6.0/dist/cleave.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script>
-    window.handleImageError = function (imgElement) {
-        const imageError = document.getElementById('imageError');
-        imgElement.style.display = 'none';
-        if (imageError) imageError.style.display = 'block';
+    window.handleImageError = function (imgElement, previewId, errorId) {
+        const defaultSrc = 'https://via.placeholder.com/600x337?text=Invalid+Image';
+        if (imgElement.src !== defaultSrc) {
+            imgElement.src = defaultSrc;
+        }
+        const imageError = document.getElementById(errorId);
+        if (imageError) {
+            imageError.textContent = "Không thể tải ảnh. Vui lòng kiểm tra lại URL.";
+            imageError.style.display = 'block';
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-
+        const courseId = {{ course.course_id }};
+        
         const quill = new Quill('#editor', {
             theme: 'snow',
             placeholder: 'Detailed description for the course page...',
-            modules: {
-                toolbar: [
-                    [{ 'header': [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline'],
-                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                    ['link', 'image']
-                ]
-            }
+            modules: { toolbar: [ [{'header': [1, 2, 3, false]}], ['bold', 'italic', 'underline'], [{'list': 'ordered'}, {'list': 'bullet'}], ['link', 'image'] ] }
         });
         const fulldesInput = document.getElementById('fulldes');
+
         const discountPriceInput = document.getElementById('discount_price');
         const priceInput = document.getElementById('price');
         let cleaveCurrent = null;
         let cleaveOriginal = null;
-
         if (discountPriceInput) {
-            cleaveCurrent = new Cleave(discountPriceInput, {
-                numeral: true,
-                numeralThousandsGroupStyle: 'thousand'
-            });
+            cleaveCurrent = new Cleave(discountPriceInput, { numeral: true, numeralThousandsGroupStyle: 'thousand' });
             const initialDiscountValue = discountPriceInput.getAttribute('data-initial-value');
-            if (initialDiscountValue && cleaveCurrent) {
-                cleaveCurrent.setRawValue(initialDiscountValue);
-            }
+            if (initialDiscountValue && cleaveCurrent) cleaveCurrent.setRawValue(initialDiscountValue);
         }
-
         if (priceInput) {
-            cleaveOriginal = new Cleave(priceInput, {
-                numeral: true,
-                numeralThousandsGroupStyle: 'thousand'
-            });
+            cleaveOriginal = new Cleave(priceInput, { numeral: true, numeralThousandsGroupStyle: 'thousand' });
             const initialPriceValue = priceInput.getAttribute('data-initial-value');
-            if (initialPriceValue && cleaveOriginal) {
-                cleaveOriginal.setRawValue(initialPriceValue);
-            }
+            if (initialPriceValue && cleaveOriginal) cleaveOriginal.setRawValue(initialPriceValue);
         }
 
         const form = document.getElementById('courseForm');
         const submitButton = document.getElementById('submitButton');
-
         if (form) {
             form.addEventListener('submit', function (e) {
                 if (quill && fulldesInput) {
                     fulldesInput.value = quill.root.innerHTML;
-                    if (quill.getText().trim().length === 0) {
-                        fulldesInput.value = "";
-                    }
+                    if (quill.getText().trim().length === 0) fulldesInput.value = "";
                 }
-                if (cleaveCurrent && discountPriceInput) {
-                    discountPriceInput.value = cleaveCurrent.getRawValue();
-                }
-                if (cleaveOriginal && priceInput) {
-                    priceInput.value = cleaveOriginal.getRawValue();
-                }
+                if (cleaveCurrent && discountPriceInput) discountPriceInput.value = cleaveCurrent.getRawValue();
+                if (cleaveOriginal && priceInput) priceInput.value = cleaveOriginal.getRawValue();
+
                 if (submitButton) {
                     submitButton.disabled = true;
-                    submitButton.innerHTML = `
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        Đang xử lý...
-                    `;
+                    submitButton.innerHTML = `<span class...</span> Đang xử lý...`;
                 }
             });
         }
+        
+        async function uploadFile(file, uploadUrl, inputField, previewElement, errorElement, oldUrl) {
+            const dropZone = inputField.closest('.mb-4').querySelector('.drop-zone');
+            dropZone.classList.add('is-uploading');
+            errorElement.style.display = 'none';
 
+            const formData = new FormData();
+            const fieldName = (inputField.id === 'imageUrlInput') ? 'courseImage' : 'introVideo';
+            formData.append(fieldName, file);
+
+            if (fieldName === 'introVideo' && oldUrl) {
+                 formData.append('oldIntroUrl', oldUrl);
+            }
+
+            try {
+                const response = await fetch(uploadUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const newUrl = data.imageUrl || data.videoUrl;
+                    inputField.value = newUrl; 
+                    
+                    if (previewElement.tagName === 'IMG') {
+                        previewElement.src = newUrl + '?t=' + new Date().getTime(); 
+                    } else if (previewElement.tagName === 'VIDEO') {
+                        previewElement.src = newUrl;
+                        previewElement.load();
+                        previewElement.parentElement.style.display = 'block';
+                    }
+                } else {
+                    throw new Error(data.message || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                errorElement.textContent = `Lỗi: ${error.message}`;
+                errorElement.style.display = 'block';
+            } finally {
+                dropZone.classList.remove('is-uploading');
+            }
+        }
+        
+        const imageDropZone = document.getElementById('imageDropZone');
+        const imageFileInput = document.getElementById('imageFileInput');
         const imageUrlInput = document.getElementById('imageUrlInput');
         const imagePreview = document.getElementById('imagePreview');
         const imageError = document.getElementById('imageError');
-
-        if (imageUrlInput && imagePreview && imageError) {
-            imageUrlInput.addEventListener('input', function () {
-                const url = this.value;
-                imageError.style.display = 'none';
-                if (url) {
-                    imagePreview.src = url;
-                } else {
-                    imagePreview.src = '';
-                    imagePreview.style.display = 'none';
+        
+        if (imageDropZone && imageFileInput && imageUrlInput && imagePreview) {
+            imageDropZone.addEventListener('click', () => imageFileInput.click());
+            imageFileInput.addEventListener('change', () => {
+                if (imageFileInput.files.length > 0) {
+                    uploadFile(imageFileInput.files[0], `/instructor/upload-course-image/${courseId}`, imageUrlInput, imagePreview, imageError);
                 }
             });
-
-            imagePreview.addEventListener('load', function () {
-                imagePreview.style.display = 'block';
-                imageError.style.display = 'none';
+            imageDropZone.addEventListener('dragover', (e) => { e.preventDefault(); imageDropZone.classList.add('drop-zone--over'); });
+            ['dragleave', 'dragend'].forEach(type => imageDropZone.addEventListener(type, () => imageDropZone.classList.remove('drop-zone--over')));
+            imageDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                imageDropZone.classList.remove('drop-zone--over');
+                if (e.dataTransfer.files.length > 0) {
+                    uploadFile(e.dataTransfer.files[0], `/instructor/upload-course-image/${courseId}`, imageUrlInput, imagePreview, imageError);
+                }
             });
-
-            if (imageUrlInput.value) {
-                if (imagePreview.complete && imagePreview.naturalHeight > 0) {
-                    imagePreview.style.display = 'block';
-                    imageError.style.display = 'none';
-                } else if (imagePreview.complete && imagePreview.naturalHeight === 0) {
-                    handleImageError(imagePreview);
-                }
-            } else {
-                imagePreview.style.display = 'none';
+            imageUrlInput.addEventListener('input', () => {
                 imageError.style.display = 'none';
-            }
+                if (imageUrlInput.value) imagePreview.src = imageUrlInput.value;
+                else imagePreview.src = 'https://via.placeholder.com/600x337?text=Image+Preview';
+            });
         }
-
-        const totalLecturesInput = document.getElementById('totalLectures');
-        const lecturerInputsContainer = document.getElementById('lecturerInputsContainer');
-
-        function generateLecturerInputs() {
-            lecturerInputsContainer.innerHTML = '';
-            const count = parseInt(totalLecturesInput.value, 10);
-            if (isNaN(count) || count <= 0) return;
-
-            const sectionLabel = document.createElement('label');
-            sectionLabel.className = 'h5 fw-semibold mb-3';
-            sectionLabel.textContent = 'Lecturer Assignments';
-            lecturerInputsContainer.appendChild(sectionLabel);
-
-            for (let i = 1; i <= count; i++) {
-                const inputGroup = document.createElement('div');
-                inputGroup.className = 'row g-3 align-items-center mb-3';
-                const labelDiv = document.createElement('div');
-                labelDiv.className = 'col-md-3';
-                const label = document.createElement('label');
-                label.className = 'form-label col-form-label text-md-end mb-0';
-                label.textContent = `Lecture ${i} - ID:`;
-                label.setAttribute('for', `lecturer_id_${i}`);
-                labelDiv.appendChild(label);
-                const inputDiv = document.createElement('div');
-                inputDiv.className = 'col-md-3';
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.id = `lecturer_id_${i}`;
-                input.name = `lecturer_ids[${i - 1}]`;
-                input.className = 'form-control';
-                input.placeholder = `Enter ID`;
-                input.addEventListener('blur', fetchLecturerName);
-                inputDiv.appendChild(input);
-                const nameDisplayDiv = document.createElement('div');
-                nameDisplayDiv.className = 'col-md-6';
-                const nameDisplay = document.createElement('span');
-                nameDisplay.id = `lecturer_name_${i}`;
-                nameDisplay.className = 'form-text text-muted italic';
-                nameDisplay.textContent = '(Name will appear here)';
-                nameDisplayDiv.appendChild(nameDisplay);
-                inputGroup.appendChild(labelDiv);
-                inputGroup.appendChild(inputDiv);
-                inputGroup.appendChild(nameDisplayDiv);
-                lecturerInputsContainer.appendChild(inputGroup);
-            }
-        }
-
-        async function fetchLecturerName(event) {
-            const inputElement = event.target;
-            const lecturerId = inputElement.value.trim();
-            const index = inputElement.id.split('_')[2];
-            const nameDisplayElement = document.getElementById(`lecturer_name_${index}`);
-            if (!lecturerId) {
-                nameDisplayElement.textContent = '(Name will appear here)';
-                nameDisplayElement.className = 'form-text text-muted italic';
-                return;
-            }
-            nameDisplayElement.textContent = 'Searching...';
-            nameDisplayElement.className = 'form-text text-muted italic';
-            try {
-                const response = await fetch(`/api/lecturers/${lecturerId}`);
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        nameDisplayElement.textContent = 'ID Not Found';
-                        nameDisplayElement.className = 'form-text text-danger fw-medium';
-                    } else { throw new Error(`HTTP ${response.status}`); }
-                } else {
-                    const lecturerData = await response.json();
-                    if (lecturerData && lecturerData.name) {
-                        nameDisplayElement.textContent = lecturerData.name;
-                        nameDisplayElement.className = 'form-text text-success fw-semibold';
-                    } else {
-                        nameDisplayElement.textContent = 'Name N/A';
-                        nameDisplayElement.className = 'form-text text-warning italic';
-                    }
+        
+        const videoDropZone = document.getElementById('videoDropZone');
+        const videoFileInput = document.getElementById('videoFileInput');
+        const introUrlInput = document.getElementById('introUrlInput');
+        const videoPreview = document.getElementById('videoPreview');
+        const videoError = document.getElementById('videoError');
+        const videoPreviewContainer = document.getElementById('videoPreviewContainer');
+        
+        if (videoDropZone && videoFileInput && introUrlInput && videoPreview) {
+            videoDropZone.addEventListener('click', () => videoFileInput.click());
+            videoFileInput.addEventListener('change', () => {
+                if (videoFileInput.files.length > 0) {
+                    const oldUrl = introUrlInput.value; 
+                    uploadFile(videoFileInput.files[0], `/instructor/upload-intro-video/${courseId}`, introUrlInput, videoPreview, videoError, oldUrl);
                 }
-            } catch (error) {
-                console.error('Error fetching lecturer name:', error);
-                nameDisplayElement.textContent = 'Fetch Error';
-                nameDisplayElement.className = 'form-text text-danger fw-medium';
-            }
-        }
-
-        if (totalLecturesInput && lecturerInputsContainer) {
-            totalLecturesInput.addEventListener('input', generateLecturerInputs);
-            generateLecturerInputs(); // Gọi 1 lần khi tải trang để hiển thị
+            });
+            videoDropZone.addEventListener('dragover', (e) => { e.preventDefault(); videoDropZone.classList.add('drop-zone--over'); });
+            ['dragleave', 'dragend'].forEach(type => videoDropZone.addEventListener(type, () => videoDropZone.classList.remove('drop-zone--over')));
+            videoDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                videoDropZone.classList.remove('drop-zone--over');
+                if (e.dataTransfer.files.length > 0) {
+                    const oldUrl = introUrlInput.value;
+                    uploadFile(e.dataTransfer.files[0], `/instructor/upload-intro-video/${courseId}`, introUrlInput, videoPreview, videoError, oldUrl);
+                }
+            });
+            introUrlInput.addEventListener('input', () => {
+                videoError.style.display = 'none';
+                if (introUrlInput.value) {
+                    videoPreview.src = introUrlInput.value;
+                    videoPreviewContainer.style.display = 'block';
+                    videoPreview.load();
+                } else {
+                    videoPreview.src = '';
+                    videoPreviewContainer.style.display = 'none';
+                }
+            });
         }
 
         const deleteButton = document.getElementById('deleteButton');
-        const courseId = {{ course.course_id }};
-
-    if (deleteButton && courseId) {
-        deleteButton.addEventListener('click', async function (e) {
-            e.preventDefault();
-
-            const isConfirmed = confirm(
-                "BẠN CÓ CHẮC CHẮN MUỐN XÓA KHÓA HỌC NÀY KHÔNG?"
-            );
-
-            if (isConfirmed) {
-                try {
-                    deleteButton.disabled = true;
-                    deleteButton.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Đang xóa...`;
-                    const response = await fetch(`/instructor/delete-course`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ course_id: courseId })
-                    });
-
-                    if (response.ok) {
-                        alert('Complete Delete course!');
-                        window.location.href = '/instructor/courses';
-                    } else {
-                        const errorData = await response.json();
-                        alert(`Lỗi khi xóa khóa học: ${errorData.message || 'Error'}`);
+        if (deleteButton && courseId) {
+            deleteButton.addEventListener('click', async function (e) {
+                e.preventDefault();
+                const isConfirmed = confirm("BẠN CÓ CHẮC CHẮN MUỐN XÓA KHÓA HỌC NÀY KHÔNG?");
+                if (isConfirmed) {
+                    try {
+                        deleteButton.disabled = true;
+                        deleteButton.innerHTML = `<span class...</span> Đang xóa...`;
+                        const response = await fetch(`/instructor/delete-course`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ course_id: courseId })
+                        });
+                        if (response.ok) {
+                            alert('Complete Delete course!');
+                            window.location.href = '/instructor/courses';
+                        } else {
+                            const errorData = await response.json();
+                            alert(`Lỗi khi xóa khóa học: ${errorData.message || 'Error'}`);
+                            deleteButton.disabled = false;
+                            deleteButton.innerHTML = '<i class="fas fa-trash-alt me-2"></i> Xóa khóa học';
+                        }
+                    } catch (error) {
+                        console.error('Fetch error:', error);
+                        alert('Lỗi kết nối. Không thể xóa khóa học.');
                         deleteButton.disabled = false;
                         deleteButton.innerHTML = '<i class="fas fa-trash-alt me-2"></i> Xóa khóa học';
                     }
-                } catch (error) {
-                    console.error('Fetch error:', error);
-                    alert('Lỗi kết nối. Không thể xóa khóa học.');
-                    deleteButton.disabled = false;
-                    deleteButton.innerHTML = '<i class="fas fa-trash-alt me-2"></i> Xóa khóa học';
                 }
-            }
-        });
-    }
+            });
+        }
     }); 
 </script>
 {{/fill_section}}

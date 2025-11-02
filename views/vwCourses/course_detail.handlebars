@@ -60,13 +60,26 @@
     <div class="col-lg-8">
 
       <div class="shadow rounded-3 mb-4 ratio ratio-16x9 bg-dark">
-        <iframe
-          src="https://www.youtube.com/embed/GxmfcnU3feo"
-          title="YouTube video player"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen>
-        </iframe>
+        {{#if (isYouTubeUrl course.intro_url)}}
+          <iframe
+            id="course-video-player"
+            src="https://www.youtube.com/embed/{{extractYouTubeId course.intro_url}}"
+            title="{{course.title}}"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        {{else if course.intro_url}}
+          <video id="course-video-player" playsinline controls style="width: 100%; height: 100%;">
+              <source src="{{course.intro_url}}" type="video/mp4" />
+              Your browser does not support the video tag.
+          </video>
+        {{else}}
+          <div class="d-flex align-items-center justify-content-center bg-secondary text-white-50">
+            <i class="bi bi-camera-video-off fs-1"></i>
+            <span class="ms-3 fs-5">No Video Preview Available</span>
+          </div>
+        {{/if}}
       </div>
 
       <div class="bg-white p-4 p-md-5 shadow-sm rounded-3 mb-4">
@@ -460,6 +473,84 @@
         }
       });
     });
+    const ratingForm = document.getElementById('ratingForm');
+    if (ratingForm) {
+      
+      const renderStars = (value) => {
+        let stars = '';
+        const val = parseInt(value, 10);
+        for (let i = 1; i <= 5; i++) {
+          stars += `<i class="bi ${i <= val ? 'bi-star-fill' : 'bi-star'}"></i>`;
+        }
+        return stars;
+      };
+
+      ratingForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(ratingForm);
+        const params = new URLSearchParams();
+        formData.forEach((value, key) => params.append(key, value));
+
+        try {
+          const response = await fetch(ratingForm.action, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString()
+          });
+
+          const result = await response.json(); 
+
+          if (result.success) {
+            const newRating = {
+               name: `{{authUser.name}}`, 
+               value: formData.get('value'),
+               comment: formData.get('comment')
+            };
+
+            const ratingHtml = `
+              <div class="border-bottom pb-3">
+                <div class="d-flex align-items-center mb-2">
+                  <div class="avatar-circle rounded-circle bg-primary bg-opacity-25 text-primary me-3">
+                    ${newRating.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                     <p class="fw-semibold mb-0">${newRating.name}</p>
+                    <div class="small text-warning">
+                      ${renderStars(newRating.value)}
+                    </div>
+                  </div>
+                  <small class="text-muted ms-auto">vài giây trước</small>
+                 </div>
+                <p class="text-secondary mb-0">"${newRating.comment}"</p>
+              </div>
+            `;
+            const container = document.querySelector('.vstack.gap-4');
+            if (container) {
+              const old = Array.from(container.children).find(el =>
+                el.textContent.includes(newRating.name)
+              );
+              if (old) old.remove();
+              
+              container.insertAdjacentHTML('afterbegin', ratingHtml);
+            } else {
+              const hr = ratingForm.closest('.bg-white').querySelector('hr.my-4');
+              if(hr) {
+                 hr.insertAdjacentHTML('afterend', `<div class="vstack gap-4">${ratingHtml}</div>`);
+              }
+            }
+            alert('Cảm ơn bạn đã đánh giá khóa học!'); 
+            
+          } else {
+            alert(result.error || 'Lỗi khi gửi đánh giá!');
+          }
+
+        } catch (err) {
+          console.error(err);
+          alert('Không thể gửi đánh giá. Vui lòng thử lại!');
+        }
+      });
+    }
   });
 </script>
 {{/fill_section}}

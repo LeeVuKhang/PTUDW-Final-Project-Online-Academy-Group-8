@@ -146,14 +146,14 @@
   </div>
 
   <nav class="mt-5 d-flex justify-content-center">
-    <ul class="pagination pagination-sm">
-      {{#each page_numbers}}
-      <li class="page-item {{#if isCurrent}}active{{/if}}">
-        <a class="page-link" href="?id={{catid}}&page={{value}}">{{value}}</a>
-      </li>
-      {{/each}}
-    </ul>
-  </nav>
+  <ul class="pagination pagination-sm">
+    {{#each page_numbers}}
+    <li class="page-item {{#if isCurrent}}active{{/if}}">
+      <a class="page-link" href="?q={{../q}}&page={{value}}">{{value}}</a>
+    </li>
+    {{/each}}
+  </ul>
+</nav>
   {{/if}}
 </div>
 
