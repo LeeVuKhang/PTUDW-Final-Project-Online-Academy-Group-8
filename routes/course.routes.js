@@ -308,7 +308,6 @@ router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) 
        }
     
        const course = await db("courses").where({ course_id }).first();
-
        const chapters = await db("chapters")
            .where({ course_id })
            .orderBy("order_index", "asc");
