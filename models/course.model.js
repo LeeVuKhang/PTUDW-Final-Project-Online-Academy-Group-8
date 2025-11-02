@@ -182,7 +182,98 @@ export default {
       countQuery.whereIn("catid", categoryIds);
     }
 
-    return countQuery.count("* as amount").first();
+  // Loại bỏ khóa học bị vô hiệu hóa
+  countQuery.where("c.is_disabled", false);
+
+  return countQuery.first();
+},
+
+    search(keyword, limit, offset, sort = 'newest') {
+  // Tạo query gốc
+  let query = db('courses as c')
+    .join('categories as cat', 'c.catid', 'cat.cat_id')
+    .leftJoin('users as u', 'c.instructor_id', 'u.user_id')
+    .leftJoin('ratings as r', 'c.course_id', 'r.course_id')
+    .select(
+      'c.course_id',
+      'c.title',
+      'c.image_url',
+      'c.price',
+      'c.discount_price',
+      'c.views',
+      'u.user_id as instructor_id',
+      'u.name as instructor_name',
+      'cat.cat_name'
+    )
+    .count('r.rating_id as rating_count')
+    .avg('r.value as avg_rating')
+    .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
+    .andWhere('c.is_disabled', false)
+    .groupBy('c.course_id', 'u.user_id', 'u.name', 'cat.cat_name')
+    .limit(limit)
+    .offset(offset);
+
+  switch (sort) {
+    case 'price_asc':
+      query = query.orderBy('c.discount_price', 'asc');
+      break;
+    case 'price_desc':
+      query = query.orderBy('c.discount_price', 'desc');
+      break;
+    case 'views':
+      query = query.orderBy('c.views', 'desc');
+      break;
+    case 'rating':
+      query = query.orderBy('avg_rating', 'desc'); 
+      break;
+    case 'newest':
+    default:
+      query = query.orderBy('c.last_update', 'desc');
+      break;
+  }
+
+  return query;
+},
+
+
+
+    countSearch(keyword) {
+    return db('courses as c')
+    .whereRaw(`fts @@ to_tsquery(remove_accents(?))`, [keyword])
+    .andWhere('c.is_disabled', false)
+    .count('* as amount')
+    .first();
+},
+  async findRelatedCourses(categoryId, currentCourseId, limit = 4, studentId = null) {
+  let relatedQuery = db("courses as c")
+    .leftJoin("categories as cat", "c.catid", "cat.cat_id")
+    .leftJoin("users as u", "c.instructor_id", "u.user_id")
+    .leftJoin("ratings as r", "c.course_id", "r.course_id")
+    .where("c.catid", categoryId)
+    .andWhereNot("c.course_id", currentCourseId)
+    .andWhere("c.is_disabled", false) // 🔹 Thêm trực tiếp điều kiện ở đây
+    .select(
+      "c.course_id",
+      "c.title",
+      "c.image_url",
+      "c.price",
+      "c.discount_price",
+      "c.views",
+      "cat.cat_name",
+      "u.user_id as instructor_id",
+      "u.name as instructor_name",
+      db.raw("COALESCE(AVG(r.value), 0) as avg_rating"),
+      db.raw("COUNT(DISTINCT r.rating_id) as rating_count")
+    )
+    .groupBy("c.course_id", "cat.cat_name", "u.user_id", "u.name")
+    .orderByRaw("RANDOM()")
+    .limit(limit);
+
+  // Thêm các subquery cho watchlist và enrollment nếu có
+  relatedQuery = addWatchlistSubquery(relatedQuery, studentId);
+  relatedQuery = addEnrollmentSubquery(relatedQuery, studentId);
+
+  return await relatedQuery;
   },
 
   search(keyword, limit, offset, studentId = null) { // Added studentId for consistency
