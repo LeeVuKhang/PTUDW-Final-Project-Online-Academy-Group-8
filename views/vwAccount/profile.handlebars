@@ -1,61 +1,42 @@
+{{!-- views/vwAccount/profile.handlebars --}}
+
 {{#fill_section 'stylesheet'}}
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet" />
 {{/fill_section}}
 
 {{#fill_section 'css'}}
 body {
-background-color: #f8f9fa;
+  background-color: #f8f9fa;
 }
 .ql-editor { font-size: 1.2rem; }
 .ql-editor.ql-blank::before { font-size: 1.2rem; }
 
 #dropZoneContainer {
-    position: relative;
-    border: 2px dashed #adb5bd;
-    border-radius: .5rem;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-    cursor: pointer;
+  position: relative;
+  border: 2px dashed #adb5bd;
+  border-radius: .5rem;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
 }
 #dropZoneContainer:hover,
 #dropZoneContainer.drop-zone--over {
-    background-color: #e9ecef;
-    border-color: #0d6efd;
+  background-color: #e9ecef;
+  border-color: #0d6efd;
 }
 #dropZoneOverlay {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: #495057;
-    font-weight: 500;
-    pointer-events: none; /* Cho phép click xuyên qua */
-}
-#profileImagePreview {
-    opacity: 1;
-    transition: opacity 0.2s ease;
-}
-#dropZoneContainer.drop-zone--over #profileImagePreview {
-    opacity: 0.3;
-}
-#uploadSpinner {
-    display: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-#dropZoneContainer.is-uploading #profileImagePreview {
-    opacity: 0.3;
-}
-#dropZoneContainer.is-uploading #uploadSpinner {
-    display: block;
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; color: #495057; font-weight: 500;
+  pointer-events: none;
 }
 #profileImagePreview { opacity: 1; transition: opacity 0.2s ease; }
 #dropZoneContainer.drop-zone--over #profileImagePreview { opacity: 0.3; }
-#uploadSpinner { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+#uploadSpinner {
+  display: none; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
 #dropZoneContainer.is-uploading #profileImagePreview { opacity: 0.3; }
 #dropZoneContainer.is-uploading #uploadSpinner { display: block; }
 {{/fill_section}}
@@ -66,13 +47,48 @@ background-color: #f8f9fa;
     <span class="text-muted">@{{user.username}}</span>
   </div>
 
-  <!-- TABS -->
+  <!-- TABS (restored) -->
   <ul class="nav nav-tabs" id="accountTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {{#if (eq tab 'info')}}active{{/if}}"
+              data-bs-toggle="tab" data-bs-target="#pane-info" type="button" role="tab">
+        Thông tin cá nhân
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {{#if (eq tab 'pwd')}}active{{/if}}"
+              data-bs-toggle="tab" data-bs-target="#pane-pwd" type="button" role="tab">
+        Đổi mật khẩu
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link {{#if (eq tab 'email')}}active{{/if}}"
+              data-bs-toggle="tab" data-bs-target="#pane-email" type="button" role="tab">
+        Thay đổi Email
+      </button>
+    </li>
+
+    {{#if pendingEmail}}
+      <li class="nav-item" role="presentation">
+        <button class="nav-link {{#if (eq tab 'email-verify-old')}}active{{/if}}"
+                data-bs-toggle="tab" data-bs-target="#pane-email-verify-old" type="button" role="tab">
+          Xác minh email hiện tại
+        </button>
+      </li>
+      {{#if (eq pendingStage 'new')}}
+        <li class="nav-item" role="presentation">
+          <button class="nav-link {{#if (eq tab 'email-verify-new')}}active{{/if}}"
+                  data-bs-toggle="tab" data-bs-target="#pane-email-verify-new" type="button" role="tab">
+            Xác minh email mới
+          </button>
+        </li>
+      {{/if}}
+    {{/if}}
   </ul>
 
   <div class="tab-content border border-top-0 p-3">
 
-    <!-- INFO -->
+    <!-- INFO (unchanged core logic) -->
     <div id="pane-info" class="tab-pane fade {{#if (eq tab 'info')}}show active{{/if}}">
       {{#if saved}}<div class="alert alert-success py-2">Profile updated.</div>{{/if}}
       <form method="post" action="/account/profile" class="row g-3" id="frmProfileInfo">
@@ -84,7 +100,7 @@ background-color: #f8f9fa;
 
         <div class="col-12">
           <label class="form-label">Email</label>
-           <div class="input-group">
+          <div class="input-group">
             <input class="form-control" type="email" value="{{user.email}}" readonly>
             <a class="btn btn-outline-secondary" href="/account/profile?tab=email">Thay đổi</a>
           </div>
@@ -96,33 +112,40 @@ background-color: #f8f9fa;
           <input id="txtdob" class="form-control" type="date" name="dob" value="{{formatDate user.dob}}">
         </div>
 
-        <!-- Avatar + drag&drop -->
+        <!-- Avatar + drag&drop (kept) -->
         <div class="col-12">
           <label for="profileImageUrlInput" class="form-label">Profile Image</label>
           <input type="text" id="profileImageUrlInput" name="image_url" class="form-control"
-            placeholder="Kéo thả ảnh vào khung bên dưới, hoặc dán URL vào đây" value="{{user.image_url}}">
+                 placeholder="Kéo thả ảnh vào khung bên dưới, hoặc dán URL vào đây" value="{{user.image_url}}">
           <div class="form-text">Enter a valid image URL or drag & drop a file below.</div>
+
           <div id="dropZoneContainer" class="mt-3 text-center p-3">
-              <div id="dropZoneOverlay">
-                  <i class="bi bi-upload fs-1"></i>
-                  <span>Enter a valid image URL or drag & drop a file below.</span>
-                  <small class="text-muted">(Or click to browse)</small>
-              </div>
-              <img id="profileImagePreview" src="{{#if user.image_url}}{{user.image_url}}{{else}}https://via.placeholder.com/150?text=Preview{{/if}}" alt="Profile Image Preview"
-                   class="rounded-circle shadow-sm border"
-                   style="width: 150px; height: 150px; object-fit: cover; background-color: #f8f9fa; position: relative; z-index: 1;"
-                   onerror="handleProfileImageError(this)">
-               <div class="spinner-border text-primary" role="status" id="uploadSpinner">
-                <span class="visually-hidden">Loading...</span>
-              </div>
-              <p id="profileImageError" class="mt-2 small text-danger fw-medium" style="display: none;">
-                  <i class="fas fa-exclamation-triangle me-1"></i> Cannot load image preview or upload failed.
-              </p>
-              <input type="file" id="fileInput" accept="image/*" class="d-none">
+            <div id="dropZoneOverlay">
+              <i class="bi bi-upload fs-1"></i>
+              <span>Enter a valid image URL or drag & drop a file below.</span>
+              <small class="text-muted">(Or click to browse)</small>
+            </div>
+
+            <img id="profileImagePreview"
+                 src="{{#if user.image_url}}{{user.image_url}}{{else}}https://via.placeholder.com/150?text=Preview{{/if}}"
+                 alt="Profile Image Preview"
+                 class="rounded-circle shadow-sm border"
+                 style="width: 150px; height: 150px; object-fit: cover; background-color: #f8f9fa; position: relative; z-index: 1;"
+                 onerror="handleProfileImageError(this)">
+
+            <div class="spinner-border text-primary" role="status" id="uploadSpinner">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+
+            <p id="profileImageError" class="mt-2 small text-danger fw-medium" style="display: none;">
+              <i class="fas fa-exclamation-triangle me-1"></i> Cannot load image preview or upload failed.
+            </p>
+
+            <input type="file" id="fileInput" accept="image/*" class="d-none">
           </div>
         </div>
 
-        <!-- Self introduction with Quill -->
+        <!-- Self introduction -->
         <div class="col-12">
           <label class="form-label fs-6 fw-semibold">Giới thiệu bản thân</label>
           <div id="editor" style="height:250px;">{{{user.self_introduction}}}</div>
@@ -134,7 +157,92 @@ background-color: #f8f9fa;
           <button class="btn btn-primary">Lưu thay đổi</button>
         </div>
       </form>
-    </div> 
+    </div>
+
+    <!-- PASSWORD (restored) -->
+    <div id="pane-pwd" class="tab-pane fade {{#if (eq tab 'pwd')}}show active{{/if}}">
+      {{#if pwdError}}<div class="alert alert-danger py-2">{{pwdError}}</div>{{/if}}
+      {{#if pwdSaved}}<div class="alert alert-success py-2">Mật khẩu đã được cập nhật thành công.</div>{{/if}}
+
+      <form method="post" action="/account/change-pwd" class="row g-3" onsubmit="return checkPwdMatchA()">
+        <div class="col-12 d-flex justify-content-between align-items-end">
+          <div class="w-100 me-3">
+            <label class="form-label">Mật khẩu hiện tại</label>
+            <input class="form-control" type="password" name="currentPassword" required>
+          </div>
+          <div class="text-nowrap">
+            <a class="link-primary" href="/account/forgot">Quên mật khẩu?</a>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Mật khẩu mới</label>
+          <input id="newPwdA" class="form-control" type="password" name="newPassword" minlength="6" required>
+          <div class="form-text">Tối thiểu 6 ký tự.</div>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label">Xác nhận mật khẩu mới</label>
+          <input id="confirmPwdA" class="form-control" type="password" minlength="6" required>
+        </div>
+
+        <div class="col-12">
+          <button class="btn btn-primary">Cập nhật mật khẩu</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- CHANGE EMAIL (step 0) (restored) -->
+    <div id="pane-email" class="tab-pane fade {{#if (eq tab 'email')}}show active{{/if}}">
+      {{#if errEmail}}<div class="alert alert-danger py-2">{{errEmail}}</div>{{/if}}
+      <form method="post" action="/account/change-email" class="row g-3">
+        <div class="col-12">
+          <label class="form-label">Email mới</label>
+          <input class="form-control" type="email" name="newEmail" required>
+          <div class="form-text">Chúng tôi sẽ gửi mã xác minh tới email hiện tại ({{user.email}}) trước.</div>
+        </div>
+        <div class="col-12">
+          <button class="btn btn-primary">Gửi mã đến email hiện tại</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- VERIFY OLD EMAIL (restored) -->
+    {{#if pendingEmail}}
+      <div id="pane-email-verify-old" class="tab-pane fade {{#if (eq tab 'email-verify-old')}}show active{{/if}}">
+        {{#if errEmailVerifyOld}}<div class="alert alert-danger py-2">{{errEmailVerifyOld}}</div>{{/if}}
+        <p>Đã gửi mã 6 chữ số đến email hiện tại: <strong>{{user.email}}</strong>.</p>
+        <form method="post" action="/account/change-email/verify-old" class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Mã xác minh</label>
+            <input class="form-control" name="code" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-primary">Xác minh email hiện tại</button>
+          </div>
+        </form>
+        <hr>
+        <p class="text-muted mb-0">Bước kế tiếp: chúng tôi sẽ gửi mã tới email mới <strong>{{pendingEmail}}</strong>.</p>
+      </div>
+    {{/if}}
+
+    <!-- VERIFY NEW EMAIL (restored) -->
+    {{#if (eq pendingStage 'new')}}
+      <div id="pane-email-verify-new" class="tab-pane fade {{#if (eq tab 'email-verify-new')}}show active{{/if}}">
+        {{#if errEmailVerifyNew}}<div class="alert alert-danger py-2">{{errEmailVerifyNew}}</div>{{/if}}
+        <p>Đã gửi mã 6 chữ số đến email mới: <strong>{{pendingEmail}}</strong>.</p>
+        <form method="post" action="/account/change-email/verify-new" class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Mã xác minh</label>
+            <input class="form-control" name="code" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-primary">Xác nhận email mới</button>
+          </div>
+        </form>
+      </div>
+    {{/if}}
+
   </div>
 </div>
 
@@ -145,17 +253,18 @@ function checkPwdMatchA() {
   if (a !== b) { alert('New passwords do not match.'); return false; }
   return true;
 }
-   function handleProfileImageError(img) {
-     img.src = 'https://via.placeholder.com/150?text=Preview'; 
-     const imageError = document.getElementById('profileImageError');
-     if (imageError) imageError.style.display = 'block';
-   }
+function handleProfileImageError(img) {
+  img.src = 'https://via.placeholder.com/150?text=Preview';
+  const imageError = document.getElementById('profileImageError');
+  if (imageError) imageError.style.display = 'block';
+}
 </script>
 
 {{#fill_section 'js'}}
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Quill init
     if (document.getElementById('editor')) {
       const toolbarOptions = [
         ['bold', 'italic', 'underline'],
@@ -172,14 +281,12 @@ function checkPwdMatchA() {
       if (form && hiddenInput) {
         form.addEventListener('submit', function() {
           const htmlContent = quill.root.innerHTML;
-          if (htmlContent === '<p><br></p>') {
-            hiddenInput.value = '';
-          } else {
-            hiddenInput.value = htmlContent;
-          }
+          hiddenInput.value = (htmlContent === '<p><br></p>') ? '' : htmlContent;
         });
       }
     }
+
+    // Drag & Drop avatar (kept behaviour)
     const dropZone = document.getElementById('dropZoneContainer');
     const fileInput = document.getElementById('fileInput');
     const imageUrlInput = document.getElementById('profileImageUrlInput');
@@ -187,73 +294,76 @@ function checkPwdMatchA() {
     const imageError = document.getElementById('profileImageError');
 
     if (dropZone && fileInput && imageUrlInput && imagePreview && imageError) {
-      
+
       dropZone.addEventListener('click', (e) => {
-          if (e.target.id !== 'profileImagePreview') { 
-            fileInput.click();
-          }
+        if (e.target.id !== 'profileImagePreview') {
+          fileInput.click();
+        }
       });
       fileInput.addEventListener('change', () => {
-          if (fileInput.files.length > 0) {
-              uploadFile(fileInput.files[0]);
-          }
+        if (fileInput.files.length > 0) {
+          uploadFile(fileInput.files[0]);
+        }
       });
 
-       imageUrlInput.addEventListener('input', function () {
-         const url = this.value;
-         if (imageError) imageError.style.display = 'none';
-         if (url) {
-           imagePreview.src = url;
-         } else {
-           imagePreview.src = 'https://via.placeholder.com/150?text=Preview';
-         }
-       });
+      imageUrlInput.addEventListener('input', function () {
+        const url = this.value;
+        if (imageError) imageError.style.display = 'none';
+        imagePreview.src = url || 'https://via.placeholder.com/150?text=Preview';
+      });
 
       dropZone.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          dropZone.classList.add('drop-zone--over');
+        e.preventDefault();
+        dropZone.classList.add('drop-zone--over');
       });
       ['dragleave', 'dragend'].forEach(type => {
-          dropZone.addEventListener(type, () => {
-              dropZone.classList.remove('drop-zone--over');
-          });
+        dropZone.addEventListener(type, () => {
+          dropZone.classList.remove('drop-zone--over');
+        });
       });
       dropZone.addEventListener('drop', (e) => {
-          e.preventDefault();
-          dropZone.classList.remove('drop-zone--over');
-          if (e.dataTransfer.files.length > 0) {
-              uploadFile(e.dataTransfer.files[0]);
-          }
+        e.preventDefault();
+        dropZone.classList.remove('drop-zone--over');
+        if (e.dataTransfer.files.length > 0) {
+          uploadFile(e.dataTransfer.files[0]);
+        }
       });
 
       async function uploadFile(file) {
-          dropZone.classList.add('is-uploading');
-          imageError.style.display = 'none';
-          
-          const formData = new FormData();
-          formData.append('avatar', file);
+        dropZone.classList.add('is-uploading');
+        imageError.style.display = 'none';
 
-          try {
-              const response = await fetch('/account/upload-avatar', {
-                  method: 'POST',
-                  body: formData
-              });
-              
-              const data = await response.json();
+        const formData = new FormData();
+        formData.append('avatar', file);
 
-              if (response.ok && data.success) {
-                  imagePreview.src = data.newImageUrl + '?t=' + new Date().getTime();
-                  imageUrlInput.value = data.newImageUrl;
-              } else {
-                  throw new Error(data.message || 'Upload failed');
-              }
-          } catch (error) {
-              console.error('Upload error:', error);
-              imageError.textContent = error.message;
-              imageError.style.display = 'block';
-          } finally {
-              dropZone.classList.remove('is-uploading');
+        try {
+          const response = await fetch('/account/upload-avatar', {
+            method: 'POST',
+            body: formData
+          });
+
+          // Guard against non-JSON (prevents "Unexpected token <" errors)
+          const ct = response.headers.get('content-type') || '';
+          if (!ct.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`Unexpected non-JSON response (${response.status}). ${text.slice(0,120)}…`);
           }
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            imagePreview.src = data.newImageUrl + '?t=' + Date.now();
+            imageUrlInput.value = data.newImageUrl;
+          } else {
+            throw new Error(data.message || 'Upload failed');
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          imageError.textContent = error.message;
+          imageError.style.display = 'block';
+        } finally {
+          dropZone.classList.remove('is-uploading');
+        }
       }
     }
 
