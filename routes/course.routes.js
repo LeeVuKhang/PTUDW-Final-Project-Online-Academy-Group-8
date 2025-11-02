@@ -638,6 +638,10 @@ router.get("/instructorProfile", async (req, res) => {
 router.get('/search', async function (req, res) {
   try {
     const q = req.query.q || '';
+    const sort = req.query.sort || 'newest';
+    const page = parseInt(req.query.page) || 1;
+    const pageLimit = 12; // ✅ Khai báo giới hạn số khóa học mỗi trang
+
     if (q.trim().length === 0) {
       return res.render('vwCourses/search', {
         q,
@@ -645,6 +649,7 @@ router.get('/search', async function (req, res) {
       });
     }
 
+    // Chuẩn hóa từ khóa cho full-text search
     const keywords = q.replace(/ /g, ' & ');
 
     // Lấy trang hiện tại
@@ -653,7 +658,7 @@ router.get('/search', async function (req, res) {
 
     // Gọi DB song song (dữ liệu + tổng số dòng)
     const [courses, totalResult] = await Promise.all([
-      courseModel.search(keywords, pageLimit, offset),
+      courseModel.search(keywords, pageLimit, offset, sort),
       courseModel.countSearch(keywords)
     ]);
 
