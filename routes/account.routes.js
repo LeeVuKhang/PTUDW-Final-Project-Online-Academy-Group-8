@@ -326,7 +326,7 @@ router.post('/change-pwd', checkAuthenticated, async (req, res) => {
   if (!ok) {
     return res.render('vwAccount/profile', {
       user,
-      error: true,
+      pwdError: 'Current password is incorrect.',
       tab: 'pwd',
     });
   }
@@ -334,7 +334,7 @@ router.post('/change-pwd', checkAuthenticated, async (req, res) => {
   if (newPwd.length < 6) {
     return res.render('vwAccount/profile', {
       user,
-      error: true,
+      pwdError: 'New password must be at least 6 characters long.',
       tab: 'pwd',
     });
   }
