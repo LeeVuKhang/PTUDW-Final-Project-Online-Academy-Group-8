@@ -48,7 +48,7 @@ const courseImageStorage = multer.diskStorage({
     filename: (req, file, cb) => {
         const courseId = req.params.course_id;
         const ext = path.extname(file.originalname);
-        const newFilename = `${courseId}${ext}`; // Tên file là ID khóa học + extension
+        const newFilename = `${courseId}${ext}`;
 
         try {
             const filesInDir = fs.readdirSync(courseImageDir);
@@ -173,14 +173,15 @@ router.post('/create-course', async (req, res) => {
         tinydes: req.body.tinydes,
         fulldes: req.body.fulldes,
         total_hours: req.body.total_hours || 0,
-        total_lectures: req.body.total_lectures || 0,
+        // total_lectures: req.body.total_lectures || 0,
         price: req.body.price,
         discount_price: req.body.discount_price,
         catid: req.body.catid,
         level: req.body.level,
         image_url: req.body.image_url,
         is_complete: false,
-        instructor_id: instructor_id
+        instructor_id: instructor_id,
+        is_disabled: false
     };
 
     try {
@@ -189,7 +190,7 @@ router.post('/create-course', async (req, res) => {
 
         if (newCourseId) {
             console.log("Course created with ID:", newCourseId);
-            res.redirect(`/instructor/courses/edit-syllabus/${newCourseId}`);
+            res.redirect(`/instructor/upload-media/${newCourseId}`);
         } else {
             throw new Error("Could not retrieve new course ID after creation.");
         }
@@ -202,6 +203,68 @@ router.post('/create-course', async (req, res) => {
         });
     }
 });
+
+router.get('/upload-media/:course_id', async (req, res) => {
+    try {
+        const course_id = req.params.course_id;
+        const instructor_id = req.session.authUser.user_id;
+
+        // Dùng hàm findByIdForAdmin (như chúng ta đã sửa) để lấy khóa học
+        const course = await courseModel.findByIdForAdmin(course_id);
+
+        if (!course) {
+            return res.status(404).send('Không tìm thấy khóa học.');
+        }
+        // Kiểm tra quyền sở hữu
+        if (course.instructor_id !== instructor_id && req.session.authUser.role != 0) {
+            return res.status(403).send('Bạn không có quyền chỉnh sửa khóa học này.');
+        }
+
+        // Render file handlebars mới
+        res.render('vwInstructor/upload-media', {
+            course: course
+        });
+    } catch (error) {
+        console.error("Error loading upload media page:", error);
+        res.status(500).send("Error loading page");
+    }
+});
+
+router.post('/update-field/:course_id', async (req, res) => {
+    const course_id = req.params.course_id;
+    const instructor_id = req.session.authUser.user_id;
+
+    // Chỉ cho phép cập nhật 2 trường này
+    const allowedFields = ['image_url', 'intro_url'];
+    let fieldToUpdate = {};
+    
+    for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+            fieldToUpdate[field] = req.body[field];
+            fieldToUpdate['last_update'] = new Date(); // Cập nhật thời gian
+        }
+    }
+
+    if (Object.keys(fieldToUpdate).length === 0) {
+        return res.status(400).json({ success: false, message: 'No valid field to update.' });
+    }
+
+    try {
+        const existingCourse = await courseModel.findByIdForAdmin(course_id);
+        if (!existingCourse || (existingCourse.instructor_id !== instructor_id && req.session.authUser.role != 0)) {
+            return res.status(403).json({ success: false, message: 'Permission denied.'});
+        }
+
+        await courseModel.update(course_id, fieldToUpdate);
+        res.status(200).json({ success: true, message: 'Field updated.' });
+
+    } catch (error) {
+        console.error("Error updating course field:", error);
+        res.status(500).json({ success: false, message: 'Server error.' });
+    }
+});
+
+
 router.post('/upload-course-image/:course_id', (req, res) => {
     uploadCourseImage(req, res, async (err) => {
         if (err) {
@@ -362,7 +425,38 @@ router.post('/courses/edit-syllabus/:course_id', async (req, res) => {
             return res.status(403).send('Bạn không có quyền lưu syllabus cho khóa học này.');
         }
 
-        let is_complete = false;
+        let is_complete = true; 
+
+        if (!chapters || chapters.length === 0) {
+            is_complete = false;
+        } else {
+            for (const chap of chapters) {
+                if (!chap.title || chap.title.trim() === '') {
+                    is_complete = false;
+                    break; 
+                }
+
+                if (!chap.lessons || chap.lessons.length === 0) {
+                    is_complete = false;
+                    break;
+                }
+
+                for (const les of chap.lessons) {
+                    const titleValid = les.title && les.title.trim() !== '';
+                    const durationValid = les.duration && parseInt(les.duration, 10) > 0;
+                    const videoValid = les.video_url && les.video_url.trim() !== '';
+
+                    if (!titleValid || !durationValid || !videoValid) {
+                        is_complete = false;
+                        break; 
+                    }
+                }
+
+                if (!is_complete) {
+                    break; 
+                }
+            }
+        }
         let hasAtLeastOneChapter = false;
         let allLessonsAreValid = true;
 
@@ -395,6 +489,9 @@ router.post('/courses/edit-syllabus/:course_id', async (req, res) => {
 
         await syllabusModel.saveSyllabus(course_id, chapters, is_complete);
         console.log(`Syllabus updated for course ${course_id}, is_complete: ${is_complete}`);
+        if (req.session.authUser.role === 0){
+            return res.redirect('/admin');
+        }
         res.redirect('/instructor/courses');
     } catch (error) {
         console.error('Error saving syllabus:', error);
@@ -408,7 +505,7 @@ router.get('/update/:course_id', async function(req, res) {
         const course_id = req.params.course_id;
         const instructor_id = req.session.authUser.user_id;
 
-        const course = await courseModel.findByID(course_id);
+        const course = await courseModel.findByIdForAdmin(course_id);
 
         if (!course) {
             return res.status(404).send('Không tìm thấy khóa học.');
@@ -482,6 +579,31 @@ router.post('/delete-course', async (req, res) => {
             return res.status(403).json({ message: 'Không có quyền xóa khóa học này.' });
         }
 
+        const staticDir = path.join(__dirname, '..', 'static');
+
+        if (course.image_url && course.image_url.startsWith('/static/course_img/')) {
+            const imagePath = path.join(staticDir, course.image_url.substring('/static'.length));
+            if (fs.existsSync(imagePath)) {
+                fs.unlinkSync(imagePath);
+                console.log(`[Delete Course] Đã xóa ảnh bìa: ${imagePath}`);
+            }
+        }
+
+        const courseVideoDir = path.join(staticDir, 'course_video', course_id.toString());
+        if (fs.existsSync(courseVideoDir)) {
+            fs.rmSync(courseVideoDir, { recursive: true, force: true });
+            console.log(`[Delete Course] Đã xóa thư mục video bài giảng: ${courseVideoDir}`);
+        }
+
+        if (course.intro_url && course.intro_url.startsWith('/static/course_video/')) {
+            const videoPath = path.join(staticDir, course.intro_url.substring('/static'.length));
+            if (fs.existsSync(videoPath)) {
+                fs.unlinkSync(videoPath);
+                console.log(`[Delete Course] Đã xóa video giới thiệu: ${videoPath}`);
+            }
+        }
+
+        
         await courseModel.deleteCascade(course_id);
         console.log(`Course ${course_id} and all related data deleted by instructor ${instructor_id}.`);
         res.status(200).json({ message: 'Complete Delete Course!' });

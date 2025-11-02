@@ -2,18 +2,65 @@ import express from 'express';
 import courseModel from '../models/course.model.js';
 import categoryModel from '../models/category.model.js';
 
+import userModel from '../models/user.model.js';
+
 const router = express.Router();
 
 // 4.2 Quản lý khóa học - Xem danh sách
 router.get('/', async (req, res) => {
     try {
-        const courses = await courseModel.findAllForAdmin();
-        const categories = await categoryModel.findAll();
-        
+        const LIMIT = 10;
+        let page = +req.query.page || 1;
+        if (page < 1) page = 1;
+
+        const filters = {
+            categoryId: req.query.category || 'all',
+            instructorId: req.query.instructor || 'all',
+            searchTerm: req.query.search || ''
+        };
+
+        const totalResult = await courseModel.countAllForAdmin(filters);
+        const totalCourses = totalResult.total || 0;
+        const totalPages = Math.ceil(totalCourses / LIMIT);
+
+        if (page > totalPages && totalPages > 0) {
+            page = totalPages;
+        }
+        const offset = (page - 1) * LIMIT;
+
+        const pageNumbers = [];
+        for (let i = 1; i <= totalPages; i++) {
+            pageNumbers.push({
+                value: i,
+                isCurrent: i === page
+            });
+        }
+
+        const [courses, categories, instructors] = await Promise.all([
+            courseModel.findAllForAdmin(LIMIT, offset, filters),
+            categoryModel.findAll(),
+            userModel.findAllInstructors()
+        ]);
+
         res.render('vwAdminCourse/list', {
             layout: 'admin',
             courses: courses,
             categories: categories,
+            instructors: instructors,
+            pagination: {
+                page: page,
+                totalPages: totalPages,
+                pageNumbers: pageNumbers,
+                hasPrevPage: page > 1,
+                hasNextPage: page < totalPages,
+                prevPage: page - 1,
+                nextPage: page + 1
+            },
+            totalItems: totalCourses,
+            currentItemsCount: courses.length,
+            itemType: 'khóa học',
+            queryParams: req.query,
+            currentFilters: filters,
             title: 'Quản lý khóa học'
         });
     } catch (error) {
