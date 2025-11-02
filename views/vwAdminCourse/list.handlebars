@@ -135,7 +135,7 @@
               <ul class="pagination justify-content-end mb-0">
                   <li class="page-item {{#unless pagination.hasPrevPage}}disabled{{/unless}}">
                       <a class="page-link" href="{{createPaginationLink pagination.prevPage ../queryParams}}"
-                          tabindex="-1" aria-disabled="true">Previous</a>
+                          tabindex="-1" aria-disabled="true">Trước</a>
                   </li>
                   {{#each pagination.pageNumbers}}
                   <li class="page-item {{#if this.isCurrent}}active{{/if}}">
@@ -145,7 +145,7 @@
                   {{/each}}
                   <li class="page-item {{#unless pagination.hasNextPage}}disabled{{/unless}}">
                       <a class="page-link"
-                          href="{{createPaginationLink pagination.nextPage ../queryParams}}">Next</a>
+                          href="{{createPaginationLink pagination.nextPage ../queryParams}}">Sau</a>
                   </li>
               </ul>
           </nav>

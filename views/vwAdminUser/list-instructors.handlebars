@@ -6,7 +6,7 @@
         <i class="bi bi-mortarboard"></i> Quản lý giảng viên
       </h4>
       <div>
-        <span class="badge bg-success">{{instructors.length}} giảng viên</span>
+        <span class="badge bg-success">{{totalItems}} giảng viên</span>
         <a href="/admin/users/add-instructor" class="btn btn-primary ms-2">
           <i class="bi bi-person-plus"></i> Thêm giảng viên
         </a>
@@ -14,17 +14,23 @@
     </div>
     
     <div class="card-body">
-      <!-- Search -->
-      <div class="row mb-3">
-        <div class="col-md-12">
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="bi bi-search"></i>
-            </span>
-            <input type="text" class="form-control" id="searchInstructor" placeholder="Tìm kiếm theo tên hoặc email...">
+      <!-- Search & Filters -->
+      <form method="GET" action="/admin/users/instructors" class="mb-4">
+        <div class="row g-3">
+          <div class="col-md-12">
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="bi bi-search"></i>
+              </span>
+              <input type="text" class="form-control" name="search" placeholder="Tìm kiếm theo tên, email hoặc username..." value="{{filters.searchTerm}}">
+              <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+              {{#if filters.searchTerm}}
+              <a href="/admin/users/instructors" class="btn btn-secondary">Xóa bộ lọc</a>
+              {{/if}}
+            </div>
           </div>
         </div>
-      </div>
+      </form>
 
       <!-- Instructors Table -->
       {{#if instructors}}
@@ -122,6 +128,34 @@
         </a>
       </div>
       {{/if}}
+
+      <!-- Pagination -->
+      {{#if (isGreater pagination.totalPages 1)}}
+      <div class="d-flex justify-content-between align-items-center mt-4">
+          <span class="text-muted">
+              Hiển thị {{currentItemsCount}} trên tổng số {{totalItems}} {{itemType}}
+          </span>
+          
+          <nav aria-label="{{itemType}} pagination">
+              <ul class="pagination justify-content-end mb-0">
+                  <li class="page-item {{#unless pagination.hasPrevPage}}disabled{{/unless}}">
+                      <a class="page-link" href="{{createPaginationLink pagination.prevPage queryParams}}"
+                          tabindex="-1" aria-disabled="true">Trước</a>
+                  </li>
+                  {{#each pagination.pageNumbers}}
+                  <li class="page-item {{#if this.isCurrent}}active{{/if}}">
+                      <a class="page-link"
+                          href="{{createPaginationLink this.value ../../queryParams}}">{{this.value}}</a>
+                  </li>
+                  {{/each}}
+                  <li class="page-item {{#unless pagination.hasNextPage}}disabled{{/unless}}">
+                      <a class="page-link"
+                          href="{{createPaginationLink pagination.nextPage queryParams}}">Sau</a>
+                  </li>
+              </ul>
+          </nav>
+      </div>
+      {{/if}}
       
 
     </div>
@@ -129,25 +163,28 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Search functionality
-  const searchInput = document.getElementById('searchInstructor');
-  const tableRows = document.querySelectorAll('tbody tr');
-
-  function filterTable() {
-    const searchTerm = searchInput.value.toLowerCase();
-
-    tableRows.forEach(row => {
-      const instructorInfo = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-      const email = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-      
-      const searchMatch = instructorInfo.includes(searchTerm) || 
-                         email.includes(searchTerm);
-
-      row.style.display = searchMatch ? '' : 'none';
+function toggleUserStatus(userId, activate) {
+  const action = activate ? 'activate' : 'deactivate';
+  const actionText = activate ? 'kích hoạt' : 'tạm khóa';
+  
+  if (confirm(`Bạn có chắc muốn ${actionText} tài khoản này?`)) {
+    fetch(`/admin/users/${userId}/${action}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        location.reload();
+      } else {
+        alert('Có lỗi xảy ra: ' + data.message);
+      }
+    })
+    .catch(error => {
+      alert('Có lỗi xảy ra: ' + error.message);
     });
   }
-
-  searchInput.addEventListener('input', filterTable);
-});
+}
 </script>

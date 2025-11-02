@@ -107,6 +107,15 @@ app.engine('handlebars', engine({
   lt(a,b){
     return a < b;
   },
+  gt(a, b) {
+    return a > b;
+  },
+  add(a, b) {
+    return Number(a) + Number(b);
+  },
+  subtract(a, b) {
+    return Number(a) - Number(b);
+  },
 
     // Hiển thị sao (rating)
     renderStars(rating) {
