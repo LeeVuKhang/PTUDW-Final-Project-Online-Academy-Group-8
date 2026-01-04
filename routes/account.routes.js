@@ -13,50 +13,50 @@ const __dirname = import.meta.dirname;
 const avatarDir = path.join(__dirname, '..', 'static', 'avatar');
 
 if (!fs.existsSync(avatarDir)) {
-    fs.mkdirSync(avatarDir, { recursive: true });
+  fs.mkdirSync(avatarDir, { recursive: true });
 }
 const avatarStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, avatarDir);
-    },
-    filename: (req, file, cb) => {
-        const userId = req.session.authUser.user_id;
-        const ext = path.extname(file.originalname);
-        const newFilename = `${userId}${ext}`;
+  destination: (req, file, cb) => {
+    cb(null, avatarDir);
+  },
+  filename: (req, file, cb) => {
+    const userId = req.session.authUser.user_id;
+    const ext = path.extname(file.originalname);
+    const newFilename = `${userId}${ext}`;
 
-        try {
-            const filesInDir = fs.readdirSync(avatarDir);
-            
-            const oldFile = filesInDir.find(f => f.startsWith(`${userId}.`));
+    try {
+      const filesInDir = fs.readdirSync(avatarDir);
 
-            if (oldFile) {
-                fs.unlinkSync(path.join(avatarDir, oldFile));
-            }
-        } catch (err) {
-            console.error("[Avatar Upload] Lỗi khi xóa file cũ:", err);
-        }
-        cb(null, newFilename);
+      const oldFile = filesInDir.find(f => f.startsWith(`${userId}.`));
+
+      if (oldFile) {
+        fs.unlinkSync(path.join(avatarDir, oldFile));
+      }
+    } catch (err) {
+      console.error("[Avatar Upload] Lỗi khi xóa file cũ:", err);
     }
+    cb(null, newFilename);
+  }
 });
-const upload = multer({ 
-    storage: avatarStorage,
-    fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png|gif|webp|gif/;
-        const mimetype = filetypes.test(file.mimetype);
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        if (mimetype && extname) {
-            return cb(null, true);
-        }
-        cb("Error: Chỉ chấp nhận file ảnh (jpeg, jpg, png, gif, webp)!");
+const upload = multer({
+  storage: avatarStorage,
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif|webp|gif/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimetype && extname) {
+      return cb(null, true);
     }
+    cb("Error: Chỉ chấp nhận file ảnh (jpeg, jpg, png, gif, webp)!");
+  }
 });
 const router = express.Router();
 
 
 
 router.get('/signup', (req, res) => {
-    res.render('vwAccount/signup');
-}); 
+  res.render('vwAccount/signup');
+});
 
 router.post('/signup', async (req, res) => {
   try {
@@ -64,10 +64,10 @@ router.post('/signup', async (req, res) => {
     const payload = {
       username: String(raw.username || '').trim(),
       password: String(raw.password || ''),
-      confirm:  String(raw.confirm  || ''),
-      name:     String(raw.name  || '').trim(),
-      email:    String(raw.email || '').trim().toLowerCase(),
-      dob:      String(raw.dob || ''),
+      confirm: String(raw.confirm || ''),
+      name: String(raw.name || '').trim(),
+      email: String(raw.email || '').trim().toLowerCase(),
+      dob: String(raw.dob || ''),
     };
     const rerender = (fieldErrors) =>
       res.status(400).render('vwAccount/signup', {
@@ -90,7 +90,7 @@ router.post('/signup', async (req, res) => {
     if (Object.keys(errs).length > 0) {
       return rerender(errs);
     }
-    const existedUser  = await userModel.findByUsername(payload.username);
+    const existedUser = await userModel.findByUsername(payload.username);
     if (existedUser) {
       errs.username = 'Username is already taken.';
     }
@@ -125,7 +125,7 @@ router.post('/signup', async (req, res) => {
     if (e?.code === '23505') {
       const fieldErrors = {};
       if (/users_username_key/i.test(e.constraint || '')) fieldErrors.username = 'Username is already taken.';
-      if (/users_email_key/i.test(e.constraint || ''))    fieldErrors.email    = 'Email is already taken.';
+      if (/users_email_key/i.test(e.constraint || '')) fieldErrors.email = 'Email is already taken.';
       if (Object.keys(fieldErrors).length > 0) {
         return res.status(400).render('vwAccount/signup', { fieldErrors });
       }
@@ -136,9 +136,9 @@ router.post('/signup', async (req, res) => {
 });
 
 router.get('/signin', (req, res) => {
-    res.render('vwAccount/signin', {
-        retUrl: req.query.retUrl || '' 
-    });
+  res.render('vwAccount/signin', {
+    retUrl: req.query.retUrl || ''
+  });
 });
 router.post('/signin', async (req, res) => {
   try {
@@ -156,12 +156,12 @@ router.post('/signin', async (req, res) => {
 
     req.session.isAuthenticated = true;
     req.session.authUser = user;
-    
+
     // Ưu tiên retUrl nếu có, không thì dùng role-based redirect
     const sessionRetUrl = req.session.retUrl;
     const bodyRetUrl = req.body.retUrl;
     delete req.session.retUrl;
-    
+
     // Nếu có retUrl cụ thể từ session hoặc form thì dùng
     if (sessionRetUrl && sessionRetUrl !== '/') {
       return res.redirect(sessionRetUrl);
@@ -169,7 +169,7 @@ router.post('/signin', async (req, res) => {
     if (bodyRetUrl && bodyRetUrl !== '/') {
       return res.redirect(bodyRetUrl);
     }
-    
+
     // Không có retUrl cụ thể -> redirect theo role
     let redirectUrl;
     if (user.role === 0) {
@@ -185,7 +185,7 @@ router.post('/signin', async (req, res) => {
       // Default - trang chủ
       redirectUrl = '/';
     }
-    
+
     return res.redirect(redirectUrl);
   } catch (e) {
     console.error('[signin] error:', e);
@@ -244,18 +244,19 @@ router.post('/signup/verify', async (req, res) => {
 
 
 router.post('/signout', async (req, res) => {
-    req.session.isAuthenticated = false;
-    req.session.authUser = null;
-    return res.redirect(req.headers.referer);
+  req.session.isAuthenticated = false;
+  req.session.authUser = null;
+  const redirectUrl = req.headers.referer || '/';
+  return res.redirect(req.headers.referer);
 });
 
-router.get('/is-available',async (req, res) => {
-    const username = req.query.username;
-    const user = await userModel.findByUsername(username);
-    if (!user){
-        return res.json(true);
-    }
-    return res.json(false);
+router.get('/is-available', async (req, res) => {
+  const username = req.query.username;
+  const user = await userModel.findByUsername(username);
+  if (!user) {
+    return res.json(true);
+  }
+  return res.json(false);
 });
 
 router.get('/profile', checkAuthenticated, (req, res) => {
@@ -270,30 +271,30 @@ router.get('/profile', checkAuthenticated, (req, res) => {
 });
 
 router.post('/upload-avatar', checkAuthenticated, upload.single('avatar'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ success: false, message: 'Không có file nào được tải lên hoặc file không phải là ảnh.' });
-        }
-
-        const newImageUrl = `/static/avatar/${req.file.filename}`;
-        const userId = req.session.authUser.user_id;
-
-        await userModel.patch(userId, { image_url: newImageUrl });
-
-        req.session.authUser.image_url = newImageUrl;
-        
-        req.session.save(err => {
-            if (err) {
-                 console.error("Lỗi lưu session sau khi upload avatar:", err);
-                 return res.status(500).json({ success: false, message: 'Lỗi khi lưu session.' });
-            }
-            res.json({ success: true, newImageUrl: newImageUrl });
-        });
-
-    } catch (error) {
-        console.error("Lỗi upload avatar:", error);
-        res.status(500).json({ success: false, message: 'Lỗi server khi tải ảnh lên.' });
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Không có file nào được tải lên hoặc file không phải là ảnh.' });
     }
+
+    const newImageUrl = `/static/avatar/${req.file.filename}`;
+    const userId = req.session.authUser.user_id;
+
+    await userModel.patch(userId, { image_url: newImageUrl });
+
+    req.session.authUser.image_url = newImageUrl;
+
+    req.session.save(err => {
+      if (err) {
+        console.error("Lỗi lưu session sau khi upload avatar:", err);
+        return res.status(500).json({ success: false, message: 'Lỗi khi lưu session.' });
+      }
+      res.json({ success: true, newImageUrl: newImageUrl });
+    });
+
+  } catch (error) {
+    console.error("Lỗi upload avatar:", error);
+    res.status(500).json({ success: false, message: 'Lỗi server khi tải ảnh lên.' });
+  }
 });
 
 
@@ -316,7 +317,7 @@ router.post('/profile', checkAuthenticated, async (req, res) => {
   });
 });
 router.get('/change-pwd', checkAuthenticated, async (req, res) => {
-    res.render('vwAccount/change-pwd', {user: req.session.authUser})
+  res.render('vwAccount/change-pwd', { user: req.session.authUser })
 });
 router.post('/change-pwd', checkAuthenticated, async (req, res) => {
   const user = req.session.authUser;
@@ -408,7 +409,7 @@ router.post('/complete', async (req, res) => {
       name: req.body.name,
       email: pending.email,
       dob: req.body.dob,
-      role: 1, 
+      role: 1,
       self_introduction: req.body.self_introduction || null,
       image_url: req.body.image_url || null,
     };
@@ -418,7 +419,7 @@ router.post('/complete', async (req, res) => {
     req.session.authUser = { ...user, user_id: newId };
     req.session.authUser.isSocial = true;
 
-    
+
     req.session.pendingSocial = null;
     const retUrl = req.session.retUrl || '/';
     delete req.session.retUrl;
@@ -896,8 +897,8 @@ router.get('/watchlist', checkAuthenticated, async (req, res) => {
   try {
     const student_id = req.session.authUser.user_id;
     const items = await watchlistModel.findCoursesByStudentID(student_id);
-    
-    res.render('vwAccount/watchlist', { 
+
+    res.render('vwAccount/watchlist', {
       watchlistItems: items,
     });
   } catch (error) {
@@ -926,14 +927,14 @@ router.post('/watchlist/add', checkAuthenticated, async (req, res) => {
 router.post('/watchlist/remove', checkAuthenticated, async (req, res) => {
   try {
     const student_id = req.session.authUser.user_id;
-    const { course_id } = req.body; 
+    const { course_id } = req.body;
 
     if (!course_id) {
       return res.status(400).send('Course ID is missing.');
     }
 
     await watchlistModel.remove(student_id, course_id);
-    
+
     res.redirect(req.headers.referer || '/');
   } catch (error) {
     console.error('Error removing from watchlist:', error);
