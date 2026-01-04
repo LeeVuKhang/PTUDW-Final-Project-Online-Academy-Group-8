@@ -247,7 +247,7 @@ router.post('/signout', async (req, res) => {
   req.session.isAuthenticated = false;
   req.session.authUser = null;
   const redirectUrl = req.headers.referer || '/';
-  return res.redirect(req.headers.referer);
+  return res.redirect(redirectUrl);
 });
 
 router.get('/is-available', async (req, res) => {
