@@ -1,6 +1,6 @@
 import express from "express";
 import db from "../utils/db.js";
-import { checkAuthenticated } from "../models/auth.model.js";
+import { authenticateJWT } from "../models/auth.model.js";
 import userModel from "../models/user.model.js";
 import courseModel from "../models/course.model.js";
 import categoryModel from '../models/category.model.js';
@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * pageLimit;
-    const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null;
+    const student_id = req.user != null ? req.user.user_id : null;
 
     const [courses, totalResult] = await Promise.all([
       courseModel.findCoursesByFilter('all', student_id, pageLimit, offset),
@@ -58,7 +58,7 @@ router.get("/byCat", async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const sort = req.query.sort || 'newest';
     const offset = (page - 1) * pageLimit;
-    const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null;
+    const student_id = req.user != null ? req.user.user_id : null;
 
     // Kiểm tra danh mục
     const category = catid ? await categoryModel.findById(catid) : null;
@@ -149,7 +149,7 @@ router.get("/instructorProfile", async (req, res) => {
 router.get("/details/:id", async (req, res) => {
   try {
     const course_id = req.params.id;
-    const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null;
+    const student_id = req.user != null ? req.user.user_id : null;
 
     const course = await db("courses as c")
       .leftJoin('categories as cat', 'c.catid', 'cat.cat_id')
@@ -238,9 +238,9 @@ router.get("/details/:id", async (req, res) => {
 
 
 /*Ghi danh khóa học*/
-router.get("/enroll/:id", checkAuthenticated, async (req, res) => {
+router.get("/enroll/:id", authenticateJWT, async (req, res) => {
   const course_id = req.params.id;
-  const student_id = req.session.authUser.user_id;
+  const student_id = req.user.user_id;
 
   const exists = await db("enrollments").where({ course_id, student_id }).first();
   if (!exists) {
@@ -256,10 +256,10 @@ router.get("/enroll/:id", checkAuthenticated, async (req, res) => {
   res.redirect(`/course/learn/${course_id}`);
 });
 
-router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
+router.get("/learn/:course_id", authenticateJWT, async (req, res) => {
   try {
     const { course_id } = req.params;
-    const student_id = req.session.authUser.user_id;
+    const student_id = req.user.user_id;
 
     const course = await db("courses").where({ course_id }).first();
     if (!course) return res.status(404).send("Không tìm thấy khóa học.");
@@ -311,10 +311,10 @@ router.get("/learn/:course_id", checkAuthenticated, async (req, res) => {
 });
 
 
-router.get("/learn/:course_id/:lesson_id", checkAuthenticated, async (req, res) => {
+router.get("/learn/:course_id/:lesson_id", authenticateJWT, async (req, res) => {
   try {
     const { course_id, lesson_id } = req.params;
-    const student_id = req.session.authUser.user_id;
+    const student_id = req.user.user_id;
 
     const course = await db("courses").where({ course_id }).first();
     if (!course) return res.status(404).send("Không tìm thấy khóa học.");
@@ -399,10 +399,10 @@ router.post('/update-last-watch', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing course_id or lesson_id' });
     }
 
-    await progressModel.upsertWatched(req.session.authUser.user_id, course_id, lesson_id);
-    const progress = await progressModel.courseProgressPercent(req.session.authUser.user_id, course_id);
+    await progressModel.upsertWatched(req.user.user_id, course_id, lesson_id);
+    const progress = await progressModel.courseProgressPercent(req.user.user_id, course_id);
     await db('enrollments')
-  .where({ student_id: req.session.authUser.user_id, course_id })
+  .where({ student_id: req.user.user_id, course_id })
   .update({ progress, last_watched_lesson: lesson_id });
 
     return res.json({ success: true, progress });
@@ -411,16 +411,16 @@ router.post('/update-last-watch', async (req, res) => {
     return res.status(500).json({ success: false, error: 'Server error' });
   }
 });
-router.get('/my-courses', checkAuthenticated, async (req, res) => {
-  const user = req.session.authUser;
+router.get('/my-courses', authenticateJWT, async (req, res) => {
+  const user = req.user;
   const courses = await enrollmentModel.findCoursesByStudent(user.user_id);
   res.render('vwCourses/myCourses', { courses });
 });
 
 /*Đánh giá khóa học*/
-router.post("/rate/:id", checkAuthenticated, async (req, res) => {
+router.post("/rate/:id", authenticateJWT, async (req, res) => {
   const course_id = req.params.id;
-  const student_id = req.session.authUser.user_id;
+  const student_id = req.user.user_id;
   const { value, comment } = req.body;
 
   try {
@@ -456,13 +456,13 @@ router.post("/rate/:id", checkAuthenticated, async (req, res) => {
 
 
 /*Mua ngay → chuyển đến checkout*/
-router.get("/buy-now/:id", checkAuthenticated, (req, res) => {
+router.get("/buy-now/:id", authenticateJWT, (req, res) => {
   const course_id = req.params.id;
   res.redirect(`/course/checkout/${course_id}`);
 });
 
 /*Trang thanh toán*/
-router.get("/checkout/:id", checkAuthenticated, async (req, res) => {
+router.get("/checkout/:id", authenticateJWT, async (req, res) => {
   const course_id = req.params.id;
   const course = await db("courses").where("course_id", course_id).first();
   if (!course) return res.render("vwCourses/not-found", { layout: "main" });
@@ -470,9 +470,9 @@ router.get("/checkout/:id", checkAuthenticated, async (req, res) => {
 });
 
 /*Xử lý thanh toán*/
-router.post("/checkout/:id", checkAuthenticated, async (req, res) => {
+router.post("/checkout/:id", authenticateJWT, async (req, res) => {
   const course_id = req.params.id;
-  const student_id = req.session.authUser.user_id;
+  const student_id = req.user.user_id;
 
   const exists = await db("enrollments").where({ course_id, student_id }).first();
   if (!exists) {
@@ -489,9 +489,9 @@ router.post("/checkout/:id", checkAuthenticated, async (req, res) => {
 });
 
 /*Thêm vào giỏ hàng*/
-router.post("/add-to-cart/:id", checkAuthenticated, async (req, res) => {
+router.post("/add-to-cart/:id", authenticateJWT, async (req, res) => {
   const course_id = req.params.id;
-  const student_id = req.session.authUser.user_id;
+  const student_id = req.user.user_id;
 
   try {
     const exists = await db("cart_items").where({ student_id, course_id }).first();
@@ -526,13 +526,13 @@ router.post("/add-to-cart/:id", checkAuthenticated, async (req, res) => {
 
 
 /*Xem giỏ hàng*/
-router.get("/add-to-cart/:id", checkAuthenticated, async (req, res) => {
+router.get("/add-to-cart/:id", authenticateJWT, async (req, res) => {
   const course_id = req.params.id;
   res.redirect(`/course/details/${course_id}`);
 });
 
-router.get("/cart", checkAuthenticated, async (req, res) => {
-  const student_id = req.session.authUser.user_id;
+router.get("/cart", authenticateJWT, async (req, res) => {
+  const student_id = req.user.user_id;
 
   const items = await db("cart_items")
     .join("courses", "cart_items.course_id", "courses.course_id")
@@ -543,16 +543,16 @@ router.get("/cart", checkAuthenticated, async (req, res) => {
 });
 
 /*Xóa khóa học khỏi giỏ hàng*/
-router.post("/cart/remove/:id", checkAuthenticated, async (req, res) => {
+router.post("/cart/remove/:id", authenticateJWT, async (req, res) => {
   const cart_item_id = req.params.id;
-  const student_id = req.session.authUser.user_id;
+  const student_id = req.user.user_id;
   await db("cart_items").where({ cart_item_id, student_id }).delete();
   res.redirect("/course/cart");
 });
 
 /*Thanh toán tất cả khóa học trong giỏ*/
-router.post("/cart/checkout", checkAuthenticated, async (req, res) => {
-  const student_id = req.session.authUser.user_id;
+router.post("/cart/checkout", authenticateJWT, async (req, res) => {
+  const student_id = req.user.user_id;
   const items = await db("cart_items").where({ student_id });
 
   for (const item of items) {
@@ -567,9 +567,9 @@ router.post("/cart/checkout", checkAuthenticated, async (req, res) => {
 });
 
 /*Thanh toán riêng một khóa học trong giỏ hàng*/
-router.post("/cart/checkout/:id", checkAuthenticated, async (req, res) => {
+router.post("/cart/checkout/:id", authenticateJWT, async (req, res) => {
   const course_id = req.params.id;
-  const student_id = req.session.authUser.user_id;
+  const student_id = req.user.user_id;
 
   try {
     // Kiểm tra xem đã mua chưa
@@ -601,9 +601,9 @@ router.post("/cart/checkout/:id", checkAuthenticated, async (req, res) => {
 /*Trang liệt kê tất cả khóa học đã mua*/
 
 /*Xóa khóa học đã ghi danh*/
-router.post("/my-courses/remove/:id", checkAuthenticated, async (req, res) => {
+router.post("/my-courses/remove/:id", authenticateJWT, async (req, res) => {
   const course_id = req.params.id;
-  const student_id = req.session.authUser.user_id;
+  const student_id = req.user.user_id;
 
   await db("enrollments")
     .where({ course_id, student_id })
