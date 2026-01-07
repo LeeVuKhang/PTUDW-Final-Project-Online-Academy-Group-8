@@ -10,24 +10,28 @@
   .instructor-profile-box {
     margin-bottom: 3.5rem;
   }
+
   .instructor-title {
     font-size: 1rem;
     font-weight: 700;
-    color: #563d7c; 
+    color: #563d7c;
     margin-bottom: 0.25rem;
     text-transform: uppercase;
   }
+
   .instructor-name {
     font-size: 2.25rem;
     font-weight: 700;
     color: #333;
     margin-bottom: 0.25rem;
   }
+
   .instructor-subtitle {
     font-size: 1.15rem;
     color: #555;
     margin-bottom: 2rem;
   }
+
   .instructor-avatar {
     width: 140px;
     height: 140px;
@@ -35,34 +39,41 @@
     object-fit: cover;
     margin-bottom: 1rem;
   }
+
   .instructor-stats {
     list-style: none;
     padding-left: 0;
     font-size: 1rem;
   }
+
   .instructor-stats li {
     display: flex;
     align-items: center;
     margin-bottom: 0.75rem;
     color: #212529;
   }
+
   .instructor-stats i {
     font-size: 1.1rem;
     color: #111;
-    width: 28px; 
+    width: 28px;
     margin-right: 0.75rem;
   }
+
   .instructor-bio {
     margin-top: 2.5rem;
   }
+
   .instructor-bio h4 {
     font-weight: 700;
     margin-bottom: 1rem;
   }
+
   .instructor-bio .bio-content p {
     font-size: 1rem;
     line-height: 1.6;
   }
+
   .show-more-link {
     font-weight: 700;
     color: #563d7c;
@@ -83,9 +94,14 @@
         <h1 class="instructor-name">{{instructor.name}}</h1>
         <p class="instructor-subtitle">Giảng viên tại CourseCademy</p>
 
-        <div class="row">
-          <div class="col-md-3">
-            <img src="{{instructor.image_url}}" alt="{{instructor.name}}" class="instructor-avatar">
+        <div class="row align-items-center">
+          <div class="col-md-3 text-center text-md-start mb-3 mb-md-0">
+            <div
+              style="width: 100px; height: 100px; margin: 0 auto; overflow: hidden; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              <img src="{{instructor.image_url}}" alt="{{instructor.name}}"
+                style="width: 100%; height: 100%; object-fit: cover;"
+                onerror="this.src='https://via.placeholder.com/100?text={{substr instructor.name 0 2}}'">
+            </div>
           </div>
 
           <div class="col-md-9 d-flex align-items-center">
@@ -127,9 +143,9 @@
           <div class="bio-content">
             {{{instructor.bio}}}
             {{#unless instructor.bio}}
-              <p>Chào mừng!</p>
-              <p>Tôi là **{{instructor.name}}**, một giảng viên tại CourseCademy.</p>
-              <p class="text-muted small">(Giảng viên chưa cập nhật tiểu sử.)</p>
+            <p>Chào mừng!</p>
+            <p>Tôi là **{{instructor.name}}**, một giảng viên tại CourseCademy.</p>
+            <p class="text-muted small">(Giảng viên chưa cập nhật tiểu sử.)</p>
             {{/unless}}
           </div>
         </div>
@@ -138,31 +154,32 @@
       <hr class="my-5">
 
       <h2 class="fw-bold mb-4">Các khóa học của {{instructor.name}}</h2>
-      
+
       <div class="row g-4">
         {{#each courses}}
-          <div class="col-md-4 col-lg-3">
-            <div class="card h-100 shadow-sm border-0">
-              <a href="/course/details/{{this.course_id}}">
-                <img src="{{this.image_url}}" class="card-img-top" alt="{{this.title}}" style="height: 180px; object-fit: cover;">
-              </a>
-              <div class="card-body">
-                <h6 class="card-title fw-semibold mb-2">
-                  <a href="/course/details/{{this.course_id}}" class="text-dark text-decoration-none">
-                    {{this.title}}
-                  </a>
-                </h6>
-                <p class="text-muted small mb-2">{{this.tinydes}}</p>
-                <div class="text-primary fw-bold">{{formatNumber this.discount_price}}</div>
-              </div>
+        <div class="col-md-4 col-lg-3">
+          <div class="card h-100 shadow-sm border-0">
+            <a href="/course/details/{{this.course_id}}">
+              <img src="{{this.image_url}}" class="card-img-top" alt="{{this.title}}"
+                style="height: 180px; object-fit: cover;">
+            </a>
+            <div class="card-body">
+              <h6 class="card-title fw-semibold mb-2">
+                <a href="/course/details/{{this.course_id}}" class="text-dark text-decoration-none">
+                  {{this.title}}
+                </a>
+              </h6>
+              <p class="text-muted small mb-2">{{this.tinydes}}</p>
+              <div class="text-primary fw-bold">{{formatNumber this.discount_price}}</div>
             </div>
           </div>
+        </div>
         {{else}}
-          <div class="text-center text-muted py-4">
-            Giảng viên này chưa đăng tải khóa học nào.
-          </div>
+        <div class="text-center text-muted py-4">
+          Giảng viên này chưa đăng tải khóa học nào.
+        </div>
         {{/each}}
-      </div>    
+      </div>
     </div>
   </div>
 </div>
