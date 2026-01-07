@@ -7,17 +7,41 @@ body { background-color: #f8f9fa; }
 .ql-editor.ql-blank::before { font-size: 1.2rem; }
 .navbar .nav-link:hover,
 .navbar .nav-link:focus {
-  color: #0d6efd; /* xanh khi hover */
+  color: #0d6efd; /* course card hover*/
+}
+.card-title-hover:hover {
+	color: #0a58ca !important;
+	text-decoration: underline;
 }
 
-.course-card {
-  border-radius: 15px;
-  overflow: hidden;
+/* Global Image Overflow Prevention */
+img {
+  max-width: 100%;
+  height: auto;
 }
+
+/* Specific image containers with fixed dimensions */
+.card-img-top,
+.course-thumbnail,
+.instructor-avatar,
+.rounded-circle[style*="width"][style*="height"] {
+  object-fit: cover;
+  display: block;
+}
+
+/* Ensure Bootstrap card images don't overflow */
+.card img {
+  max-width: 100%;
+}
+
 .username-large {
     font-size: clamp(1.25rem, 2.5vw, 2rem);
     font-weight: 600;
 
+}
+.course-card {
+  border-radius: 15px;
+  overflow: hidden;
 }
 .course-card img {
   width: 93%;
