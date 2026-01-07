@@ -2,8 +2,10 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import userModel from '../models/user.model.js';
-import { checkAuthenticated } from '../models/auth.model.js';
+import { authenticateJWT } from '../models/auth.model.js';
 import { sendOtpEmail } from '../utils/mailer.js';
+import { generateAccessToken, generateRefreshToken, setTokenCookies, clearTokenCookies } from '../utils/jwt.util.js';
+import tempDataModel from '../models/temp-data.model.js';
 
 import watchlistModel from '../models/watchlist.model.js'
 import multer from 'multer';
@@ -20,7 +22,7 @@ const avatarStorage = multer.diskStorage({
     cb(null, avatarDir);
   },
   filename: (req, file, cb) => {
-    const userId = req.session.authUser.user_id;
+    const userId = req.user.user_id; // Changed from req.user
     const ext = path.extname(file.originalname);
     const newFilename = `${userId}${ext}`;
 
@@ -103,7 +105,12 @@ router.post('/signup', async (req, res) => {
       return rerender(errs);
     }
     const hash = bcrypt.hashSync(payload.password, 10);
-    req.session.pendingSignup = {
+
+    // Generate unique session ID for anonymous temp data storage
+    const sessionId = crypto.randomBytes(16).toString('hex');
+
+    // Store pending signup in database instead of session
+    await tempDataModel.saveSessionData(sessionId, 'pendingSignup', {
       username: payload.username,
       password: hash,
       name: payload.name,
@@ -112,9 +119,20 @@ router.post('/signup', async (req, res) => {
       role: 1,
       self_introduction: null,
       image_url: null,
-    };
+    }, new Date(Date.now() + 30 * 60 * 1000)); // 30 minutes expiry
+
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-    req.session.signupOtp = { code: otp, expiresAt: Date.now() + 10 * 60 * 1000 };
+    await tempDataModel.saveSessionData(sessionId, 'signupOtp', {
+      code: otp,
+      expiresAt: Date.now() + 10 * 60 * 1000
+    }, new Date(Date.now() + 10 * 60 * 1000));
+
+    // Store sessionId in cookie
+    res.cookie('signupSessionId', sessionId, {
+      maxAge: 30 * 60 * 1000,
+      httpOnly: true,
+      sameSite: 'strict',
+    });
 
     const { sendOtpEmail } = await import('../utils/mailer.js');
     await sendOtpEmail(payload.email, otp, 'Complete your registration');
@@ -154,17 +172,25 @@ router.post('/signin', async (req, res) => {
     if (!user) return invalid();
     if (!bcrypt.compareSync(p, user.password)) return invalid();
 
-    req.session.isAuthenticated = true;
-    req.session.authUser = user;
+    // Generate JWT tokens
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    // Ưu tiên retUrl nếu có, không thì dùng role-based redirect
-    const sessionRetUrl = req.session.retUrl;
+    // Set tokens as HTTPOnly cookies
+    setTokenCookies(res, accessToken, refreshToken);
+
+    // Handle redirect URL priority: retUrl cookie > body retUrl > role-based
+    const cookieRetUrl = req.cookies.retUrl;
     const bodyRetUrl = req.body.retUrl;
-    delete req.session.retUrl;
 
-    // Nếu có retUrl cụ thể từ session hoặc form thì dùng
-    if (sessionRetUrl && sessionRetUrl !== '/') {
-      return res.redirect(sessionRetUrl);
+    // Clear retUrl cookie
+    if (cookieRetUrl) {
+      res.clearCookie('retUrl');
+    }
+
+    // If có retUrl cụ thể từ cookie hoặc form thì dùng
+    if (cookieRetUrl && cookieRetUrl !== '/') {
+      return res.redirect(cookieRetUrl);
     }
     if (bodyRetUrl && bodyRetUrl !== '/') {
       return res.redirect(bodyRetUrl);
@@ -194,14 +220,26 @@ router.post('/signin', async (req, res) => {
 });
 
 router.get('/signup/verify', (req, res) => {
-  const pending = req.session.pendingSignup;
-  if (!pending) return res.redirect('/account/signup');
-  res.render('vwAccount/signup-verify', { email: pending.email });
+  const sessionId = req.cookies.signupSessionId;
+  if (!sessionId) return res.redirect('/account/signup');
+
+  tempDataModel.getSessionData(sessionId, 'pendingSignup')
+    .then(pending => {
+      if (!pending) return res.redirect('/account/signup');
+      res.render('vwAccount/signup-verify', { email: pending.email });
+    })
+    .catch(err => {
+      console.error('[signup/verify GET] error:', err);
+      res.redirect('/account/signup');
+    });
 });
 router.post('/signup/verify', async (req, res) => {
   try {
-    const pending = req.session.pendingSignup;
-    const hold = req.session.signupOtp;
+    const sessionId = req.cookies.signupSessionId;
+    if (!sessionId) return res.redirect('/account/signup');
+
+    const pending = await tempDataModel.getSessionData(sessionId, 'pendingSignup');
+    const hold = await tempDataModel.getSessionData(sessionId, 'signupOtp');
 
     if (!pending || !hold) return res.redirect('/account/signup');
 
@@ -210,13 +248,15 @@ router.post('/signup/verify', async (req, res) => {
       return res.render('vwAccount/signup-verify', { email: pending.email, err: 'Please enter the code.' });
     }
     if (Date.now() > hold.expiresAt) {
-      req.session.pendingSignup = null;
-      req.session.signupOtp = null;
+      await tempDataModel.deleteSessionData(sessionId, 'pendingSignup');
+      await tempDataModel.deleteSessionData(sessionId, 'signupOtp');
+      res.clearCookie('signupSessionId');
       return res.render('vwAccount/signup', { err: 'Code expired. Please sign up again.' });
     }
     if (code !== hold.code) {
       return res.render('vwAccount/signup-verify', { email: pending.email, err: 'Invalid code. Try again.' });
     }
+
     const newId = await userModel.add({
       username: pending.username,
       password: pending.password,
@@ -227,11 +267,19 @@ router.post('/signup/verify', async (req, res) => {
       self_introduction: pending.self_introduction,
       image_url: pending.image_url,
     });
-    req.session.pendingSignup = null;
-    req.session.signupOtp = null;
+
+    // Clean up temp data
+    await tempDataModel.deleteSessionData(sessionId, 'pendingSignup');
+    await tempDataModel.deleteSessionData(sessionId, 'signupOtp');
+    res.clearCookie('signupSessionId');
+
     const user = await userModel.findByUsername(pending.username);
-    req.session.isAuthenticated = true;
-    req.session.authUser = user;
+
+    // Auto-login with JWT
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    setTokenCookies(res, accessToken, refreshToken);
+
     return res.redirect('/account/profile');
   } catch (e) {
     console.error('[signup/verify] error:', e);
@@ -244,8 +292,8 @@ router.post('/signup/verify', async (req, res) => {
 
 
 router.post('/signout', async (req, res) => {
-  req.session.isAuthenticated = false;
-  req.session.authUser = null;
+  // Clear JWT cookies
+  clearTokenCookies(res);
   const redirectUrl = req.headers.referer || '/';
   return res.redirect(redirectUrl);
 });
@@ -259,37 +307,31 @@ router.get('/is-available', async (req, res) => {
   return res.json(false);
 });
 
-router.get('/profile', checkAuthenticated, (req, res) => {
+router.get('/profile', authenticateJWT, async (req, res) => {
   const tab = req.query.tab || 'info';
-  const pending = req.session.pendingEmailChange;
+  // Check for pending email change in temp data
+  const pending = await tempDataModel.getTempData(req.user.user_id, 'pendingEmailChange');
   res.render('vwAccount/profile', {
-    user: req.session.authUser,
+    user: req.user,
     tab,
     pendingEmail: pending ? pending.newEmail : null,
     pendingStage: pending ? pending.stage : null,
   });
 });
 
-router.post('/upload-avatar', checkAuthenticated, upload.single('avatar'), async (req, res) => {
+router.post('/upload-avatar', authenticateJWT, upload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Không có file nào được tải lên hoặc file không phải là ảnh.' });
     }
 
     const newImageUrl = `/static/avatar/${req.file.filename}`;
-    const userId = req.session.authUser.user_id;
+    const userId = req.user.user_id;
 
     await userModel.patch(userId, { image_url: newImageUrl });
 
-    req.session.authUser.image_url = newImageUrl;
-
-    req.session.save(err => {
-      if (err) {
-        console.error("Lỗi lưu session sau khi upload avatar:", err);
-        return res.status(500).json({ success: false, message: 'Lỗi khi lưu session.' });
-      }
-      res.json({ success: true, newImageUrl: newImageUrl });
-    });
+    // Note: JWT payload is immutable, but next request will have updated data from database
+    return res.json({ success: true, newImageUrl: newImageUrl });
 
   } catch (error) {
     console.error("Lỗi upload avatar:", error);
@@ -299,8 +341,8 @@ router.post('/upload-avatar', checkAuthenticated, upload.single('avatar'), async
 
 
 
-router.post('/profile', checkAuthenticated, async (req, res) => {
-  const id = req.session.authUser.user_id;
+router.post('/profile', authenticateJWT, async (req, res) => {
+  const id = req.user.user_id;
   const user = {
     name: req.body.name,
     dob: req.body.dob,
@@ -308,22 +350,32 @@ router.post('/profile', checkAuthenticated, async (req, res) => {
     image_url: req.body.image_url || null,
   };
   await userModel.patch(id, user);
-  req.session.authUser = { ...req.session.authUser, ...user };
+
+  // Fetch updated user for fresh data
+  const updatedUser = await userModel.findById(id);
+
+  // Check for pending email change
+  const pending = await tempDataModel.getTempData(id, 'pendingEmailChange');
+
   res.render('vwAccount/profile', {
-    user: req.session.authUser,
+    user: updatedUser,
     tab: 'info',
     saved: true,
-    pendingEmail: req.session.pendingEmailChange ? req.session.pendingEmailChange.newEmail : null,
+    pendingEmail: pending ? pending.newEmail : null,
   });
 });
-router.get('/change-pwd', checkAuthenticated, async (req, res) => {
-  res.render('vwAccount/change-pwd', { user: req.session.authUser })
+router.get('/change-pwd', authenticateJWT, async (req, res) => {
+  res.render('vwAccount/change-pwd', { user: req.user })
 });
-router.post('/change-pwd', checkAuthenticated, async (req, res) => {
-  const user = req.session.authUser;
+router.post('/change-pwd', authenticateJWT, async (req, res) => {
+  const user = req.user;
   const id = user.user_id;
   const currentPassword = req.body.currentPassword || '';
-  const ok = bcrypt.compareSync(currentPassword, user.password);
+
+  // Fetch fresh user data with password
+  const dbUser = await userModel.findById(id);
+  const ok = bcrypt.compareSync(currentPassword, dbUser.password);
+
   if (!ok) {
     return res.render('vwAccount/profile', {
       user,
@@ -341,7 +393,6 @@ router.post('/change-pwd', checkAuthenticated, async (req, res) => {
   }
   const hash_password = bcrypt.hashSync(newPwd, 10);
   await userModel.patch(id, { password: hash_password });
-  req.session.authUser.password = hash_password;
 
   return res.redirect('/account/profile');
 });
@@ -362,15 +413,29 @@ router.post('/sync', async (req, res) => {
 
     const existing = await userModel.findByEmail(email);
     if (existing) {
-      req.session.isAuthenticated = true;
-      req.session.authUser = existing;
-      req.session.authUser.isSocial = true;
+      // User exists - issue JWT tokens
+      const accessToken = generateAccessToken(existing);
+      const refreshToken = generateRefreshToken(existing);
+      setTokenCookies(res, accessToken, refreshToken);
 
-      const retUrl = req.session.retUrl || '/';
-      delete req.session.retUrl;
+      const retUrl = req.cookies.retUrl || '/';
+      res.clearCookie('retUrl');
       return res.json({ ok: true, redirect: retUrl });
     }
-    req.session.pendingSocial = { email, name: name || '', supabase_uid };
+
+    // New user - store pending social data with temporary session
+    const sessionId = crypto.randomBytes(16).toString('hex');
+    await tempDataModel.saveSessionData(sessionId, 'pendingSocial',
+      { email, name: name || '', supabase_uid },
+      new Date(Date.now() + 30 * 60 * 1000) // 30 min expiry
+    );
+
+    res.cookie('socialSessionId', sessionId, {
+      maxAge: 30 * 60 * 1000,
+      httpOnly: true,
+      sameSite: 'strict',
+    });
+
     return res.json({ ok: false, needSignup: true, redirect: '/account/complete' });
   } catch (err) {
     console.error('[sync] error:', err);
@@ -383,15 +448,23 @@ router.post('/sync', async (req, res) => {
 router.get('/oauth-done', (req, res) => {
   res.render('vwAccount/oauth-done');
 });
-router.get('/complete', (req, res) => {
-  const pending = req.session.pendingSocial;
+router.get('/complete', async (req, res) => {
+  const sessionId = req.cookies.socialSessionId;
+  if (!sessionId) return res.redirect('/account/signin');
+
+  const pending = await tempDataModel.getSessionData(sessionId, 'pendingSocial');
   if (!pending) return res.redirect('/account/signin');
+
   res.render('vwAccount/complete', { email: pending.email, name: pending.name, dob: pending.dob });
 });
 router.post('/complete', async (req, res) => {
   try {
-    const pending = req.session.pendingSocial;
+    const sessionId = req.cookies.socialSessionId;
+    if (!sessionId) return res.redirect('/account/signin');
+
+    const pending = await tempDataModel.getSessionData(sessionId, 'pendingSocial');
     if (!pending) return res.redirect('/account/signin');
+
     const randomPwd = crypto.randomBytes(16).toString('hex');
     const hash_password = bcrypt.hashSync(randomPwd, 10);
     let finalUsername = (req.body.username || '').trim();
@@ -415,14 +488,19 @@ router.post('/complete', async (req, res) => {
     };
 
     const newId = await userModel.add(user);
-    req.session.isAuthenticated = true;
-    req.session.authUser = { ...user, user_id: newId };
-    req.session.authUser.isSocial = true;
+    const fullUser = { ...user, user_id: newId };
 
+    // Clean up temp data
+    await tempDataModel.deleteSessionData(sessionId, 'pendingSocial');
+    res.clearCookie('socialSessionId');
 
-    req.session.pendingSocial = null;
-    const retUrl = req.session.retUrl || '/';
-    delete req.session.retUrl;
+    // Issue JWT tokens
+    const accessToken = generateAccessToken(fullUser);
+    const refreshToken = generateRefreshToken(fullUser);
+    setTokenCookies(res, accessToken, refreshToken);
+
+    const retUrl = req.cookies.retUrl || '/';
+    res.clearCookie('retUrl');
     return res.redirect(retUrl);
   } catch (e) {
     console.error(e);
@@ -430,9 +508,9 @@ router.post('/complete', async (req, res) => {
   }
 });
 // --- edit email/password stuff ---
-router.post('/change-email', checkAuthenticated, async (req, res) => {
+router.post('/change-email', authenticateJWT, async (req, res) => {
   try {
-    const user = req.session.authUser;
+    const user = req.user;
     const newEmail = (req.body.newEmail || '').trim();
     if (!newEmail) {
       return res.render('vwAccount/profile', { user, tab: 'email', errEmail: 'Enter a valid new email.' });
@@ -455,11 +533,12 @@ router.post('/change-email', checkAuthenticated, async (req, res) => {
 
     await sendOtpEmail(user.email, otp, 'Confirm email change (current email code)');
 
-    req.session.pendingEmailChange = {
+    // Store in temp_data instead of session
+    await tempDataModel.saveTempData(user.user_id, 'pendingEmailChange', {
       user_id: user.user_id,
       newEmail,
       stage: 'old',
-    };
+    }, new Date(Date.now() + 30 * 60 * 1000));
 
     return res.render('vwAccount/profile', {
       user,
@@ -473,9 +552,9 @@ router.post('/change-email', checkAuthenticated, async (req, res) => {
   }
 });
 
-router.post('/change-email', checkAuthenticated, async (req, res) => {
+router.post('/change-email', authenticateJWT, async (req, res) => {
   try {
-    const user = req.session.authUser;
+    const user = req.user;
     const newEmail = (req.body.newEmail || '').trim();
     if (!newEmail) {
       return res.render('vwAccount/profile', { user, tab: 'email', errEmail: 'Enter a valid new email.' });
@@ -501,12 +580,12 @@ router.post('/change-email', checkAuthenticated, async (req, res) => {
     // send to current email
     await sendOtpEmail(user.email, otp, 'Confirm email change (current email code)');
 
-    // store pending change in session
-    req.session.pendingEmailChange = {
+    // store pending change in temp_data
+    await tempDataModel.saveTempData(user.user_id, 'pendingEmailChange', {
       user_id: user.user_id,
       newEmail,
       stage: 'old',
-    };
+    }, new Date(Date.now() + 30 * 60 * 1000));
 
     return res.render('vwAccount/profile', {
       user,
@@ -519,24 +598,25 @@ router.post('/change-email', checkAuthenticated, async (req, res) => {
     return res.status(500).render('vwAccount/403');
   }
 });
-router.get('/change-email/verify', checkAuthenticated, (req, res) => {
-  if (!req.session.pendingEmailChange) {
+router.get('/change-email/verify', authenticateJWT, async (req, res) => {
+  const pending = await tempDataModel.getTempData(req.user.user_id, 'pendingEmailChange');
+  if (!pending) {
     return res.redirect('/account/change-email');
   }
   res.render('vwAccount/change-email-verify', {
-    user: req.session.authUser,
-    newEmail: req.session.pendingEmailChange.newEmail
+    user: req.user,
+    newEmail: pending.newEmail
   });
 });
-router.post('/change-email/verify', checkAuthenticated, async (req, res) => {
+router.post('/change-email/verify', authenticateJWT, async (req, res) => {
   try {
-    const pending = req.session.pendingEmailChange;
+    const pending = await tempDataModel.getTempData(req.user.user_id, 'pendingEmailChange');
     if (!pending) return res.redirect('/account/profile?tab=email');
 
     const { code } = req.body;
     if (!code) {
       return res.render('vwAccount/profile', {
-        user: req.session.authUser,
+        user: req.user,
         tab: 'email-verify',
         pendingEmail: pending.newEmail,
         errEmailVerify: 'Please enter the verification code.',
@@ -555,7 +635,7 @@ router.post('/change-email/verify', checkAuthenticated, async (req, res) => {
 
     if (!otpRow) {
       return res.render('vwAccount/profile', {
-        user: req.session.authUser,
+        user: req.user,
         tab: 'email-verify',
         pendingEmail: pending.newEmail,
         errEmailVerify: 'Invalid or expired code.',
@@ -563,23 +643,20 @@ router.post('/change-email/verify', checkAuthenticated, async (req, res) => {
     }
 
     await db('otps').where({ otp_id: otpRow.otp_id }).update({ is_verified: true });
-
-
     await userModel.patch(pending.user_id, { email: pending.newEmail });
 
+    // Clean up temp data
+    await tempDataModel.deleteTempData(req.user.user_id, 'pendingEmailChange');
 
-
-    req.session.authUser.email = pending.newEmail;
-    req.session.pendingEmailChange = null;
     return res.redirect('/account/profile?tab=info');
   } catch (e) {
     console.error(e);
     return res.status(500).render('vwAccount/403');
   }
 });
-router.post('/change-pwd-social/send', checkAuthenticated, async (req, res) => {
+router.post('/change-pwd-social/send', authenticateJWT, async (req, res) => {
   try {
-    const user = req.session.authUser;
+    const user = req.user;
     if (!user.isSocial) {
       return res.render('vwAccount/profile', { user, tab: 'pwd' });
     }
@@ -602,9 +679,9 @@ router.post('/change-pwd-social/send', checkAuthenticated, async (req, res) => {
     return res.status(500).render('vwAccount/403');
   }
 });
-router.post('/change-pwd-social', checkAuthenticated, async (req, res) => {
+router.post('/change-pwd-social', authenticateJWT, async (req, res) => {
   try {
-    const user = req.session.authUser;
+    const user = req.user;
     if (!user.isSocial) {
       return res.render('vwAccount/profile', { user, tab: 'pwd' });
     }
@@ -627,16 +704,16 @@ router.post('/change-pwd-social', checkAuthenticated, async (req, res) => {
 
     const hash_password = bcrypt.hashSync(newPassword, 10);
     await userModel.patch(user.user_id, { password: hash_password });
-    req.session.authUser.password = hash_password;
+    req.user.password = hash_password;
     return res.redirect('/account/profile?tab=pwd');
   } catch (e) {
     console.error(e);
     return res.status(500).render('403');
   }
 });
-router.post('/change-email/verify-old', checkAuthenticated, async (req, res) => {
+router.post('/change-email/verify-old', authenticateJWT, async (req, res) => {
   try {
-    const user = req.session.authUser;
+    const user = req.user;
     const pending = req.session.pendingEmailChange;
     if (!pending || pending.user_id !== user.user_id) {
       return res.redirect('/account/profile');
@@ -695,9 +772,9 @@ router.post('/change-email/verify-old', checkAuthenticated, async (req, res) => 
     return res.status(500).render('vwAccount/403');
   }
 });
-router.post('/change-email/verify-new', checkAuthenticated, async (req, res) => {
+router.post('/change-email/verify-new', authenticateJWT, async (req, res) => {
   try {
-    const user = req.session.authUser;
+    const user = req.user;
     const pending = req.session.pendingEmailChange;
     if (!pending || pending.user_id !== user.user_id || pending.stage !== 'new') {
       return res.redirect('/account/profile');
@@ -740,7 +817,7 @@ router.post('/change-email/verify-new', checkAuthenticated, async (req, res) => 
       console.warn('failed action :', e.message);
     }
 
-    req.session.authUser.email = pending.newEmail;
+    req.user.email = pending.newEmail;
     req.session.pendingEmailChange = null;
 
     return res.redirect('/account/profile');
@@ -754,7 +831,7 @@ router.post('/change-email/verify-new', checkAuthenticated, async (req, res) => 
 router.get('/forgot', async (req, res) => {
   try {
     if (req.session?.isAuthenticated && req.session?.authUser) {
-      const user = req.session.authUser;
+      const user = req.user;
       const db = (await import('../utils/db.js')).default;
       const otp = String(Math.floor(100000 + Math.random() * 900000));
       const expiration = new Date(Date.now() + 10 * 60 * 1000);
@@ -875,8 +952,8 @@ router.post('/forgot/reset', async (req, res) => {
     const hash_password = bcrypt.hashSync(newPassword, 10);
     await userModel.patch(pending.user_id, { password: hash_password });
 
-    if (req.session?.authUser && req.session.authUser.user_id === pending.user_id) {
-      req.session.authUser.password = hash_password;
+    if (req.session?.authUser && req.user.user_id === pending.user_id) {
+      req.user.password = hash_password;
       req.session.pendingReset = null;
       return res.redirect('/account/profile');
     }
@@ -893,9 +970,9 @@ router.post('/forgot/reset', async (req, res) => {
 
 
 
-router.get('/watchlist', checkAuthenticated, async (req, res) => {
+router.get('/watchlist', authenticateJWT, async (req, res) => {
   try {
-    const student_id = req.session.authUser.user_id;
+    const student_id = req.user.user_id;
     const items = await watchlistModel.findCoursesByStudentID(student_id);
 
     res.render('vwAccount/watchlist', {
@@ -906,9 +983,9 @@ router.get('/watchlist', checkAuthenticated, async (req, res) => {
     res.status(500).send('Error loading your watchlist.');
   }
 });
-router.post('/watchlist/add', checkAuthenticated, async (req, res) => {
+router.post('/watchlist/add', authenticateJWT, async (req, res) => {
   try {
-    const student_id = req.session.authUser.user_id;
+    const student_id = req.user.user_id;
     const { course_id } = req.body;
 
     if (!course_id) {
@@ -924,9 +1001,9 @@ router.post('/watchlist/add', checkAuthenticated, async (req, res) => {
   }
 });
 
-router.post('/watchlist/remove', checkAuthenticated, async (req, res) => {
+router.post('/watchlist/remove', authenticateJWT, async (req, res) => {
   try {
-    const student_id = req.session.authUser.user_id;
+    const student_id = req.user.user_id;
     const { course_id } = req.body;
 
     if (!course_id) {

@@ -2,7 +2,7 @@ import express from 'express';
 import courseModel from '../models/course.model.js';
 import categoryModel from '../models/category.model.js';
 import syllabusModel from '../models/syllabus.model.js';
-import { checkInstructor, checkAuthenticated } from '../models/auth.model.js';
+import { checkInstructor, authenticateJWT } from '../models/auth.model.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -90,7 +90,7 @@ const uploadIntroVideo = multer({
     }
 }).single('introVideo');
 
-router.use(checkAuthenticated, checkInstructor);
+router.use(authenticateJWT, checkInstructor);
 
 router.get('/', (req, res) => {
     res.redirect('/instructor/courses');
@@ -98,7 +98,7 @@ router.get('/', (req, res) => {
 
 router.get('/courses', async (req, res) => {
     try {
-        const instructor_id = req.session.authUser.user_id;
+        const instructor_id = req.user.user_id;
         const LIMIT = 5;
         let page = +req.query.page || 1;
         if (page < 1) page = 1;
@@ -166,7 +166,7 @@ router.get('/create-course', async (req, res) => {
 });
 
 router.post('/create-course', async (req, res) => {
-    const instructor_id = req.session.authUser.user_id;
+    const instructor_id = req.user.user_id;
 
     const course = {
         title: req.body.title,
@@ -207,7 +207,7 @@ router.post('/create-course', async (req, res) => {
 router.get('/upload-media/:course_id', async (req, res) => {
     try {
         const course_id = req.params.course_id;
-        const instructor_id = req.session.authUser.user_id;
+        const instructor_id = req.user.user_id;
 
         // Dùng hàm findByIdForAdmin (như chúng ta đã sửa) để lấy khóa học
         const course = await courseModel.findByIdForAdmin(course_id);
@@ -216,7 +216,7 @@ router.get('/upload-media/:course_id', async (req, res) => {
             return res.status(404).send('Không tìm thấy khóa học.');
         }
         // Kiểm tra quyền sở hữu
-        if (course.instructor_id !== instructor_id && req.session.authUser.role != 0) {
+        if (course.instructor_id !== instructor_id && req.user.role != 0) {
             return res.status(403).send('Bạn không có quyền chỉnh sửa khóa học này.');
         }
 
@@ -232,7 +232,7 @@ router.get('/upload-media/:course_id', async (req, res) => {
 
 router.post('/update-field/:course_id', async (req, res) => {
     const course_id = req.params.course_id;
-    const instructor_id = req.session.authUser.user_id;
+    const instructor_id = req.user.user_id;
 
     // Chỉ cho phép cập nhật 2 trường này
     const allowedFields = ['image_url', 'intro_url'];
@@ -251,7 +251,7 @@ router.post('/update-field/:course_id', async (req, res) => {
 
     try {
         const existingCourse = await courseModel.findByIdForAdmin(course_id);
-        if (!existingCourse || (existingCourse.instructor_id !== instructor_id && req.session.authUser.role != 0)) {
+        if (!existingCourse || (existingCourse.instructor_id !== instructor_id && req.user.role != 0)) {
             return res.status(403).json({ success: false, message: 'Permission denied.'});
         }
 
@@ -276,7 +276,7 @@ router.post('/upload-course-image/:course_id', (req, res) => {
 
         try {
             const course = await courseModel.findByID(req.params.course_id);
-            if (!course || (course.instructor_id !== req.session.authUser.user_id && req.session.authUser.role !== 0)) {
+            if (!course || (course.instructor_id !== req.user.user_id && req.user.role !== 0)) {
                 fs.unlinkSync(req.file.path);
                 return res.status(403).json({ success: false, message: 'Không có quyền.' });
             }
@@ -319,7 +319,7 @@ router.post('/upload-intro-video/:course_id', (req, res) => {
 
         try {
             const course = await courseModel.findByID(req.params.course_id);
-            if (!course || (course.instructor_id !== req.session.authUser.user_id && req.session.authUser.role !== 0)) {
+            if (!course || (course.instructor_id !== req.user.user_id && req.user.role !== 0)) {
                 fs.unlinkSync(req.file.path);
                 return res.status(403).json({ success: false, message: 'Không có quyền.' });
             }
@@ -368,10 +368,10 @@ router.post('/upload-video/:course_id', (req, res) => {
 
         try {
              const course_id = req.params.course_id;
-             const instructor_id = req.session.authUser.user_id;
+             const instructor_id = req.user.user_id;
              const course = await courseModel.findByID(course_id);
              
-             if (!course || (course.instructor_id !== instructor_id && req.session.authUser.role !== 0)) {
+             if (!course || (course.instructor_id !== instructor_id && req.user.role !== 0)) {
                  fs.unlinkSync(req.file.path);
                  return res.status(403).json({ success: false, message: 'Không có quyền tải lên cho khóa học này.' });
              }
@@ -392,14 +392,14 @@ router.post('/upload-video/:course_id', (req, res) => {
 router.get('/courses/edit-syllabus/:course_id', async (req, res) => {
     try {
         const course_id = req.params.course_id;
-        const instructor_id = req.session.authUser.user_id;
+        const instructor_id = req.user.user_id;
 
         const courseWithSyllabus = await syllabusModel.findByCourseId(course_id);
 
         if (!courseWithSyllabus) {
             return res.status(404).send('Không tìm thấy khóa học');
         }
-        if (courseWithSyllabus.instructor_id !== instructor_id && req.session.authUser.role != 0) {
+        if (courseWithSyllabus.instructor_id !== instructor_id && req.user.role != 0) {
              return res.status(403).send('Bạn không có quyền chỉnh sửa khóa học này.');
         }
 
@@ -416,12 +416,12 @@ router.get('/courses/edit-syllabus/:course_id', async (req, res) => {
 
 router.post('/courses/edit-syllabus/:course_id', async (req, res) => {
     const course_id = req.params.course_id;
-    const instructor_id = req.session.authUser.user_id;
+    const instructor_id = req.user.user_id;
     const chapters = req.body.chapters || [];
 
      try {
         const course = await courseModel.findByID(course_id);
-        if (!course || (course.instructor_id !== instructor_id && req.session.authUser.role != 0)) {
+        if (!course || (course.instructor_id !== instructor_id && req.user.role != 0)) {
             return res.status(403).send('Bạn không có quyền lưu syllabus cho khóa học này.');
         }
 
@@ -489,7 +489,7 @@ router.post('/courses/edit-syllabus/:course_id', async (req, res) => {
 
         await syllabusModel.saveSyllabus(course_id, chapters, is_complete);
         console.log(`Syllabus updated for course ${course_id}, is_complete: ${is_complete}`);
-        if (req.session.authUser.role === 0){
+        if (req.user.role === 0){
             return res.redirect('/admin');
         }
         res.redirect('/instructor/courses');
@@ -503,14 +503,14 @@ router.get('/update/:course_id', async function(req, res) {
     try {
         const categories = await categoryModel.findParentsWithChildren();
         const course_id = req.params.course_id;
-        const instructor_id = req.session.authUser.user_id;
+        const instructor_id = req.user.user_id;
 
         const course = await courseModel.findByIdForAdmin(course_id);
 
         if (!course) {
             return res.status(404).send('Không tìm thấy khóa học.');
         }
-        if (course.instructor_id !== instructor_id && req.session.authUser.role != 0) {
+        if (course.instructor_id !== instructor_id && req.user.role != 0) {
             return res.status(403).send('Bạn không có quyền chỉnh sửa khóa học này.');
         }
 
@@ -526,11 +526,11 @@ router.get('/update/:course_id', async function(req, res) {
 
 router.post('/update/:course_id', async (req, res) => {
     const course_id = req.params.course_id;
-    const instructor_id = req.session.authUser.user_id;
+    const instructor_id = req.user.user_id;
 
     try {
         const existingCourse = await courseModel.findByID(course_id);
-        if (!existingCourse || (existingCourse.instructor_id !== instructor_id && req.session.authUser.role != 0)) {
+        if (!existingCourse || (existingCourse.instructor_id !== instructor_id && req.user.role != 0)) {
             return res.status(403).send("Không có quyền cập nhật khóa học này.");
         }
 
@@ -567,7 +567,7 @@ router.post('/update/:course_id', async (req, res) => {
 
 router.post('/delete-course', async (req, res) => {
     const { course_id } = req.body;
-    const instructor_id = req.session.authUser.user_id;
+    const instructor_id = req.user.user_id;
 
     if (!course_id) {
         return res.status(400).json({ message: 'Thiếu ID khóa học.' });
@@ -575,7 +575,7 @@ router.post('/delete-course', async (req, res) => {
 
     try {
         const course = await courseModel.findByID(course_id);
-        if (!course || (course.instructor_id !== instructor_id && req.session.authUser.role !== 0)) {
+        if (!course || (course.instructor_id !== instructor_id && req.user.role !== 0)) {
             return res.status(403).json({ message: 'Không có quyền xóa khóa học này.' });
         }
 

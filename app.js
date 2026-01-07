@@ -1,16 +1,16 @@
 import 'dotenv/config';
 
-
 import express from 'express';
 import { engine } from 'express-handlebars';
 import hbs_sections from 'express-handlebars-sections';
-import session from 'express-session';
+import cookieParser from 'cookie-parser';
 import moment from 'moment';
 import Handlebars from 'handlebars';
 
 import categoryModel from './models/category.model.js';
 import courseModel from './models/course.model.js';
-import { checkAdmin, checkAuthenticated, checkInstructor} from './models/auth.model.js';
+import { checkAdmin, authenticateJWT, optionalAuth, checkInstructor } from './models/auth.model.js';
+import { verifyAccessToken } from './utils/jwt.util.js';
 import ratingModel from './models/rating.model.js';
 
 
@@ -27,14 +27,8 @@ import adminRouter from './routes/admin.routes.js';
 const __dirname = import.meta.dirname;
 const app = express();
 
-// Cấu hình session
-app.set('trust proxy', 1);
-app.use(session({
-  secret: 'skibidiahjdwadlwadluiasigma',
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false }
-}));
+// Cấu hình cookie parser (JWT authentication)
+app.use(cookieParser());
 
 // Thiết lập handlebars
 app.engine('handlebars', engine({
@@ -43,16 +37,16 @@ app.engine('handlebars', engine({
     fill_section: hbs_sections(),
 
     extractYouTubeId(url) {
-        if (!url) return '';
-        const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^?&]+)/);
-        return match ? match[1] : '';
+      if (!url) return '';
+      const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([^?&]+)/);
+      return match ? match[1] : '';
     },
     isYouTubeUrl(url) {
-        if (typeof url !== 'string' || url.trim() === '') {
-            return false;
-        }
-        const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
-        return youtubeRegex.test(url);
+      if (typeof url !== 'string' || url.trim() === '') {
+        return false;
+      }
+      const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+      return youtubeRegex.test(url);
     },
     // Định dạng tiền tệ VND
     formatNumber(num) {
@@ -96,26 +90,26 @@ app.engine('handlebars', engine({
       return str;
     },
     range(start, end) {
-    const s = Number(start), e = Number(end);
-    const out = [];
-    for (let i = s; i <= e; i++) out.push(i);
-    return out;
-  },
-  lteq(a, b) {
-    return a >= b;
-  },
-  lt(a,b){
-    return a < b;
-  },
-  gt(a, b) {
-    return a > b;
-  },
-  add(a, b) {
-    return Number(a) + Number(b);
-  },
-  subtract(a, b) {
-    return Number(a) - Number(b);
-  },
+      const s = Number(start), e = Number(end);
+      const out = [];
+      for (let i = s; i <= e; i++) out.push(i);
+      return out;
+    },
+    lteq(a, b) {
+      return a >= b;
+    },
+    lt(a, b) {
+      return a < b;
+    },
+    gt(a, b) {
+      return a > b;
+    },
+    add(a, b) {
+      return Number(a) + Number(b);
+    },
+    subtract(a, b) {
+      return Number(a) - Number(b);
+    },
 
     // Hiển thị sao (rating)
     renderStars(rating) {
@@ -183,11 +177,22 @@ app.engine('handlebars', engine({
   allowProtoMethodsByDefault: true
 }));
 
-// Middleware gán session vào res.locals
+// Middleware gán JWT user vào res.locals (cho Handlebars templates)
 app.use((req, res, next) => {
-  if (req.session.isAuthenticated) {
-    res.locals.isAuthenticated = true;
-    res.locals.authUser = req.session.authUser;
+  const token = req.cookies.accessToken;
+  if (token) {
+    try {
+      const decoded = verifyAccessToken(token);
+      res.locals.isAuthenticated = true;
+      res.locals.authUser = decoded;
+    } catch (err) {
+      // Token invalid hoặc expired - tiếp tục như guest
+      res.locals.isAuthenticated = false;
+      res.locals.authUser = null;
+    }
+  } else {
+    res.locals.isAuthenticated = false;
+    res.locals.authUser = null;
   }
   res.locals.currentUrl = req.originalUrl;
   next();
@@ -210,15 +215,15 @@ function chunkArray(array, size) {
 }
 
 // Trang chủ – hiển thị dữ liệu thật từ courseModel
-app.get('/', async (req, res) => {
-  if (req.session.isAuthenticated) {
+app.get('/', optionalAuth, async (req, res) => {
+  if (req.user) {
     console.log('User is authenticated');
-    console.log(req.session.authUser)
+    console.log(req.user)
   }
-  const student_id = req.session.isAuthenticated ? req.session.authUser.user_id : null; 
-  const newestCourses = chunkArray(await courseModel.findNewestCourses(12, student_id), 4); 
-  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(12, student_id), 4); 
-  const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek(4, student_id); 
+  const student_id = req.user ? req.user.user_id : null;
+  const newestCourses = chunkArray(await courseModel.findNewestCourses(12, student_id), 4);
+  const mostViewsCourses = chunkArray(await courseModel.findMostViewsCourses(12, student_id), 4);
+  const impressiveCourses = await courseModel.findImpressiveCoursesLastWeek(4, student_id);
   const parents = await categoryModel.findParents();
   const rating = await ratingModel.findTop3RecentFiveStarCourses();
   const topCate = await categoryModel.findTopCategoriesOfWeek(5);
@@ -256,12 +261,12 @@ app.use(async (req, res, next) => {
 
 // Gắn các router
 app.use('/account', accountRouter);
-app.use('/admin/categories', checkAuthenticated, checkAdmin, categoryRouter);
-app.use('/instructor', checkAuthenticated , checkInstructor,instructorRouter);
+app.use('/admin/categories', authenticateJWT, checkAdmin, categoryRouter);
+app.use('/instructor', authenticateJWT, checkInstructor, instructorRouter);
 app.use('/course', courseRouter);
-app.use('/admin/courses', checkAuthenticated, checkAdmin, adminCourseRouter);
-app.use('/admin/users', checkAuthenticated, checkAdmin, adminUserRouter);
-app.use('/admin', checkAuthenticated, checkAdmin, adminRouter);
+app.use('/admin/courses', authenticateJWT, checkAdmin, adminCourseRouter);
+app.use('/admin/users', authenticateJWT, checkAdmin, adminUserRouter);
+app.use('/admin', authenticateJWT, checkAdmin, adminRouter);
 
 // Khởi động server
 const PORT = process.env.PORT || 3000;
