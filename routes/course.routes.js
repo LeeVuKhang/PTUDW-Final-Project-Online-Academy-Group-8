@@ -9,10 +9,10 @@ import enrollmentModel from "../models/enrollment.model.js";
 import progressModel from "../models/progress.model.js";
 
 const formatNumber = (num) => {
-    if (typeof num === 'number' && num > 0) {
-        return num.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-    }
-    return 'Miễn phí'; 
+  if (typeof num === 'number' && num > 0) {
+    return num.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+  }
+  return 'Miễn phí';
 };
 
 
@@ -101,49 +101,49 @@ router.get("/byCat", async (req, res) => {
 
 
 router.get("/instructorProfile", async (req, res) => {
-    try {
-        const instructorId = req.query.id;
+  try {
+    const instructorId = req.query.id;
 
-        if (!instructorId) {
-            return res.redirect('/');
-        }
-
-        const [profile, stats, courses] = await Promise.all([
-            instructorModel.findProfileById(instructorId), 
-            instructorModel.getInstructorStats(instructorId),
-            instructorModel.findCoursesByInstructor(instructorId) 
-        ]);
-
-        if (!profile || profile.role !== 2) { 
-            return res.status(404).send("Không tìm thấy giảng viên hợp lệ này.");
-        }
-
-        const context = {
-            layout: "main",
-            instructor: {
-                name: profile.name,
-                email: profile.email,
-                image_url: profile.image_url || '/static/avt1.png',
-                bio: profile.bio || '',
-                
-                avg_rating: stats.avg_rating,
-                total_reviews: stats.total_reviews.toLocaleString('en-US'), 
-                total_students: stats.total_students.toLocaleString('en-US'),
-                total_courses: stats.total_courses,
-            },
-            courses: courses.map(course => ({
-                ...course,
-                discount_price: course.discount_price, 
-            }))
-        };
-        
-        console.log("Context Giảng viên cuối cùng:", context.instructor); 
-        res.render("vwCourses/instructorProfile", context);
-
-    } catch (error) {
-        console.error("Lỗi trang instructorProfile:", error);
-        res.status(500).send("Lỗi máy chủ");
+    if (!instructorId) {
+      return res.redirect('/');
     }
+
+    const [profile, stats, courses] = await Promise.all([
+      instructorModel.findProfileById(instructorId),
+      instructorModel.getInstructorStats(instructorId),
+      instructorModel.findCoursesByInstructor(instructorId)
+    ]);
+
+    if (!profile || profile.role !== 2) {
+      return res.status(404).send("Không tìm thấy giảng viên hợp lệ này.");
+    }
+
+    const context = {
+      layout: "main",
+      instructor: {
+        name: profile.name,
+        email: profile.email,
+        image_url: profile.image_url || '/static/avt1.png',
+        bio: profile.bio || '',
+
+        avg_rating: stats.avg_rating,
+        total_reviews: stats.total_reviews.toLocaleString('en-US'),
+        total_students: stats.total_students.toLocaleString('en-US'),
+        total_courses: stats.total_courses,
+      },
+      courses: courses.map(course => ({
+        ...course,
+        discount_price: course.discount_price,
+      }))
+    };
+
+    console.log("Context Giảng viên cuối cùng:", context.instructor);
+    res.render("vwCourses/instructorProfile", context);
+
+  } catch (error) {
+    console.error("Lỗi trang instructorProfile:", error);
+    res.status(500).send("Lỗi máy chủ");
+  }
 });
 /*Chi tiết khóa học*/
 router.get("/details/:id", async (req, res) => {
@@ -188,19 +188,19 @@ router.get("/details/:id", async (req, res) => {
 
     let isEnrolled = false;
     let isInWatchlistMain = false;
-    let isInstructorOwner = false; 
+    let isInstructorOwner = false;
 
     if (student_id) {
-        if (course.instructor_id === student_id) {
-            isInstructorOwner = true;
-        }
+      if (course.instructor_id === student_id) {
+        isInstructorOwner = true;
+      }
 
-        const [enrollment, watchlistEntry] = await Promise.all([
-            db("enrollments").where({ student_id, course_id }).first(),
-            db("watchlists").where({ student_id, course_id }).first()
-        ]);
-        isEnrolled = !!enrollment;
-        isInWatchlistMain = !!watchlistEntry;
+      const [enrollment, watchlistEntry] = await Promise.all([
+        db("enrollments").where({ student_id, course_id }).first(),
+        db("watchlists").where({ student_id, course_id }).first()
+      ]);
+      isEnrolled = !!enrollment;
+      isInWatchlistMain = !!watchlistEntry;
     }
 
     const effectiveIsEnrolled = isEnrolled || isInstructorOwner;
@@ -281,7 +281,7 @@ router.get("/learn/:course_id", authenticateJWT, async (req, res) => {
         .orderBy("order_index")
         .first();
       if (!firstChapter) return res.status(404).send("Khóa học chưa có chương nào.");
-        
+
       const firstLesson = await db("lessons")
         .where({ chapter_id: firstChapter.chapter_id })
         .orderBy("order_index")
@@ -293,7 +293,7 @@ router.get("/learn/:course_id", authenticateJWT, async (req, res) => {
     const firstPreviewLesson = await db("lessons")
       .join("chapters", "lessons.chapter_id", "chapters.chapter_id")
       .where("chapters.course_id", course_id)
-      .andWhere("lessons.is_preview", true) 
+      .andWhere("lessons.is_preview", true)
       .orderBy("chapters.order_index", "asc")
       .orderBy("lessons.order_index", "asc")
       .select("lessons.lesson_id")
@@ -363,9 +363,9 @@ router.get("/learn/:course_id/:lesson_id", authenticateJWT, async (req, res) => 
 
     const userRating = userRatingData ? userRatingData.value : 0;
     const userComment = userRatingData ? userRatingData.comment : "";
-    
+
     const hasFullAccess = isEnrolledStudent || isInstructorOwner;
-    
+
     res.render("vwCourses/learn", {
       layout: "main",
       course,
@@ -375,10 +375,10 @@ router.get("/learn/:course_id/:lesson_id", authenticateJWT, async (req, res) => 
       avgRating,
       totalRatings,
       ratings,
-      isStudent: isEnrolledStudent,      
+      isStudent: isEnrolledStudent,
       userRating,
       userComment,
-      isEnrolled: hasFullAccess,      
+      isEnrolled: hasFullAccess,
       isInstructorOwner: isInstructorOwner,
     });
   } catch (err) {
@@ -389,10 +389,8 @@ router.get("/learn/:course_id/:lesson_id", authenticateJWT, async (req, res) => 
 
 
 
-router.post('/update-last-watch', async (req, res) => {
+router.post('/update-last-watch', authenticateJWT, async (req, res) => {
   try {
-    const user = req.session?.authUser;
-    if (!user) return res.status(401).json({ success: false, error: 'Unauthenticated' });
 
     const { course_id, lesson_id } = req.body || {};
     if (!course_id || !lesson_id) {
@@ -402,8 +400,8 @@ router.post('/update-last-watch', async (req, res) => {
     await progressModel.upsertWatched(req.user.user_id, course_id, lesson_id);
     const progress = await progressModel.courseProgressPercent(req.user.user_id, course_id);
     await db('enrollments')
-  .where({ student_id: req.user.user_id, course_id })
-  .update({ progress, last_watched_lesson: lesson_id });
+      .where({ student_id: req.user.user_id, course_id })
+      .update({ progress, last_watched_lesson: lesson_id });
 
     return res.json({ success: true, progress });
   } catch (e) {
@@ -644,7 +642,7 @@ router.get('/search', async function (req, res) {
     const q = req.query.q || '';
     const sort = req.query.sort || 'newest';
     const page = parseInt(req.query.page) || 1;
-    const pageLimit = 12; 
+    const pageLimit = 12;
 
     if (q.trim().length === 0) {
       return res.render('vwCourses/search', {
@@ -669,7 +667,7 @@ router.get('/search', async function (req, res) {
       courses,
       empty,
       sort,
-      page_numbers: [], 
+      page_numbers: [],
     });
 
   } catch (error) {

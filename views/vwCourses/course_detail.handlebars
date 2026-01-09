@@ -146,63 +146,65 @@ box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         {{/if}}
       </div>
 
-      <div class="instructor-profile-box">
-        <p class="instructor-title">Giảng viên</p>
-        <h1 class="instructor-name">
-          <a href="/course/instructorProfile?id={{instructor.user_id}}"
-            class="text-decoration-none text-dark card-title-hover">
-            {{instructor.name}}
-          </a>
-        </h1>
-        <p class="instructor-subtitle">Giảng viên tại CourseCademy</p>
+      <div class="bg-white p-4 p-md-5 shadow-sm rounded-3 mb-4">
+        <div class="instructor-profile-box">
+          <p class="instructor-title">Giảng viên</p>
+          <h1 class="instructor-name">
+            <a href="/course/instructorProfile?id={{instructor.user_id}}"
+              class="text-decoration-none text-dark card-title-hover">
+              {{instructor.name}}
+            </a>
+          </h1>
+          <p class="instructor-subtitle">Giảng viên tại CourseCademy</p>
 
-        <div class="row align-items-center">
-          <div class="col-md-3 text-center text-md-start mb-3 mb-md-0">
-            <div
-              style="width: 100px; height: 100px; margin: 0 auto; overflow: hidden; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-              <img src="{{instructor.image_url}}" alt="{{instructor.name}}"
-                style="width: 100%; height: 100%; object-fit: cover;"
-                onerror="this.src='https://via.placeholder.com/100?text=NA'">
-            </div>
-          </div>
-
-          <div class="col-md-9">
-            <div class="row text-center">
-              <div class="col-6 col-md-3 mb-3">
-                <div class="stat-box">
-                  <i class="bi bi-star-fill text-warning fs-2 mb-1"></i>
-                  <div class="stat-number">{{formatRating instructor.avg_rating}}</div>
-                  <div class="stat-label">Đánh giá</div>
-                </div>
-              </div>
-              <div class="col-6 col-md-3 mb-3">
-                <div class="stat-box">
-                  <i class="bi bi-patch-check-fill text-success fs-2 mb-1"></i>
-                  <div class="stat-number">{{instructor.total_reviews}}</div>
-                  <div class="stat-label">Nhận xét</div>
-                </div>
-              </div>
-              <div class="col-6 col-md-3 mb-3">
-                <div class="stat-box">
-                  <i class="bi bi-people-fill text-primary fs-2 mb-1"></i>
-                  <div class="stat-number">{{instructor.total_students}}</div>
-                  <div class="stat-label">Học viên</div>
-                </div>
-              </div>
-              <div class="col-6 col-md-3 mb-3">
-                <div class="stat-box">
-                  <i class="bi bi-play-circle-fill text-danger fs-2 mb-1"></i>
-                  <div class="stat-number">{{instructor.total_courses}}</div>
-                  <div class="stat-label">Khóa học</div>
-                </div>
+          <div class="row align-items-center">
+            <div class="col-md-3 text-center text-md-start mb-3 mb-md-0">
+              <div
+                style="width: 100px; height: 100px; margin: 0 auto; overflow: hidden; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <img src="{{instructor.image_url}}" alt="{{instructor.name}}"
+                  style="width: 100%; height: 100%; object-fit: cover;"
+                  onerror="this.src='https://via.placeholder.com/100?text=NA'">
               </div>
             </div>
+
+            <div class="col-md-9">
+              <div class="row text-center">
+                <div class="col-6 col-md-3 mb-3">
+                  <div class="stat-box">
+                    <i class="bi bi-star-fill text-warning fs-2 mb-1"></i>
+                    <div class="stat-number">{{formatRating instructor.avg_rating}}</div>
+                    <div class="stat-label">Đánh giá</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 mb-3">
+                  <div class="stat-box">
+                    <i class="bi bi-patch-check-fill text-success fs-2 mb-1"></i>
+                    <div class="stat-number">{{instructor.total_reviews}}</div>
+                    <div class="stat-label">Nhận xét</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 mb-3">
+                  <div class="stat-box">
+                    <i class="bi bi-people-fill text-primary fs-2 mb-1"></i>
+                    <div class="stat-number">{{instructor.total_students}}</div>
+                    <div class="stat-label">Học viên</div>
+                  </div>
+                </div>
+                <div class="col-6 col-md-3 mb-3">
+                  <div class="stat-box">
+                    <i class="bi bi-play-circle-fill text-danger fs-2 mb-1"></i>
+                    <div class="stat-number">{{instructor.total_courses}}</div>
+                    <div class="stat-label">Khóa học</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+          {{#if instructor.bio}}
+          <h4 class="mt-4 mb-2 fw-bold">Giới thiệu</h4>
+          <p class="text-muted">{{{instructor.bio}}}</p>
+          {{/if}}
         </div>
-        {{#if instructor.bio}}
-        <h4 class="mt-4 mb-2 fw-bold">Giới thiệu</h4>
-        <p class="text-muted">{{{instructor.bio}}}</p>
-        {{/if}}
       </div>
 
       <div class="bg-white p-4 p-md-5 shadow-sm rounded-3 mb-4">

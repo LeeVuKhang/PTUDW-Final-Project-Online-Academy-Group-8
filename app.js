@@ -185,14 +185,17 @@ app.use((req, res, next) => {
       const decoded = verifyAccessToken(token);
       res.locals.isAuthenticated = true;
       res.locals.authUser = decoded;
+      req.user = decoded; // Also populate req.user for routes
     } catch (err) {
       // Token invalid hoặc expired - tiếp tục như guest
       res.locals.isAuthenticated = false;
       res.locals.authUser = null;
+      req.user = null;
     }
   } else {
     res.locals.isAuthenticated = false;
     res.locals.authUser = null;
+    req.user = null;
   }
   res.locals.currentUrl = req.originalUrl;
   next();
