@@ -120,12 +120,12 @@ export function verifyRefreshToken(token) {
  * @param {string} refreshToken - JWT refresh token
  */
 export function setTokenCookies(res, accessToken, refreshToken) {
-    // Access token cookie (expires in 15 minutes by default)
+    // Access token cookie 
     res.cookie('accessToken', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // HTTPS only in production
         sameSite: 'strict', // CSRF protection
-        maxAge: 15 * 60 * 1000, // 15 minutes in milliseconds
+        maxAge: 60 * 60 * 1000, // 60 minutes in milliseconds
     });
 
     // Refresh token cookie (expires in 7 days by default)

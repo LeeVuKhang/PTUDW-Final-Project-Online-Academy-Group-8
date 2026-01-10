@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import userModel from '../models/user.model.js';
 import { authenticateJWT } from '../models/auth.model.js';
 import { sendOtpEmail } from '../utils/mailer.js';
-import { generateAccessToken, generateRefreshToken, setTokenCookies, clearTokenCookies } from '../utils/jwt.util.js';
+import { generateAccessToken, generateRefreshToken, setTokenCookies, clearTokenCookies, verifyAccessToken } from '../utils/jwt.util.js';
 import tempDataModel from '../models/temp-data.model.js';
 
 import watchlistModel from '../models/watchlist.model.js'
@@ -714,7 +714,7 @@ router.post('/change-pwd-social', authenticateJWT, async (req, res) => {
 router.post('/change-email/verify-old', authenticateJWT, async (req, res) => {
   try {
     const user = req.user;
-    const pending = req.session.pendingEmailChange;
+    const pending = await tempDataModel.getTempData(user.user_id, 'pendingEmailChange');
     if (!pending || pending.user_id !== user.user_id) {
       return res.redirect('/account/profile');
     }
@@ -759,7 +759,12 @@ router.post('/change-email/verify-old', authenticateJWT, async (req, res) => {
 
     await sendOtpEmail(pending.newEmail, otpNew, 'Confirm your new email');
 
-    req.session.pendingEmailChange.stage = 'new';
+    // Update tempData stage - use explicit properties
+    await tempDataModel.saveTempData(user.user_id, 'pendingEmailChange', {
+      user_id: pending.user_id,
+      newEmail: pending.newEmail,
+      stage: 'new'
+    }, new Date(Date.now() + 60 * 60 * 1000)); // 60 minutes
 
     return res.render('vwAccount/profile', {
       user,
@@ -775,7 +780,7 @@ router.post('/change-email/verify-old', authenticateJWT, async (req, res) => {
 router.post('/change-email/verify-new', authenticateJWT, async (req, res) => {
   try {
     const user = req.user;
-    const pending = req.session.pendingEmailChange;
+    const pending = await tempDataModel.getTempData(user.user_id, 'pendingEmailChange');
     if (!pending || pending.user_id !== user.user_id || pending.stage !== 'new') {
       return res.redirect('/account/profile');
     }
@@ -818,7 +823,7 @@ router.post('/change-email/verify-new', authenticateJWT, async (req, res) => {
     }
 
     req.user.email = pending.newEmail;
-    req.session.pendingEmailChange = null;
+    await tempDataModel.deleteTempData(user.user_id, 'pendingEmailChange');
 
     return res.redirect('/account/profile');
   } catch (e) {
@@ -830,29 +835,47 @@ router.post('/change-email/verify-new', authenticateJWT, async (req, res) => {
 
 router.get('/forgot', async (req, res) => {
   try {
-    if (req.session?.isAuthenticated && req.session?.authUser) {
-      const user = req.user;
-      const db = (await import('../utils/db.js')).default;
-      const otp = String(Math.floor(100000 + Math.random() * 900000));
-      const expiration = new Date(Date.now() + 10 * 60 * 1000);
-
-      await db('otps').insert({
-        user_id: user.user_id,
-        otp_code: otp,
-        expiration,
-        is_verified: false,
-      });
-
+    // Check if user is logged in via cookies
+    const accessToken = req.cookies.accessToken;
+    if (accessToken) {
       try {
-        await sendOtpEmail(user.email, otp, 'Password reset code');
-      } catch (e) {
-        console.warn('[forgot][authed] send mail failed:', e.message);
+        const decoded = verifyAccessToken(accessToken);
+        const user = await userModel.findById(decoded.user_id);
+
+        if (user) {
+          const db = (await import('../utils/db.js')).default;
+          const otp = String(Math.floor(100000 + Math.random() * 900000));
+          const expiration = new Date(Date.now() + 10 * 60 * 1000);
+
+          await db('otps').insert({
+            user_id: user.user_id,
+            otp_code: otp,
+            expiration,
+            is_verified: false,
+          });
+
+          try {
+            await sendOtpEmail(user.email, otp, 'Password reset code');
+          } catch (e) {
+            console.warn('[forgot][authed] send mail failed:', e.message);
+          }
+
+          // Store in tempData instead of session
+          await tempDataModel.saveTempData(user.user_id, 'pendingReset', {
+            user_id: user.user_id,
+            email: user.email,
+            verified: false
+          }, new Date(Date.now() + 60 * 60 * 1000)); // 60 minutes expiry
+
+          // Set cookies to track this flow
+          res.cookie('resetEmail', user.email, { maxAge: 60 * 60 * 1000, httpOnly: true });
+          res.cookie('resetUserId', user.user_id, { maxAge: 60 * 60 * 1000, httpOnly: true });
+
+          return res.render('vwAccount/forgot-verify', { email: user.email });
+        }
+      } catch (err) {
+        // Token invalid, continue as guest
       }
-
-      // set session
-      req.session.pendingReset = { user_id: user.user_id, email: user.email, verified: false };
-
-      return res.render('vwAccount/forgot-verify', { email: user.email });
     }
 
     return res.render('vwAccount/forgot');
@@ -887,7 +910,16 @@ router.post('/forgot', async (req, res) => {
         console.warn('[forgot][unauth] send mail failed:', e.message);
       }
 
-      req.session.pendingReset = { user_id: existing.user_id, email, verified: false };
+      // Store in tempData (session line removed - now using tempData only)
+      await tempDataModel.saveTempData(existing.user_id, 'pendingReset', {
+        user_id: existing.user_id,
+        email,
+        verified: false
+      }, new Date(Date.now() + 60 * 60 * 1000)); // 60 minutes
+
+      // Set cookies to track this flow
+      res.cookie('resetEmail', email, { maxAge: 60 * 60 * 1000, httpOnly: true });
+      res.cookie('resetUserId', existing.user_id, { maxAge: 60 * 60 * 1000, httpOnly: true });
     }
     return res.render('vwAccount/forgot-verify', { email });
   } catch (e) {
@@ -895,17 +927,38 @@ router.post('/forgot', async (req, res) => {
     return res.status(500).render('vwAccount/403');
   }
 });
-router.get('/forgot/verify', (req, res) => {
-  const pending = req.session.pendingReset;
-  if (!pending) return res.redirect('/account/forgot');
-  res.render('vwAccount/forgot-verify', { email: pending.email });
+router.get('/forgot/verify', async (req, res) => {
+  // Need to get user_id from cookie to look up tempData
+  const resetEmail = req.cookies.resetEmail; // We'll set this cookie
+  if (!resetEmail) return res.redirect('/account/forgot');
+
+  res.render('vwAccount/forgot-verify', { email: resetEmail });
 });
 router.post('/forgot/verify', async (req, res) => {
   try {
-    const pending = req.session.pendingReset;
-    if (!pending) return res.redirect('/account/forgot');
+    console.log('[forgot/verify] POST request received');
+    console.log('[forgot/verify] Body:', req.body);
+
+    const resetEmail = req.cookies.resetEmail;
+    const resetUserId = req.cookies.resetUserId;
+    console.log('[forgot/verify] Cookies:', { resetEmail, resetUserId });
+
+    if (!resetEmail || !resetUserId) {
+      console.log('[forgot/verify] Missing cookies - redirecting to /account/forgot');
+      return res.redirect('/account/forgot');
+    }
+
+    console.log('[forgot/verify] Fetching tempData for user:', resetUserId);
+    const pending = await tempDataModel.getTempData(resetUserId, 'pendingReset');
+    console.log('[forgot/verify] TempData result:', pending);
+
+    if (!pending) {
+      console.log('[forgot/verify] No pending data found - redirecting to /account/forgot');
+      return res.redirect('/account/forgot');
+    }
 
     const code = (req.body.code || '').trim();
+    console.log('[forgot/verify] OTP code entered:', code);
     if (!code) {
       return res.render('vwAccount/forgot-verify', {
         email: pending.email,
@@ -927,17 +980,29 @@ router.post('/forgot/verify', async (req, res) => {
     }
 
     await db('otps').where({ otp_id: otpRow.otp_id }).update({ is_verified: true });
-    req.session.pendingReset.verified = true;
+
+    // Update tempData - use explicit properties to avoid serialization issues
+    await tempDataModel.saveTempData(pending.user_id, 'pendingReset', {
+      user_id: pending.user_id,
+      email: pending.email,
+      verified: true
+    }, new Date(Date.now() + 60 * 60 * 1000)); // 60 minutes
 
     return res.render('vwAccount/forgot-reset');
   } catch (e) {
-    console.error(e);
+    console.error('[forgot/verify] Error:', e.message);
+    console.error('[forgot/verify] Stack:', e.stack);
     return res.status(500).render('vwAccount/403');
   }
 });
 router.post('/forgot/reset', async (req, res) => {
   try {
-    const pending = req.session.pendingReset;
+    const resetUserId = req.cookies.resetUserId;
+    if (!resetUserId) {
+      return res.redirect('/account/forgot');
+    }
+
+    const pending = await tempDataModel.getTempData(resetUserId, 'pendingReset');
     if (!pending || !pending.verified) {
       return res.redirect('/account/forgot');
     }
@@ -952,13 +1017,28 @@ router.post('/forgot/reset', async (req, res) => {
     const hash_password = bcrypt.hashSync(newPassword, 10);
     await userModel.patch(pending.user_id, { password: hash_password });
 
-    if (req.session?.authUser && req.user.user_id === pending.user_id) {
-      req.user.password = hash_password;
-      req.session.pendingReset = null;
-      return res.redirect('/account/profile');
+    // Check if user is currently logged in
+    const accessToken = req.cookies.accessToken;
+    if (accessToken) {
+      try {
+        const decoded = verifyAccessToken(accessToken);
+        if (decoded.user_id === pending.user_id) {
+          // User is resetting their own password while logged in
+          // Clear temp data and cookies
+          await tempDataModel.deleteTempData(pending.user_id, 'pendingReset');
+          res.clearCookie('resetEmail');
+          res.clearCookie('resetUserId');
+          return res.redirect('/account/profile');
+        }
+      } catch (err) {
+        // Token invalid, continue
+      }
     }
 
-    req.session.pendingReset = null;
+    // Clear temp data and cookies
+    await tempDataModel.deleteTempData(pending.user_id, 'pendingReset');
+    res.clearCookie('resetEmail');
+    res.clearCookie('resetUserId');
     return res.redirect('/account/signin');
   } catch (e) {
     console.error(e);
