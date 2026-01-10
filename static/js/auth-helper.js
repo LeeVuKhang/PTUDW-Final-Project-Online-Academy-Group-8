@@ -3,6 +3,9 @@
  * This script handles authentication state and automatic retry on token expiration
  */
 
+// Store original fetch BEFORE we override it
+const originalFetch = window.fetch;
+
 // Global auth helper
 window.authHelper = {
     /**
@@ -24,7 +27,8 @@ window.authHelper = {
         };
 
         try {
-            const response = await fetch(url, config);
+            // CRITICAL: Use originalFetch to avoid infinite recursion
+            const response = await originalFetch(url, config);
 
             // Handle 401 Unauthorized (token expired or invalid)
             if (response.status === 401) {
@@ -81,7 +85,6 @@ window.authHelper = {
 
 // Monkey-patch global fetch to use authHelper.fetch by default
 // This ensures all fetch calls automatically include credentials
-const originalFetch = window.fetch;
 window.fetch = function (url, options) {
     // Only apply to our own API calls (not external resources)
     if (typeof url === 'string' && (url.startsWith('/') || url.startsWith(window.location.origin))) {

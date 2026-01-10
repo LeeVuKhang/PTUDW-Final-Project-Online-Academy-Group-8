@@ -5,7 +5,7 @@ import userModel from './user.model.js';
  * Middleware to authenticate JWT from cookies
  * Replaces session-based checkAuthenticated
  */
-export function authenticateJWT(req, res, next) {
+export async function authenticateJWT(req, res, next) {
     const accessToken = req.cookies.accessToken;
     const refreshToken = req.cookies.refreshToken;
 
@@ -30,7 +30,7 @@ export function authenticateJWT(req, res, next) {
         // Verify access token
         const decoded = verifyAccessToken(accessToken);
         req.user = decoded; // Attach user to request
-        next();
+        return next();
     } catch (err) {
         // Access token expired or invalid - try refresh token
         if (refreshToken) {
@@ -38,36 +38,36 @@ export function authenticateJWT(req, res, next) {
                 const decodedRefresh = verifyRefreshToken(refreshToken);
 
                 // Refresh token is valid - fetch fresh user data and issue new access token
-                userModel.findById(decodedRefresh.user_id)
-                    .then(user => {
-                        if (!user) {
-                            // User no longer exists
-                            return res.redirect('/account/signin');
-                        }
+                try {
+                    const user = await userModel.findById(decodedRefresh.user_id);
 
-                        const newAccessToken = generateAccessToken(user);
-                        res.cookie('accessToken', newAccessToken, {
-                            httpOnly: true,
-                            secure: process.env.NODE_ENV === 'production',
-                            sameSite: 'strict',
-                            maxAge: 15 * 60 * 1000, // 15 minutes
-                        });
-
-                        req.user = {
-                            user_id: user.user_id,
-                            username: user.username,
-                            email: user.email,
-                            role: user.role,
-                            name: user.name,
-                            image_url: user.image_url,
-                            self_introduction: user.self_introduction,
-                        };
-                        next();
-                    })
-                    .catch(dbErr => {
-                        console.error('[authenticateJWT] Database error:', dbErr);
+                    if (!user) {
+                        // User no longer exists
                         return res.redirect('/account/signin');
+                    }
+
+                    const newAccessToken = generateAccessToken(user);
+                    res.cookie('accessToken', newAccessToken, {
+                        httpOnly: true,
+                        secure: process.env.NODE_ENV === 'production',
+                        sameSite: 'strict',
+                        maxAge: 15 * 60 * 1000, // 15 minutes
                     });
+
+                    req.user = {
+                        user_id: user.user_id,
+                        username: user.username,
+                        email: user.email,
+                        role: user.role,
+                        name: user.name,
+                        image_url: user.image_url,
+                        self_introduction: user.self_introduction,
+                    };
+                    return next();
+                } catch (dbErr) {
+                    console.error('[authenticateJWT] Database error:', dbErr);
+                    return res.redirect('/account/signin');
+                }
             } catch (refreshErr) {
                 // Refresh token also invalid - redirect to login
                 console.error('[authenticateJWT] Refresh token error:', refreshErr.message);
