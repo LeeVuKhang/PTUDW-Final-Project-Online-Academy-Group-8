@@ -759,11 +759,12 @@ router.post('/change-email/verify-old', authenticateJWT, async (req, res) => {
 
     await sendOtpEmail(pending.newEmail, otpNew, 'Confirm your new email');
 
-    // Update tempData stage
-    await tempDataModel.setTempData(user.user_id, 'pendingEmailChange', {
-      ...pending,
+    // Update tempData stage - use explicit properties
+    await tempDataModel.saveTempData(user.user_id, 'pendingEmailChange', {
+      user_id: pending.user_id,
+      newEmail: pending.newEmail,
       stage: 'new'
-    }, 15);
+    }, new Date(Date.now() + 60 * 60 * 1000)); // 60 minutes
 
     return res.render('vwAccount/profile', {
       user,
@@ -860,15 +861,15 @@ router.get('/forgot', async (req, res) => {
           }
 
           // Store in tempData instead of session
-          await tempDataModel.setTempData(user.user_id, 'pendingReset', {
+          await tempDataModel.saveTempData(user.user_id, 'pendingReset', {
             user_id: user.user_id,
             email: user.email,
             verified: false
-          }, 15); // 15 minutes expiry
+          }, new Date(Date.now() + 60 * 60 * 1000)); // 60 minutes expiry
 
           // Set cookies to track this flow
-          res.cookie('resetEmail', user.email, { maxAge: 15 * 60 * 1000, httpOnly: true });
-          res.cookie('resetUserId', user.user_id, { maxAge: 15 * 60 * 1000, httpOnly: true });
+          res.cookie('resetEmail', user.email, { maxAge: 60 * 60 * 1000, httpOnly: true });
+          res.cookie('resetUserId', user.user_id, { maxAge: 60 * 60 * 1000, httpOnly: true });
 
           return res.render('vwAccount/forgot-verify', { email: user.email });
         }
@@ -910,15 +911,15 @@ router.post('/forgot', async (req, res) => {
       }
 
       // Store in tempData (session line removed - now using tempData only)
-      await tempDataModel.setTempData(existing.user_id, 'pendingReset', {
+      await tempDataModel.saveTempData(existing.user_id, 'pendingReset', {
         user_id: existing.user_id,
         email,
         verified: false
-      }, 15); // 15 minutes
+      }, new Date(Date.now() + 60 * 60 * 1000)); // 60 minutes
 
       // Set cookies to track this flow
-      res.cookie('resetEmail', email, { maxAge: 15 * 60 * 1000, httpOnly: true });
-      res.cookie('resetUserId', existing.user_id, { maxAge: 15 * 60 * 1000, httpOnly: true });
+      res.cookie('resetEmail', email, { maxAge: 60 * 60 * 1000, httpOnly: true });
+      res.cookie('resetUserId', existing.user_id, { maxAge: 60 * 60 * 1000, httpOnly: true });
     }
     return res.render('vwAccount/forgot-verify', { email });
   } catch (e) {
@@ -935,17 +936,29 @@ router.get('/forgot/verify', async (req, res) => {
 });
 router.post('/forgot/verify', async (req, res) => {
   try {
+    console.log('[forgot/verify] POST request received');
+    console.log('[forgot/verify] Body:', req.body);
+
     const resetEmail = req.cookies.resetEmail;
     const resetUserId = req.cookies.resetUserId;
+    console.log('[forgot/verify] Cookies:', { resetEmail, resetUserId });
 
     if (!resetEmail || !resetUserId) {
+      console.log('[forgot/verify] Missing cookies - redirecting to /account/forgot');
       return res.redirect('/account/forgot');
     }
 
+    console.log('[forgot/verify] Fetching tempData for user:', resetUserId);
     const pending = await tempDataModel.getTempData(resetUserId, 'pendingReset');
-    if (!pending) return res.redirect('/account/forgot');
+    console.log('[forgot/verify] TempData result:', pending);
+
+    if (!pending) {
+      console.log('[forgot/verify] No pending data found - redirecting to /account/forgot');
+      return res.redirect('/account/forgot');
+    }
 
     const code = (req.body.code || '').trim();
+    console.log('[forgot/verify] OTP code entered:', code);
     if (!code) {
       return res.render('vwAccount/forgot-verify', {
         email: pending.email,
@@ -968,15 +981,17 @@ router.post('/forgot/verify', async (req, res) => {
 
     await db('otps').where({ otp_id: otpRow.otp_id }).update({ is_verified: true });
 
-    // Update tempData
-    await tempDataModel.setTempData(pending.user_id, 'pendingReset', {
-      ...pending,
+    // Update tempData - use explicit properties to avoid serialization issues
+    await tempDataModel.saveTempData(pending.user_id, 'pendingReset', {
+      user_id: pending.user_id,
+      email: pending.email,
       verified: true
-    }, 15);
+    }, new Date(Date.now() + 60 * 60 * 1000)); // 60 minutes
 
     return res.render('vwAccount/forgot-reset');
   } catch (e) {
-    console.error(e);
+    console.error('[forgot/verify] Error:', e.message);
+    console.error('[forgot/verify] Stack:', e.stack);
     return res.status(500).render('vwAccount/403');
   }
 });

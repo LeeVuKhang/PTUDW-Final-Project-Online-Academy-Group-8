@@ -18,11 +18,13 @@ export default {
             .where({ user_id: userId, data_key: key })
             .delete();
 
+        // PostgreSQL JSONB: Pass object directly, don't stringify
+        // Knex/PostgreSQL will handle JSONB conversion automatically
         const [result] = await db('temp_data')
             .insert({
                 user_id: userId,
                 data_key: key,
-                data_value: JSON.stringify(value),
+                data_value: value,  // Pass raw object for JSONB column
                 expires_at: expiresAt,
             })
             .returning('temp_id');
@@ -44,7 +46,9 @@ export default {
 
         if (!row) return null;
 
-        return JSON.parse(row.data_value);
+        // PostgreSQL JSONB: data_value is already a JavaScript object
+        // No need to JSON.parse - Knex/pg driver handles this automatically
+        return row.data_value;
     },
 
     /**
