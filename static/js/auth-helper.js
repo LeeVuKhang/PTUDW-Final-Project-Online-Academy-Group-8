@@ -20,11 +20,19 @@ window.authHelper = {
         const config = {
             ...options,
             credentials: 'include', // Critical: This sends JWT cookies
-            headers: {
+        };
+
+        // Only set Content-Type to JSON if body is not FormData
+        // FormData needs browser to auto-set Content-Type with boundary
+        if (!(options.body instanceof FormData)) {
+            config.headers = {
                 'Content-Type': 'application/json',
                 ...options.headers,
-            },
-        };
+            };
+        } else {
+            // For FormData, keep original headers but don't set Content-Type
+            config.headers = { ...options.headers };
+        }
 
         try {
             // CRITICAL: Use originalFetch to avoid infinite recursion
